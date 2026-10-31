@@ -2,19 +2,47 @@
 
 Standalone, backend-only proof of concept for reviewing a user's **own** public footprint. No frontend, passwords, saved-user records, browser profiles, exports, or deployment credentials are included.
 
-## What actually works
+## What works without paid keys
 
-| Service | Implemented check | Prerequisite / limit |
-| --- | --- | --- |
-| LinkedIn | Exact public-profile URL references; optional own-name document search | Brave Search API key. No LinkedIn login, scraping, private content, or employment verification. |
-| Email | Exact public-web references; HIBP breach metadata | Approve each provider separately. Brave and HIBP email API keys are separate. |
-| Phone | E.164 parsing/formatting and exact public-web references | Brave Search API key for web lookup. Number metadata is not identity verification or location tracking. |
-| Identity cards / employee badges | Own-name and optional employer searches for public document references | Brave Search API key. Results are unverified leads; files are not downloaded. |
-| Payment cards | Local Luhn checksum, length and masked last four digits | No external lookup. Does not establish issuance, active status or breach exposure. CVV/PIN and other extra input fields are rejected. |
-| Saved passwords | Local CSV audit for reuse and Pwned Passwords corpus matches | Free range API; no key. Only five SHA-1 prefix characters leave the local process. |
-| Instagram | Operator-controlled shared account sends a consented follow | Offered only for self-declared private accounts; bot also requires visible Instagram private-profile evidence before a new click. |
+- **Public references:** exact email, phone, LinkedIn-profile URL and own-name/ID-document references in public **GitHub issues and pull requests**. Uses the official unauthenticated search API, checks for an exact occurrence in returned text, and includes source links. This is limited GitHub coverage, not whole-web search or email breach membership.
+- **Supplied documents:** offline review of text and text-based PDFs for your identifiers, credential-like assignments, payment-card patterns and possible identity-card/badge references. Evidence is masked and classified; findings are candidates, not proof of active credentials or identity.
+- **Saved passwords:** local CSV reuse analysis and the free Pwned Passwords prefix API. Complete passwords and hashes stay local.
+- **Payment-card validation:** local length/Luhn checks and masked last four digits. This is hygiene, not an internet exposure search; document review separately detects card-like occurrences.
+- **Private Instagram:** the existing operator-controlled consented follow workflow, restricted to private accounts. It does not import posts or messages.
 
-These are concrete provider calls and local checks, not generated “AI findings.” Missing keys return `not_configured`; provider failures return `provider_error` or incomplete reports. Nothing is fabricated. A zero-result search does not establish safety. Search providers receive the identifiers you explicitly approve, under their own policies.
+Brave whole-web references and HIBP email breach metadata remain optional integrations. They require their own keys. Missing keys and provider failures are reported explicitly; findings are never invented. No result does not establish safety. Providers receive only the identifiers you approve.
+
+### Run a public-reference check directly
+
+After installing dependencies, no server, account or provider key is needed:
+
+```bash
+node check.mjs --service email --value me@example.org --output reports/email.json --consented
+```
+
+Services: `email`, `phone` (international format), `linkedin` (profile URL), `identity_cards` (your full name). `--consented` attests that the supplied information is yours. This command explicitly selects GitHub disclosure. Reports include coverage, source URLs, classification and provider status. GitHub limits unauthenticated search; errors or truncated results produce incomplete reports.
+
+### Review your own document locally
+
+Create a private identifiers JSON file:
+
+```json
+{"emails":["me@example.org"],"phones":["+12025550123"],"linkedinProfiles":["https://www.linkedin.com/in/your-profile"],"names":["Your Name"]}
+```
+
+```bash
+node document-audit.mjs --input /private/resume.pdf --identifiers /private/identifiers.json --output reports/document.json --consented
+```
+
+No network calls are made for document review. Input is limited to 5 MB, PDF extraction to 40 pages, and extracted text to 100,000 characters. Scanned images need OCR, which is not implemented. Output refuses overwrite and uses private file permissions. Keep source documents and identifier files outside Git.
+
+Authenticated clients can also call `POST /api/osint/review-documents`:
+
+```json
+{"documents":[{"text":"Your own document text"}],"identifiers":{"emails":["me@example.org"]},"consent":{"selfOwned":true,"version":"1"}}
+```
+
+Up to three documents of 100,000 characters each are accepted within the 512 KB request limit. Optional `sourceUrl` values are caller-provided labels, never fetched or independently verified. Reports use document indexes, line numbers and redacted evidence. Original text is not retained by the server.
 
 ## Run
 
@@ -35,7 +63,7 @@ Configure optional provider keys in ignored `.env.local`:
 - `HIBP_API_KEY`: official email breach search. This requires eligible HIBP access; Pwned Passwords does not require this key.
 - `INSTAGRAM_OPERATOR_USERNAMES`: comma-separated existing **Strikeout backend** usernames allowed to control the service browser. Empty denies operator access. Ordinary registration never grants the role.
 
-No keys are supplied with the repository. These adapters were tested with simulated provider responses. A live Pwned Passwords test succeeded with the public test prefix `5BAA6`; that is a provider connectivity test, not a user's exposure result. Live Brave and email-breach checks require your configured keys and have not been claimed as verified here.
+No keys are supplied. Live GitHub search and the free Pwned Passwords prefix endpoint were verified with public synthetic test inputs. Brave and email-breach integrations were tested with simulated responses; live checks need configured keys.
 
 ## Authentication
 
@@ -49,7 +77,7 @@ Usernames accept 3–32 letters, digits, `_` and `-`; passwords accept 10–128 
 
 This backend has independent accounts/storage. It does not read or migrate the existing website's accounts or cookie. The frontend must authenticate against this API or use a deliberately implemented trusted auth bridge. Never copy the old website's users, sessions or `.env` into Git.
 
-Every write requires an approved `Origin`. CLI clients must supply that header as well as their authenticated cookie. Rate limits are local/in-memory, not distributed. General OSINT requests are capped at six per minute per client IP and accept at most 64 KB of JSON.
+Every write requires an approved `Origin`. CLI clients must supply that header as well as their authenticated cookie. Rate limits are local/in-memory, not distributed. General OSINT requests are capped at six per minute per client IP and accept at most 512 KB of JSON.
 
 ## Check API
 
@@ -64,7 +92,7 @@ Every write requires an approved `Origin`. CLI clients must supply that header a
   "consent": {
     "selfOwned": true,
     "version": "1",
-    "providers": ["brave", "hibp"]
+    "providers": ["github_public"]
   }
 }
 ```
@@ -72,15 +100,15 @@ Every write requires an approved `Origin`. CLI clients must supply that header a
 Other `service` / `input` combinations:
 
 ```json
-{"service":"linkedin","input":{"profileUrl":"https://www.linkedin.com/in/your-profile","fullName":"Your Name"},"consent":{"selfOwned":true,"version":"1","providers":["brave"]}}
+{"service":"linkedin","input":{"profileUrl":"https://www.linkedin.com/in/your-profile","fullName":"Your Name"},"consent":{"selfOwned":true,"version":"1","providers":["github_public"]}}
 ```
 
 ```json
-{"service":"phone","input":{"phone":"+12025550123"},"consent":{"selfOwned":true,"version":"1","providers":["brave"]}}
+{"service":"phone","input":{"phone":"+12025550123"},"consent":{"selfOwned":true,"version":"1","providers":["github_public"]}}
 ```
 
 ```json
-{"service":"identity_cards","input":{"fullName":"Your Name","employer":"Your Employer"},"consent":{"selfOwned":true,"version":"1","providers":["brave"]}}
+{"service":"identity_cards","input":{"fullName":"Your Name","employer":"Your Employer"},"consent":{"selfOwned":true,"version":"1","providers":["github_public"]}}
 ```
 
 ```json
@@ -144,10 +172,11 @@ The backend never fetches arbitrary result pages, downloads exposed documents, s
 
 ```bash
 npm test
+npm run smoke:live
 ```
 
 Tests use temporary private storage and mock external providers; they cover auth/CORS, operator denial, private-only follow requests, no-click without private evidence, queue idempotency, query validation, missing-provider status, result deduplication, masked local cards, prefix-only password calls, CSV reuse/corpus analysis, and credential suppression. Provider tests are not a substitute for live testing with configured keys.
 
 Existing website changes are intentionally outside this folder. This commit adds only `OSINT BACKEND`; integrate the endpoints with the website/extension separately.
 
-Provider references: [Brave web-search API](https://api-dashboard.search.brave.com/api-reference/web/search/get), [HIBP API and Pwned Passwords](https://haveibeenpwned.com/API/V3), [Playwright browser contexts](https://playwright.dev/docs/api/class-browser).
+Provider references: [GitHub issue/PR search](https://docs.github.com/en/rest/search/search#search-issues-and-pull-requests), [Brave web-search API](https://api-dashboard.search.brave.com/api-reference/web/search/get), [HIBP API and Pwned Passwords](https://haveibeenpwned.com/API/V3), [Playwright browser contexts](https://playwright.dev/docs/api/class-browser).

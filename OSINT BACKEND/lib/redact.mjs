@@ -1,0 +1,2 @@
+export function luhn(digits){let sum=0;for(let i=digits.length-1,alt=false;i>=0;i--,alt=!alt){let n=Number(digits[i]);if(alt){n*=2;if(n>9)n-=9}sum+=n}return /^\d{12,19}$/.test(digits)&&sum%10===0;}
+export function redactEvidence(value){return String(value).replace(/<[^>]*>/g,' ').replace(/((?:password|passwd|pwd|api[_ -]?key|token|secret|cvv|cvc|pin)\s*[=:]\s*)[^\s,;<>]+/gi,'$1[REDACTED]').replace(/(?:\d[ -]?){8,19}/g,s=>'[digits ending '+s.replace(/\D/g,'').slice(-4)+']').slice(0,500);}

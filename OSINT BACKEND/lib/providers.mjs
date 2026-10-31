@@ -31,3 +31,28 @@ export async function passwordRange(prefix,{fetcher=fetch}={}){
  const lines=text.trim().split(/\r?\n/);if(!lines.length||lines.some(x=>! /^[A-F0-9]{35}:\d+$/.test(x)))throw new ProviderError('provider_error','Password provider returned an unexpected response.');
  return text;
 }
+
+// Official, keyless GitHub issue/PR search. This is explicitly not whole-web coverage.
+export async function githubReferences(needles,{fetcher=fetch}={}){
+ const {redactEvidence}=await import('./redact.mjs');
+ const findings=[],checks=[];
+ for(const needle of needles.slice(0,2)){
+  const url=new URL('https://api.github.com/search/issues');
+  url.search=new URLSearchParams({q:'"'+needle.value+'" in:body'+(needle.cardContext?' "ID card"':''),per_page:'5'});
+  const data=await request(url,{headers:{Accept:'application/vnd.github.text-match+json','X-GitHub-Api-Version':'2022-11-28'},fetcher});
+  if(!data||!Array.isArray(data.items)||typeof data.incomplete_results!=='boolean')throw new ProviderError('provider_error','GitHub returned an unexpected search response.');
+  let confirmed=0;
+  for(const item of data.items){
+   let source;try{source=new URL(item.html_url)}catch{continue}
+   if(source.protocol!=='https:'||source.hostname!=='github.com'||source.username||source.password||!/^\/[^/]+\/[^/]+\/(issues|pull)\/\d+/.test(source.pathname))continue;
+   const candidates=[item.body,...(item.text_matches||[]).map(x=>x.fragment)].filter(x=>typeof x==='string');
+   const text=candidates.find(x=>x.toLowerCase().includes(needle.value.toLowerCase()));
+   if(!text)continue; // Search stemming alone is not evidence of an exact occurrence.
+   if(needle.cardContext&&!/(?:id card|identity card|employee badge)/i.test(text))continue;
+   const at=text.toLowerCase().indexOf(needle.value.toLowerCase());
+   findings.push({category:needle.category,reviewPriority:needle.cardContext?'high':'review',confidence:'exact_occurrence_in_public_provider_text',url:source.href,title:redactEvidence(item.title||'Public GitHub reference'),snippet:redactEvidence(text.slice(Math.max(0,at-70),at+needle.value.length+100)),provider:'github_public'});confirmed++;
+  }
+  checks.push({provider:'github_public',status:data.incomplete_results?'partial':'completed',returnedCandidates:data.items.length,confirmedOccurrences:confirmed,coverage:'Public GitHub issue and pull-request search only; up to five candidates per query.'});
+ }
+ const seen=new Set();return {checks,findings:findings.filter(x=>{if(seen.has(x.url))return false;seen.add(x.url);return true})};
+}

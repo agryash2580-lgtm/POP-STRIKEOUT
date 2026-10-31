@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 import {createStore,hash} from './lib/store.mjs';
 import {installInstagramBot} from './lib/instagram.mjs';
+import {reviewDocuments} from './lib/documents.mjs';
 import {runCheck,runPasswordRange} from './lib/osint.mjs';
 try{process.loadEnvFile('.env.local')}catch{}
 export function createApp({directory,env=process.env,fetcher=fetch}={}){
@@ -18,14 +19,14 @@ export function createApp({directory,env=process.env,fetcher=fetch}={}){
   if(!['GET','HEAD'].includes(req.method)&&(!origin||req.get('sec-fetch-site')==='cross-site'))return res.status(403).json({error:'Use an approved application origin.'});
   next();
  });
- app.use(express.json({limit:'64kb'}));
+ app.use(express.json({limit:'512kb'}));
  const guarded=fn=>async(req,res,next)=>{try{await fn(req,res,next)}catch(e){if(!res.headersSent)res.status(e.status|| (e.code==='not_configured'?503:e.code==='provider_error'?502:500)).json({error:e.status?e.message:e.code?e.message:'The operation failed. No result has been invented.',...(e.code?{code:e.code}:{})});}};
  function limited(req,scope,max=30){const key=scope+':'+req.socket.remoteAddress,now=Date.now(),v=limits.get(key);if(v&&v.until>now){if(++v.count>max)fail(429,'Too many requests. Please wait a minute.')}else limits.set(key,{count:1,until:now+60000});if(limits.size>2000)for(const [k,v] of limits)if(v.until<now)limits.delete(k)}
  function token(req){return(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('osint_session='))?.slice(14)}
  async function user(req){const raw=token(req);if(!raw)fail(401,'Sign into Strikeout.');const session=await store.read('sessions/'+hash(raw));if(!session||session.expires<Date.now())fail(401,'Your session expired. Sign in again.');const u=await store.read('users/'+session.userId);if(!u)fail(401,'Sign in again.');return u;}
  function safe(u){return{id:u.id,username:u.username,guest:false}}
  async function session(res,id){const raw=randomBytes(32).toString('hex');await store.write('sessions/'+hash(raw),{userId:id,expires:Date.now()+7*86400000});res.cookie('osint_session',raw,{httpOnly:true,sameSite:'strict',secure:env.COOKIE_SECURE==='true',maxAge:7*86400000,path:'/'});}
- app.get('/api/health',(req,res)=>res.json({ok:true,service:'Strikeout OSINT Backend',version:'0.1.0'}));
+ app.get('/api/health',(req,res)=>res.json({ok:true,service:'Strikeout OSINT Backend',version:'0.2.0'}));
  app.post('/api/auth/:action',guarded(async(req,res)=>{
   limited(req,'auth',12);const action=req.params.action;
   if(action==='logout'){const raw=token(req);if(raw)await store.remove('sessions/'+hash(raw));res.clearCookie('osint_session',{path:'/'});return res.json({ok:true});}
@@ -46,8 +47,9 @@ export function createApp({directory,env=process.env,fetcher=fetch}={}){
  const registrations=new Set();
  app.get('/api/auth/me',guarded(async(req,res)=>res.json({user:safe(await user(req))})));
  app.delete('/api/account',guarded(async(req,res)=>{const u=await user(req);await instagram.removeUser(u.id);await store.remove('users/'+u.id);const raw=token(req);if(raw)await store.remove('sessions/'+hash(raw));res.clearCookie('osint_session',{path:'/'});res.json({deleted:true});}));
- app.get('/api/osint/capabilities',guarded(async(req,res)=>{await user(req);res.json({services:['linkedin','email','phone','identity_cards','payment_cards','saved_passwords'],providers:{brave:!!env.BRAVE_SEARCH_API_KEY,hibp:!!env.HIBP_API_KEY,pwned_passwords:true},instagram:{service:'popyourproblemsaway',privateAccountsOnly:true,privacyIsSelfDeclaredUntilBotCheck:true},reportStorage:'none',privateContentScanning:false});}));
+ app.get('/api/osint/capabilities',guarded(async(req,res)=>{await user(req);res.json({services:['linkedin','email','phone','identity_cards','payment_cards','saved_passwords'],keylessDefaults:{publicReferences:'github_public',documentReview:'local',savedPasswords:'pwned_passwords'},localTools:['payment_card_validation'],providers:{github_public:true,local_documents:true,brave:!!env.BRAVE_SEARCH_API_KEY,hibp:!!env.HIBP_API_KEY,pwned_passwords:true},instagram:{service:'popyourproblemsaway',privateAccountsOnly:true,privacyIsSelfDeclaredUntilBotCheck:true},reportStorage:'none',privateContentScanning:false});}));
  app.post('/api/osint/check',guarded(async(req,res)=>{await user(req);limited(req,'osint',6);res.json(await runCheck(req.body,{env,fetcher}));}));
+ app.post('/api/osint/review-documents',guarded(async(req,res)=>{await user(req);limited(req,'documents',6);res.json(reviewDocuments(req.body));}));
  app.post('/api/osint/passwords/range',guarded(async(req,res)=>{await user(req);limited(req,'passwords',30);res.json(await runPasswordRange(req.body,{fetcher}));}));
  const instagram=installInstagramBot(app,{user,guarded,fail,limited,...store,hash,env});
  app.use((error,req,res,next)=>res.status(error.type==='entity.too.large'?413:400).json({error:'Invalid or oversized request body.'}));
