@@ -1,0 +1,9 @@
+{
+  "email": {"service":"email","input":{"email":"me@example.org"},"consent":{"selfOwned":true,"version":"1","providers":["brave","hibp"]}},
+  "linkedin": {"service":"linkedin","input":{"profileUrl":"https://www.linkedin.com/in/synthetic-profile","fullName":"Synthetic Person"},"consent":{"selfOwned":true,"version":"1","providers":["brave"]}},
+  "phone": {"service":"phone","input":{"phone":"+12025550123"},"consent":{"selfOwned":true,"version":"1","providers":["brave"]}},
+  "identity_cards": {"service":"identity_cards","input":{"fullName":"Synthetic Person","employer":"Example Corp"},"consent":{"selfOwned":true,"version":"1","providers":["brave"]}},
+  "payment_cards": {"service":"payment_cards","input":{"number":"4111111111111111"},"consent":{"selfOwned":true,"version":"1","providers":[]}},
+  "password_prefix": {"prefix":"5BAA6","consent":{"selfOwned":true,"version":"1","providers":["pwned_passwords"]}},
+  "private_instagram": {"username":"synthetic_private_user","accountPrivacy":"private","consent":true}
+}

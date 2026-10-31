@@ -1,0 +1,6 @@
+{
+  "name": "strikeout-osint-backend", "version": "0.1.0", "private": true, "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {"start": "node server.mjs", "test": "node --test tests/*.test.mjs", "password-audit": "node password-audit.mjs"},
+  "dependencies": {"express": "5.3.0", "@playwright/test": "1.64.1", "libphonenumber-js": "^1.12.0"}
+}
