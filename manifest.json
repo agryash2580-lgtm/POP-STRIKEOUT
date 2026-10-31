@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "Pop by STRIKEOUT",
+  "version": "2.1.1",
+  "description": "A pet with a job: find watched information, catch accidental sharing and save reviewed evidence.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "contextMenus",
+    "downloads"
+  ],
+  "host_permissions": [
+    "https://strikeout-wheat.vercel.app/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "action": {
+    "default_popup": "panel.html",
+    "default_title": "Pop's tools"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_ui": {
+    "page": "workspace.html#settings",
+    "open_in_tab": true
+  },
+  "icons": {
+    "128": "icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "pop.png"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  }
+}
