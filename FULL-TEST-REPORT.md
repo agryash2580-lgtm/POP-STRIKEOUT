@@ -6,7 +6,7 @@ Main a4fce08 was the baseline. All 77 automated tests pass. Production build pas
 
 ## Public deployment
 
-Tested https://strikeout-mu20.vercel.app with fictional accounts and cases. Test accounts used solely for these checks were deleted after use, except the temporary email/report test session retained until final cleanup.
+Tested https://strikeout-mu20.vercel.app with fictional accounts and cases. Test accounts used solely for these checks were deleted after use, including the email/report test session after the email service confirmed acceptance.
 
 - Health: reachable; private cloud Blob storage reported.
 - MFA: real browser enrolment, recovery-code login, access gating and disable passed.
@@ -18,7 +18,7 @@ Tested https://strikeout-mu20.vercel.app with fictional accounts and cases. Test
 - User-authorized report inbox verification succeeded. A second fictional AI report completed the opt-in email stage; the mailer reported accepted. Repeating advance retained accepted state. Inbox receipt was not independently confirmed. No complaint/test email was sent to CyberDost.
 - Both extension downloads returned HTTP 200 with ZIP signatures.
 - Both specialist chat endpoints return HTTP 503: their separate server keys are not configured in production. Local live calls with the supplied keys pass. The Vercel connection exposes no matching project, so deployment environment variables could not be configured from this connection.
-- Production OSINT external check returns HTTP 403 requiring phone/SMS verification. This gate is absent from the tested main source. Live external OSINT from this deployed account therefore could not be completed; the gate was not bypassed. Production also reports Brave and HIBP unconfigured.
+- Production OSINT external check returns HTTP 403 requiring phone/SMS verification. This gate was absent from the initial main baseline. Live external OSINT from this deployed account therefore could not be completed; the gate was not bypassed. Production also reports Brave and HIBP unconfigured.
 
 ## Installed-extension test limits
 
@@ -29,3 +29,7 @@ Downloaded current Chromium and Firefox. Full-browser launches both fail on this
 Removed duplicate Emotional support and Digital footprint cards and the expert-booking note. Added the supplied UpLife destination using HTTPS beside Therabot. Shortened specialist copy. Suppressed visible error/success/working/status banners and explanatory notes; removed report-unknowns and finding-confidence/limitation display. Severity ordering, response statuses, redaction, checks and exported results are preserved. No failed action is relabelled successful. With silent errors, failed requests preserve input but no explanatory error is displayed, as requested.
 
 Build, 77 backend tests, case/exposure/specialist browser checks, desktop/mobile cleanup assertions and a synthetic silent-error/retry-state check passed. These UI changes require merging and deployment before the public site changes.
+
+## Latest main incorporated
+
+The teammate OSINT/SMS branch was merged as main 70cd673 during this pass. The interface cleanup was rebased onto it, preserving RiskSummary, source attribution, link assessments, advanced tools and phone verification. The complete current backend suite passes 108/108 tests and the production build passes. SMS verification is now present in this source too; no live SMS test was performed. Advanced-search confidence/limitation copy is suppressed consistently with the main results screen. Form controls and actionable links remain accessible while message banners are suppressed.
