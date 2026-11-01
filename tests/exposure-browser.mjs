@@ -2,7 +2,7 @@ import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 import {mkdir,readFile} from 'node:fs/promises';
 const base=process.env.DESKTOP_TEST_URL||'http://localhost:3002';
-const browser=await chromium.launch();const page=await browser.newPage({viewport:{width:1440,height:950}});
+const browser=await chromium.launch({args:process.env.TEST_HOST_IP?['--host-resolver-rules=MAP '+new URL(process.env.DESKTOP_TEST_URL).hostname+' '+process.env.TEST_HOST_IP]:[]});const page=await browser.newPage({viewport:{width:1440,height:950}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));let created=false;
 try{
  const registered=await page.request.post(base+'/api/auth/register',{data:{username:'exposure_'+Date.now().toString(36),password:'fictional-exposure-password-42'}});assert.equal(registered.status(),200);created=true;

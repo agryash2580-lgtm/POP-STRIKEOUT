@@ -641,7 +641,7 @@ app.post(
       fail(400, "Review the context before asking Pop.");
     const context = String(req.body.context || "").slice(0, 6000),
       task = String(req.body.task || "Explain my next step").slice(0, 300);
-    const model = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
+    const model = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
     let r;
     try {
       r = await fetch(

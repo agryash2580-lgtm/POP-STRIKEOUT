@@ -253,3 +253,14 @@ The current storage and rate limiting suit a hackathon prototype. Limits are pro
 ## 14. A short explanation you can say aloud
 
 “Our React frontend gives users a Windows 98 workspace. An Express backend owns the private accounts, cases and evidence. Report generation saves a snapshot, researches generic official guidance, asks Gemini to write structured content, validates it and turns it into a downloadable PDF. Work is saved between stages so it can resume. Exposure checks tell the user exactly which providers and content were examined. Pop's core browser tools run locally, and AI is optional. The Instagram feature is a consent-based local follow workflow, not private-account scraping. We used AI to help implement the code, and we can trace each feature from its interface through its request handler to storage or its external provider.”
+
+
+## Desktop and Google sign-in fixes
+
+The desktop has one Pop app. `GetPopApp.tsx` contains the installation links and buttons to launch the supplied `GuidedTour.tsx` tutorial or the interactive `PopCompanion.tsx`. The separate extension demo is available inside Pop. The tutorial is the supplied frontend implementation, with its instructions corrected to match actual storage and exposure coverage.
+
+`Taskbar` stops click propagation because the desktop click handler dismisses Start. Without that boundary, clicking Start opened and immediately dismissed it in the same event. `tests/desktop-navigation.mjs` checks opening/dismissing Start and launching/advancing the original tutorial.
+
+Google OAuth is configured server-side on the live site. The callback is `https://strikeout-mu20.vercel.app/api/auth/google/callback`. While the Google project is in testing mode, add allowed accounts in Google Auth Platform > Audience > Test users. The Google account password never belongs in our code. A valid verified Google email becomes the default report/evidence recipient when no separate recipient has already been chosen. An existing separately chosen address is preserved. Tests cover state/nonce/PKCE, verified callback account creation, recipient preservation and unverified-identity rejection. Reaching Google's real sign-in screen is verified; a completed human-account login is not claimed by these tests.
+
+The live exposure walkthrough checks supplied-document findings, masked export, the hosted Instagram permission queue and withdrawal, and an actual downloadable report PDF. Instagram public-reference search uses the explicitly approved providers shown on screen. A completed GitHub search does not mean Instagram posts or private accounts were inspected. Provider failures stay incomplete and never become invented findings.

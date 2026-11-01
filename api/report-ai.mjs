@@ -257,7 +257,7 @@ export function createGemini({ fetcher = fetch, env = process.env } = {}) {
     const model =
       (search ? env.GEMINI_RESEARCH_MODEL : env.GEMINI_REPORT_MODEL) ||
       env.GEMINI_MODEL ||
-      "gemini-3.1-flash-lite";
+      "gemini-3.5-flash-lite";
     if (!/^[a-zA-Z0-9.-]+$/.test(model))
       fail(503, "Invalid Gemini model setting.");
     const parts = [{ text: prompt }];

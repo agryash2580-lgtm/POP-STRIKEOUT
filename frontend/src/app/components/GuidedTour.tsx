@@ -236,7 +236,7 @@ export function PopPet({
       facingLeft: true,
       highlightSelector: "#tour-cases-tab-mycases",
       highlightLabel: "My Cases Vault",
-      text: "Cases & Reports is your private vault. When accounts are compromised or you face harassment, this app securely tracks evidence. Everything stays on your device.",
+      text: "Cases & Reports is your private vault. When accounts are compromised or you face harassment, this app securely tracks evidence. Cases and attached evidence are stored privately in your signed-in STRIKEOUT account.",
     },
     {
       title: "Cases & Reports - Log Incident",
@@ -263,7 +263,7 @@ export function PopPet({
       facingLeft: true,
       highlightSelector: "#tour-exposure-search-well",
       highlightLabel: "OSINT Live Scanner",
-      text: "Check Exposure is a live OSINT breach scanner! Scan public GitHub threads, darkweb dumps, and leaked credentials using verified k-anonymity.",
+      text: "Check Exposure reviews supplied documents and public references. GitHub search covers public issues and pull requests. Password checks send only a hash prefix; they do not scan the dark web.",
     },
     {
       title: "Pop.exe Sim - Browser Sandbox",

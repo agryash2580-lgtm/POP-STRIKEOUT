@@ -86,7 +86,7 @@ function validatedConversation(body) {
 }
 
 async function generateReply(conversation) {
-  const model = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
+  const model = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
   let response;
   try {
     response = await fetch(

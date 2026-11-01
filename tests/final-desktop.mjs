@@ -1,7 +1,7 @@
 import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
-const browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1440,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const browser=await chromium.launch({headless:true,args:process.env.TEST_HOST_IP?['--host-resolver-rules=MAP '+new URL(process.env.DESKTOP_TEST_URL).hostname+' '+process.env.TEST_HOST_IP]:[]});const page=await browser.newPage({viewport:{width:1440,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
 const base=process.env.DESKTOP_TEST_URL||'http://localhost:3002';
 await mkdir('output/final',{recursive:true});
 try{

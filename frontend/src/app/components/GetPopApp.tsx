@@ -16,11 +16,13 @@ const sunken: React.CSSProperties = {
 
 export function GetPopApp({
   onSummonPet,
+  onStartTutorial,
   onOpenSimulator,
   activeBrowserTab: controlledTab,
   onTabChange,
 }: {
   onSummonPet?: () => void;
+  onStartTutorial?: () => void;
   onOpenSimulator?: () => void;
   activeBrowserTab?: "chrome" | "firefox";
   onTabChange?: (tab: "chrome" | "firefox") => void;
@@ -45,6 +47,10 @@ export function GetPopApp({
         padding: "24px 32px",
       }}
     >
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        <button onClick={onStartTutorial}>Start guided tutorial</button>
+        <button onClick={onSummonPet}>Show assistant</button>
+      </div>
       {/* ─── Hero Header ──────────────────────────────────────────────────── */}
       <div style={{ display: "flex", gap: "24px", alignItems: "center", marginBottom: "24px" }}>
         <div
@@ -82,7 +88,7 @@ export function GetPopApp({
               cursor: "pointer",
             }}
           >
-            🐾 Summon Desktop Pop
+            Summon Pop
           </button>
         </div>
 
@@ -112,7 +118,7 @@ export function GetPopApp({
             Meet Pop: Your Everyday Guardian
           </h2>
           <div style={{ fontSize: "13px", color: "#57534e", lineHeight: "1.45", maxWidth: "480px" }}>
-            Pop floats gently in your browser and desktop, intercepts sensitive credential leaks before they happen, captures cryptographic evidence, and keeps you grounded.
+            Pop checks supported page text, warns when watched information is pasted, and saves evidence with source details and integrity hashes. Left click to pet him; right click for tools.
           </div>
 
           {/* Direct Download Action Grid */}
@@ -241,7 +247,7 @@ export function GetPopApp({
             🛑 Anti-Impulsive Posting Check
           </div>
           <div style={{ fontSize: "12px", color: "#57534e", lineHeight: "1.4" }}>
-            Pop senses rapid keystrokes during heated interactions and suggests a quick 10-second breath, preventing emotional leaks or regretful social posts.
+            Use Check my draft to review a supported editable field for watched information. Pop suggests changes; you decide whether to remove matches.
           </div>
         </div>
 
@@ -260,7 +266,7 @@ export function GetPopApp({
             🌿 Cyber-Catnip & Companion
           </div>
           <div style={{ fontSize: "12px", color: "#57534e", lineHeight: "1.4" }}>
-            A comforting digital friend. Pop stays near you in the bottom right corner, purrs when petted, and enthusiastically chases Cyber-Catnip when fed.
+            Pop stays near you, reacts to head pats, and accepts Cyber-Catnip on this website. Sound stays off by default.
           </div>
         </div>
       </div>

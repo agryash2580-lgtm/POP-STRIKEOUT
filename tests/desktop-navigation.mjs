@@ -1,0 +1,23 @@
+import {chromium} from '@playwright/test';
+import assert from 'node:assert/strict';
+const base=process.env.DESKTOP_TEST_URL||'http://localhost:3002';
+const args=process.env.TEST_HOST_IP?['--host-resolver-rules=MAP '+new URL(base).hostname+' '+process.env.TEST_HOST_IP]:[];
+const browser=await chromium.launch({args});
+const page=await browser.newPage({viewport:{width:1440,height:950}});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+try {
+ await page.goto(base);
+ await page.getByRole('button',{name:'Start',exact:true}).click();
+ await page.getByText('STRIKEOUT 98',{exact:true}).waitFor();
+ await page.mouse.click(1200,120);
+ await page.getByText('STRIKEOUT 98',{exact:true}).waitFor({state:'hidden'});
+ assert.equal(await page.getByText('Pop tutorial',{exact:true}).count(),0);
+ assert.equal(await page.getByText('Get Pop',{exact:true}).count(),0);
+ await page.getByText('Pop',{exact:true}).first().click();
+ await page.getByRole('button',{name:'Start guided tutorial',exact:true}).click();
+ await page.getByText('Tutorial: General 1/14',{exact:true}).waitFor();
+ await page.getByRole('button',{name:/Next/}).click();
+ await page.getByText('Tutorial: General 2/14',{exact:true}).waitFor();
+ assert.deepEqual(errors,[]);
+ console.log('PASS: Start opens/dismisses, one Pop app, original guided tutorial launches/advances, no runtime errors.');
+} finally {await browser.close()}

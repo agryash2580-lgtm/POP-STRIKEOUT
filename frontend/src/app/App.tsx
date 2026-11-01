@@ -582,7 +582,7 @@ function Taskbar({
       case "extsim":
         return "Extension Simulator";
       case "getpop":
-        return "Get Pop";
+        return "Pop";
     }
   };
 
@@ -609,6 +609,7 @@ function Taskbar({
 
   return (
     <div
+      onClick={(event) => event.stopPropagation()}
       style={{
         position: "fixed",
         bottom: 0,
@@ -832,7 +833,7 @@ function StartMenu({
           }}
         >
           <IconPopExe size={22} />
-          <span>Pop (Desktop Companion)</span>
+          <span>Pop</span>
         </div>
 
         <div
@@ -1630,26 +1631,9 @@ export default function App() {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Pop desktop icon - Increased prominent size! */}
         <DesktopIcon
           icon={IconPopExe}
-          label="Pop tutorial"
-          size={iconSize}
-          selected={selectedIcon === "tutorial"}
-          onClick={() => setTutorialOpen(true)}
-          onDoubleClick={() => setTutorialOpen(true)}
-        />
-        <DesktopIcon
-          icon={IconExtensionSim}
-          label="Extension demo"
-          size={iconSize}
-          selected={selectedIcon === "extsim"}
-          onClick={() => openWindow("extsim")}
-          onDoubleClick={() => openWindow("extsim")}
-        />
-        <DesktopIcon
-          icon={IconPopExe}
-          label="Get Pop"
+          label="Pop"
           size={iconSize}
           selected={selectedIcon === "getpop"}
           onClick={() => openWindow("getpop")}
@@ -1677,24 +1661,6 @@ export default function App() {
           }}
           onDoubleClick={() => openWindow("cases")}
         />
-        <DesktopIcon
-          icon={IconPopExe}
-          label="Pop"
-          size={iconSize}
-          customIconSize={
-            iconSize === "small" ? 42 : iconSize === "large" ? 64 : 52
-          }
-          selected={selectedIcon === "pop"}
-          onClick={() => {
-            if (isMobile) {
-              setPopPetOpen(true);
-            } else {
-              setSelectedIcon("pop");
-            }
-          }}
-          onDoubleClick={() => setPopPetOpen(true)}
-        />
-
         {/* Cyber-Catnip - Instant in-hand food! No window opens */}
         <DesktopIcon
           icon={IconCatnip}
@@ -1878,7 +1844,7 @@ export default function App() {
       </Win95Window>
       <Win95Window
         id="getpop"
-        title="STRIKEOUT / Get Pop"
+        title="STRIKEOUT / Pop"
         icon={IconPopExe}
         titleBarGradient={currentTitleBarGradient}
         state={windows.getpop}
@@ -1891,7 +1857,8 @@ export default function App() {
         isMobile={isMobile}
       >
         <GetPopApp
-          onSummonPet={() => setTutorialOpen(true)}
+          onSummonPet={() => setPopPetOpen(true)}
+          onStartTutorial={() => setTutorialOpen(true)}
           onOpenSimulator={() => openWindow("extsim")}
         />
       </Win95Window>
@@ -2035,7 +2002,7 @@ export default function App() {
       {startOpen && (
         <StartMenu
           onOpenApp={(id) => openWindow(id)}
-          onOpenPopPet={() => setPopPetOpen(true)}
+          onOpenPopPet={() => openWindow("getpop")}
           onGrabCatnip={() => {
             setHasCatnip(true);
             setPopPetOpen(true);

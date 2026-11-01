@@ -15,6 +15,7 @@ export function installGoogleAuth(
     seed,
     session,
     env = process.env,
+    createOAuthClient = (id, secret, redirect) => new OAuth2Client(id, secret, redirect),
   },
 ) {
   const configured = () =>
@@ -59,7 +60,7 @@ export function installGoogleAuth(
         expires: Date.now() + 10 * 60 * 1000,
       });
       res.cookie(cookieName, state, cookieOptions);
-      const client = new OAuth2Client(
+      const client = createOAuthClient(
         env.GOOGLE_CLIENT_ID,
         env.GOOGLE_CLIENT_SECRET,
         env.GOOGLE_REDIRECT_URI,
@@ -109,7 +110,7 @@ export function installGoogleAuth(
       )
         return res.redirect("/?auth-error=google-cancelled");
       try {
-        const client = new OAuth2Client(
+        const client = createOAuthClient(
           env.GOOGLE_CLIENT_ID,
           env.GOOGLE_CLIENT_SECRET,
           env.GOOGLE_REDIRECT_URI,
@@ -126,7 +127,9 @@ export function installGoogleAuth(
         if (
           !identity?.sub ||
           identity.nonce !== pending.nonce ||
-          identity.email_verified !== true
+          identity.email_verified !== true ||
+          typeof identity.email !== "string" ||
+          !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(identity.email)
         )
           throw Error("Invalid identity");
         // Stable Google subject, not email/name, identifies an account. No automatic account linking.
@@ -147,6 +150,16 @@ export function installGoogleAuth(
             seed(owner.workspaceId),
           );
           await write("users/" + id, owner);
+        }
+        // Google has verified this address. Keep an existing, separately chosen
+        // delivery address; otherwise use it for this account's reports/evidence.
+        const deliveryKey = "analysis_email/" + id;
+        if (!(await read(deliveryKey))) {
+          await write(deliveryKey, {
+            email: String(identity.email).toLowerCase(),
+            verifiedAt: new Date().toISOString(),
+            verifiedBy: "google",
+          });
         }
         await session(res, id);
         res.redirect("/");
