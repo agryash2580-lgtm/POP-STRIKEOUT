@@ -14,7 +14,7 @@ import {
   scryptSync,
   timingSafeEqual,
 } from "node:crypto";
-import { read, write, remove, hash, usesCloud } from "./store.mjs";
+import { read, write, remove, hash, usesCloud, createIfMissing } from "./store.mjs";
 import {
   seed,
   portfolio,
@@ -336,7 +336,9 @@ app.post(
         cases: previous?.guest ? previous.cases : [],
         identifiers: previous?.guest ? previous.identifiers : [],
       };
-      await write("users/" + id, u);
+      // Claim the username atomically across server instances, not check-then-write.
+      if (!(await createIfMissing("users/" + id, u)))
+        fail(409, "That username is already in use. Sign in or choose another.");
       if (!previous?.guest)
         await write("workspaces/" + u.workspaceId, seed(u.workspaceId));
       if (previous?.guest) await remove("users/" + previous.id);
@@ -746,3 +748,4 @@ app.use((error, req, res, next) =>
   ),
 );
 export default app;
+

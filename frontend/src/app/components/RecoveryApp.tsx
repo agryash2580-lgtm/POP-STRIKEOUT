@@ -981,12 +981,12 @@ export function RecoveryApp() {
                     <B
                       disabled={!!busy || job.stale}
                       onClick={() =>
-                        run("Simplifying your report", async () =>
+                        run("Loading your report summary", async () =>
                           setAnswer(await reportsAPI.summarise(job.id)),
                         )
                       }
                     >
-                      Explain my report simply
+                      Read my report summary
                     </B>
                     {job.report.nextSteps.map((s: any) => (
                       <article className="step-card" key={s.id}>
@@ -1378,3 +1378,4 @@ export function RecoveryApp() {
     </BusyContext.Provider>
   );
 }
+

@@ -15,11 +15,17 @@ export async function sendGmail({ env, to, subject, text, attachments, key }) {
   let receipt = await read(recordKey);
   if (receipt?.status === "accepted") return receipt;
   const marker = randomUUID();
-  await createIfMissing(recordKey, {
+  const pending = {
     status: "pending",
     marker,
     at: new Date().toISOString(),
-  });
+  };
+  if (receipt?.status === "failed") {
+    // Only definite non-delivery may be retried. The ETag lets one retry win.
+    await write(recordKey, pending, receipt._etag);
+  } else {
+    await createIfMissing(recordKey, pending);
+  }
   receipt = await read(recordKey);
   if (receipt.marker !== marker)
     fail(
@@ -48,11 +54,18 @@ export async function sendGmail({ env, to, subject, text, attachments, key }) {
         content: Buffer.from(a.content, "base64"),
       })),
     });
-    if (!result.accepted?.length) throw Error("No recipient accepted");
+    if (!result.accepted?.length)
+      throw Object.assign(Error("No recipient accepted"), { code: "NO_RECIPIENT" });
     const accepted = { status: "accepted", providerId: result.messageId };
     await write(recordKey, accepted, receipt._etag);
     return accepted;
   } catch (error) {
+    const definiteFailure = ["EAUTH", "EENVELOPE", "ECONNECTION", "EDNS", "NO_RECIPIENT"].includes(error.code)
+      || (Number(error.responseCode) >= 500 && Number(error.responseCode) < 600);
+    if (definiteFailure) {
+      await write(recordKey, { status: "failed", at: new Date().toISOString() }, receipt._etag);
+      fail(503, "Email was not accepted. Check the sender configuration, then retry. Your evidence and downloads remain saved.");
+    }
     fail(
       503,
       "Gmail did not confirm acceptance. Check the sending mailbox and app-password configuration before another attempt. Your saved evidence and downloads remain available.",
@@ -61,3 +74,4 @@ export async function sendGmail({ env, to, subject, text, attachments, key }) {
     transport.close();
   }
 }
+

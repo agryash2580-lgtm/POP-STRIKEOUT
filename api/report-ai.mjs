@@ -212,7 +212,7 @@ export function validateReport(value, snapshot, research) {
     fail(502, "Gemini returned invalid report sections.");
   const seen = new Set();
   const suppliedDates = new Set(
-    JSON.stringify(snapshot).match(/\b\d{4}-\d{2}-\d{2}\b/g) || [],
+    JSON.stringify({ snapshot, sources: research.sources.map(s => s.excerpts || []) }).match(/\b\d{4}-\d{2}-\d{2}\b/g) || [],
   );
   const reportDates =
     JSON.stringify(value).match(/\b\d{4}-\d{2}-\d{2}\b/g) || [];
@@ -221,7 +221,7 @@ export function validateReport(value, snapshot, research) {
   return {
     summary: "User-reported account (not independently verified): " + snapshot.details.description,
     observations: value.observations.map((o) => ({
-      text: requireExtract(bounded(o.text, 2000), snapshot.evidence.filter(e => o.evidenceIds?.includes(e.id)).map(e => e.note), "observation"),
+      text: requireExtract(bounded(o.text, 3000), snapshot.evidence.filter(e => o.evidenceIds?.includes(e.id)).map(e => e.note), "observation"),
       evidenceIds: validateReferences(o.evidenceIds, evidenceIds, "evidence"),
     })),
     unknowns: ["Identity, cause, current account status and outcomes are not independently verified.", "Source excerpts are search-grounded guidance or bundled references, not proof of the incident. Review the original source before acting."],
@@ -514,3 +514,4 @@ export function createGemini({ fetcher = fetch, env = process.env } = {}) {
     },
   };
 }
+

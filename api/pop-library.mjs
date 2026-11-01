@@ -135,7 +135,7 @@ export function evidenceLibraryRouter({ identity, guarded, limited }) {
           raw
         : "";
       const index = (await read(indexKey(req.libraryOwner))) || { ids: [] };
-      if (index.ids.length >= 50)
+      if (index.ids.length >= 50 && !index.ids.includes(b.id))
         fail(
           413,
           "Your evidence library holds 50 captures. Export and delete older captures first.",
@@ -155,6 +155,9 @@ export function evidenceLibraryRouter({ identity, guarded, limited }) {
         htmlHash: html ? hash(html) : null,
         redactionCount: Number(b.redactionCount) || 0,
       };
+      // Reserve capacity first. A failed capacity check must not leave an
+      // unindexed screenshot behind, invisible to account deletion.
+      await addToIndex(req.libraryOwner, item.id);
       await createIfMissing(itemKey(req.libraryOwner, item.id), item);
       const stored = await read(itemKey(req.libraryOwner, item.id));
       if (stored.captureDigest !== digest)
@@ -302,3 +305,4 @@ export function evidenceLibraryRouter({ identity, guarded, limited }) {
   );
   return router;
 }
+

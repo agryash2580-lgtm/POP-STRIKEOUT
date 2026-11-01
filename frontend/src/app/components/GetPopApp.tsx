@@ -47,12 +47,12 @@ export function GetPopApp({
         padding: "24px 32px",
       }}
     >
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
         <button onClick={onStartTutorial}>Start guided tutorial</button>
         <button onClick={onSummonPet}>Show assistant</button>
       </div>
       {/* ─── Hero Header ──────────────────────────────────────────────────── */}
-      <div style={{ display: "flex", gap: "24px", alignItems: "center", marginBottom: "24px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", alignItems: "center", marginBottom: "24px" }}>
         <div
           style={{
             ...raised,
@@ -92,7 +92,7 @@ export function GetPopApp({
           </button>
         </div>
 
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: "1 1 220px", minWidth: 0 }}>
           <div
             style={{
               fontSize: "10px",
@@ -122,7 +122,7 @@ export function GetPopApp({
           </div>
 
           {/* Direct Download Action Grid */}
-          <div id="tour-getpop-downloads" style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+          <div id="tour-getpop-downloads" style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "16px" }}>
             <a
               href="/pop-chromium-2.3.0.zip"
               download="pop-chromium-2.3.0.zip"
@@ -341,3 +341,4 @@ export function GetPopApp({
     </div>
   );
 }
+
