@@ -1,3 +1,4 @@
+import { specialistBotsRouter } from "./specialist-bots.mjs";
 import {
   startLogin,
   securityState,
@@ -217,6 +218,7 @@ app.post(
 app.use("/api/reporting", reportingRouter({ user, guarded, limited }));
 app.use("/api/reports", reportsRouter({ user, guarded, limited }));
 app.use("/api/guide", websiteChatRouter({ user, guarded, limited }));
+app.use("/api/assistants", specialistBotsRouter({ user, guarded, limited }));
 app.use(
   "/api/library",
   evidenceLibraryRouter({
