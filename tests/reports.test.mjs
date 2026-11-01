@@ -13,7 +13,7 @@ import mainApp from '../api/index.mjs';
 import {hash} from '../api/store.mjs';
 
 const research = {sources: [{id: 'S1', title: 'Google account recovery', url: 'https://support.google.com/accounts/answer/6294825', excerpts: ['Use official recovery.'], retrievedAt: '2026-10-31T09:00:00.000Z'}], searchEntryPoint: '', searchedAt: '2026-10-31T09:00:00.000Z'};
-const report = {summary: 'The user reports losing access to a fictional Google account.', observations: [], unknowns: ['No independent confirmation of compromise.'], nextSteps: [{id: 'recover', title: 'Use official recovery', detail: 'Open the official Google instructions. Do not share recovery codes.', sourceIds: ['S1'], serviceId: 'expert'}, {id: 'evidence', title: 'Organise evidence', detail: 'Keep relevant messages for your own reporting.', sourceIds: ['S1'], serviceId: 'reporting'}], complaintDraft: 'USER-REPORTED DRAFT, NOT SUBMITTED\nI report losing access to a fictional account. Please advise on recovery. The incident date is unknown.'};
+const report = {summary: 'The user reports losing access to a fictional Google account.', observations: [], unknowns: ['No independent confirmation of compromise.'], nextSteps: [{id: 'recover', title: 'Use official recovery', detail: 'Use official recovery.', sourceIds: ['S1'], serviceId: 'expert'}, {id: 'evidence', title: 'Organise evidence', detail: 'Use official recovery.', sourceIds: ['S1'], serviceId: 'reporting'}], complaintDraft: 'USER-REPORTED DRAFT, NOT SUBMITTED\nI report losing access to a fictional account. Please advise on recovery. The incident date is unknown.'};
 const details = {title: 'Fictional account access incident', category: 'account_takeover', platform: 'Google', description: 'I cannot access my fictional account. This is a test, not a real incident.', email: 'private@example.com', phone: '+12025550123'};
 
 test('research uses only a category and allowlisted platform; report selection and references are checked', () => {
@@ -29,7 +29,10 @@ test('research uses only a category and allowlisted platform; report selection a
   assert.throws(() => validateReport({...report, nextSteps: [{...report.nextSteps[0], sourceIds: ['fabricated']}]}, snapshot, research));
   assert.throws(() => validateReport({...report, observations: [{text: 'Invented evidence', evidenceIds: ['fake']}]}, snapshot, research));
   assert.throws(() => validateReport({...report, summary: 'It happened on 2025-01-01.'}, snapshot, research), /unsupplied date/);
-  assert.deepEqual(validateReport(report, snapshot, research), report);
+  const validated = validateReport(report, snapshot, research);
+  assert.equal(validated.summary, 'User-reported account (not independently verified): ' + details.description);
+  assert.equal(validated.nextSteps[0].detail, 'Use official recovery.');
+  assert.match(validated.complaintDraft, /NOT SUBMITTED/);
 });
 
 test('real session middleware protects reports and one request saves a case plus its resumable job', async () => {
