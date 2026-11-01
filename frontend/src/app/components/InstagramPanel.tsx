@@ -160,7 +160,7 @@ export function InstagramPanel() {
           {records.map((r) => (
             <article className="step-card" key={r.id}>
               <strong>@{r.owner}</strong>
-              <p>Status: {r.status.replaceAll("_", " ")}</p>
+              <p className="quiet-status-copy">Status: {r.status.replaceAll("_", " ")}</p>
               {r.status !== "withdrawn" && (
                 <button
                   disabled={busy}

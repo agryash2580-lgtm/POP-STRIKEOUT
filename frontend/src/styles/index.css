@@ -48,3 +48,8 @@ body.holding-catnip .pop-pet-cursor * {
 
 
 
+
+/* Quiet interface: validation still runs; suppress message banners and status copy. */
+.error, .success, .working, [role="alert"],
+.recovery .mini-note, .recovery .nav-bottom, .recovery .desk-footer,
+.recovery .job-status > span, .quiet-status-copy { display: none !important; }
