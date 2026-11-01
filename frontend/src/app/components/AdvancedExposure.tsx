@@ -44,13 +44,13 @@ export function AdvancedExposure({ capabilities }: { capabilities: any }) {
     <p>Search your own public information on a chosen domain, or look for copies and visually similar images. Data retrieval is a separate feature.</p>
     {!capabilities && <p className="mini-note">Sign in through Cases &amp; Reports before using these tools.</p>}
     <form onSubmit={run}><fieldset disabled={busy} style={{ border: 0, padding: 0, margin: 0 }}>
-      <label>Search tool<select value={tool} onChange={e => { epoch.current++; setTool(e.target.value); setApproved(false); setResult(null); setError(''); setBusy(false); }}>
+      <label>Search tool<select aria-label="Search tool" value={tool} onChange={e => { epoch.current++; setTool(e.target.value); setApproved(false); setResult(null); setError(''); setBusy(false); }}>
         <option value="dorks">Domain-scoped Google searches</option><option value="images">Reverse-image lookup</option>
       </select></label>
       {tool === 'dorks' ? <>
         <label>Domain to check<input value={domain} required maxLength={253} placeholder="example.org" onChange={e => { setDomain(e.target.value); setApproved(false); setResult(null); }} /></label>
         <label>Your name, email, username or phone<input value={identifier} required minLength={3} maxLength={254} onChange={e => { setIdentifier(e.target.value); setApproved(false); setResult(null); }} /></label>
-        <label>What to look for<select value={template} onChange={e => { setTemplate(e.target.value); setApproved(false); setResult(null); }}>
+        <label>What to look for<select aria-label="What to look for" value={template} onChange={e => { setTemplate(e.target.value); setApproved(false); setResult(null); }}>
           {(capabilities?.dorkTemplates || [{ id: 'references', label: 'Exact public reference' }, { id: 'pdf', label: 'PDF references' }]).map((x: any) => <option key={x.id} value={x.id}>{x.label}</option>)}
         </select></label>
         <p className="mini-note">Uses site: to limit the domain, quotes for your exact identifier and optional filetype:/page filters. No passwords, webcams or credential dumps are searched.</p>
@@ -58,7 +58,7 @@ export function AdvancedExposure({ capabilities }: { capabilities: any }) {
         <label>Public image URL<input type="url" required maxLength={2000} value={imageUrl} placeholder="https://example.org/my-image.jpg" onChange={e => { setImageUrl(e.target.value); setApproved(false); setResult(null); }} /></label>
         <p className="mini-note">Use an image you own or are authorized to check. Public HTTPS URLs only; no private or signed links. Similarity is not identity or location verification. For a local file, you can <a href="https://lens.google.com/" target="_blank" rel="noopener noreferrer">open Google Lens</a> and choose the file there yourself; Strikeout does not upload it.</p>
       </>}
-      <label>Search method<select value={mode} onChange={e => { setMode(e.target.value); setApproved(false); setResult(null); }}>
+      <label>Search method<select aria-label="Search method" value={mode} onChange={e => { setMode(e.target.value); setApproved(false); setResult(null); }}>
         <option value="auto">{capabilities?.providers?.serpapi ? 'Automatic results, with free Google fallback' : 'Free Google handoff (automatic provider not configured)'}</option>
         <option value="handoff">Free: open Google results yourself</option>
         {capabilities?.providers?.serpapi && <option value="api">Automatic results inside Strikeout</option>}

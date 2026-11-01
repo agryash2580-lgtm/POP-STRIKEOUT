@@ -68,7 +68,7 @@ export function MFAChallenge({ onComplete, onCancel }: any) {
     </div>
   );
 }
-export function AccountSecurity() {
+export function AccountSecurity({ onSetupComplete }: { onSetupComplete?: () => void } = {}) {
   const [state, setState] = useState<any>(null),
     [setup, setSetup] = useState<any>(null),
     [codes, setCodes] = useState<string[]>([]),
@@ -139,6 +139,7 @@ export function AccountSecurity() {
                 setSetup(null);
                 setCode("");
                 await refresh();
+                window.dispatchEvent(new Event("strikeout-mfa-changed"));
               });
             }}
           >
@@ -188,7 +189,7 @@ export function AccountSecurity() {
           >
             Download recovery codes
           </button>
-          <button onClick={() => setCodes([])}>I saved them</button>
+          <button onClick={() => { setCodes([]); onSetupComplete?.(); }}>I saved them</button>
         </div>
       )}
       {state?.enabled && (
@@ -206,6 +207,7 @@ export function AccountSecurity() {
               setCode("");
               setCodes([]);
               await refresh();
+              window.dispatchEvent(new Event("strikeout-mfa-changed"));
             });
           }}
         >

@@ -1,7 +1,7 @@
 import { ExposureAuthenticatorGate } from "./ExposureAuthenticatorGate";
 import { ResultLink, RiskSummary, LinkChecker } from "./LinkRisk";
 import { AdvancedExposure } from "./AdvancedExposure";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { InstagramPanel } from "./InstagramPanel";
 import { documentText as extractDocumentText } from "../document-text";
 export function IconExposure({ size = 32 }: { size?: number }) {
@@ -29,6 +29,7 @@ export function ExposureApp() {
   );
 }
 function ExposureTools() {
+  const generation = useRef(0);
   const [service, setService] = useState("email"),
     [value, setValue] = useState(""),
     [name, setName] = useState(""),
@@ -69,6 +70,8 @@ function ExposureTools() {
   }, []);
   useEffect(() => {
     function clearAccount() {
+      generation.current++;
+      setBusy(false);
       setResult(null);
       setValue("");
       setDocumentText("");
@@ -92,22 +95,27 @@ function ExposureTools() {
         setCaps(x);
       })
       .catch((e) => setError(e.message));
-    return () =>
+    return () => {
+      generation.current++;
       window.removeEventListener("strikeout-auth-changed", clearAccount);
+    };
   }, []);
   async function post(path: string, body: any) {
+    const version = generation.current;
     const r = await fetch("/api/osint" + path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     const data = await r.json();
+    if (version !== generation.current) throw new DOMException("Superseded check", "AbortError");
     if (!r.ok) throw Error(data.error || "Lookup failed.");
     return data;
   }
   async function scan(e: any) {
     e.preventDefault();
     if (busy) return;
+    const version = ++generation.current;
     setBusy(true);
     setError("");
     setResult(null);
@@ -143,6 +151,7 @@ function ExposureTools() {
           .map((v) => v.toString(16).padStart(2, "0"))
           .join("")
           .toUpperCase();
+        if (version !== generation.current) return;
         setValue("");
         const data = await post("/passwords/range", {
           prefix: digest.slice(0, 5),
@@ -184,9 +193,9 @@ function ExposureTools() {
         }),
       );
     } catch (e: any) {
-      setError(e.message);
+      if (version === generation.current) setError(e.message);
     } finally {
-      setBusy(false);
+      if (version === generation.current) setBusy(false);
     }
   }
   return (
@@ -262,6 +271,8 @@ function ExposureTools() {
           <select
             value={service}
             onChange={(e) => {
+              generation.current++;
+              setBusy(false);
               setService(e.target.value);
               setValue("");
               setName("");
@@ -357,7 +368,9 @@ function ExposureTools() {
                   if (!f) return;
                   try {
                     setError("");
-                    setDocumentText(await extractDocumentText(f));
+                    const version = generation.current;
+                    const extracted = await extractDocumentText(f);
+                    if (version === generation.current) setDocumentText(extracted);
                   } catch (error: any) {
                     setError(error.message);
                   }
