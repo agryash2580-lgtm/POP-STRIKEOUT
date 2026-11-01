@@ -1,4 +1,4 @@
-import { ExposurePhoneGate } from "./ExposurePhoneGate";
+import { ExposureAuthenticatorGate } from "./ExposureAuthenticatorGate";
 import { ResultLink, RiskSummary, LinkChecker } from "./LinkRisk";
 import { AdvancedExposure } from "./AdvancedExposure";
 import React, { useEffect, useState } from "react";
@@ -23,9 +23,9 @@ export function IconExposure({ size = 32 }: { size?: number }) {
 }
 export function ExposureApp() {
   return (
-    <ExposurePhoneGate>
+    <ExposureAuthenticatorGate>
       <ExposureTools />
-    </ExposurePhoneGate>
+    </ExposureAuthenticatorGate>
   );
 }
 function ExposureTools() {
@@ -274,7 +274,9 @@ function ExposureTools() {
               Instagram references (ownership verification required)
             </option>
             <option value="email">Email public references</option>
-            <option value="phone">Phone public references</option>
+            <option value="phone" disabled>
+              Phone references (ownership verification required)
+            </option>
             <option value="linkedin">LinkedIn public references</option>
             <option value="identity_cards">
               Own-name identity-document references

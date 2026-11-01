@@ -55,7 +55,7 @@ test('automatic dorks filter off-domain and nonexact snippets; partial failures 
 test('Express router enforces account auth and dispatches real dork/image handlers',async()=>{
  const {osintRouter}=await import('../api/osint.mjs');
  const guarded=fn=>async(req,res,next)=>{try{await fn(req,res,next)}catch(e){res.status(e.status||500).json({error:e.message})}};
- const router=osintRouter({user:async req=>{if(req.headers['x-test-auth']!=='yes')throw Object.assign(Error('Sign in'),{status:401});return {id:'qa'}},guarded,limited:()=>{},phoneAuth:{requireVerified:async()=>{}},imageOptions:{env:{},resolver},searchOptions:{env:{}}});
+ const router=osintRouter({user:async req=>{if(req.headers['x-test-auth']!=='yes')throw Object.assign(Error('Sign in'),{status:401});return {id:'qa'}},guarded,limited:()=>{},exposureAuth:{requireVerified:async()=>{}},imageOptions:{env:{},resolver},searchOptions:{env:{}}});
  function send(path,body,auth=true){return new Promise((resolve,reject)=>{
   const req={method:body?'POST':'GET',url:path,headers:auth?{'x-test-auth':'yes'}:{},body};
   const res={statusCode:200,status(code){this.statusCode=code;return this},json(value){resolve({status:this.statusCode,value})}};
