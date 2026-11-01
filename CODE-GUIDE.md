@@ -1,6 +1,6 @@
 # STRIKEOUT: understand the code and present it honestly
 
-Production address: https://strikeout-mu20.vercel.app. The extension's current version is 2.2.0.
+Production address: https://strikeout-mu20.vercel.app. The extension's current version is 2.3.0.
 
 Read sections 1–4 first. They explain the product and the main flow. Use the file map when someone asks where a feature is implemented.
 
@@ -183,7 +183,7 @@ Component paths above are relative to `frontend/src/app/` unless a longer path i
 | `reports.mjs` | Saved report versions/stages, email verification, PDF downloads, summary, guidance and progress. |
 | `report-ai.mjs` | Gemini research/writing/help prompts, schemas, official references and output validation. |
 | `report-pdf.mjs` | PDF layout, line wrapping, page breaks and saved-report rendering. |
-| `report-mail.mjs` | Optional Resend delivery adapter and acceptance handling. |
+| `report-mail.mjs`, `report-smtp.mjs` | Resend or Gmail app-password delivery, durable SMTP-attempt receipts and honest acceptance status. |
 | `pop.mjs` | Website chat, scoped extension pairing, chat token revocation and AI request limits. |
 | `osint.mjs` | Authenticated OSINT endpoints and provider capabilities. |
 | `osint/osint.mjs` | Supported check types, consent, validated inputs and combined coverage. |
@@ -232,7 +232,7 @@ For Google sign-in, create a Web application OAuth client and register the exact
 
 ## 12. Installing and demonstrating the extension
 
-Run `npm run package:pop` after changing extension source. Current development packages are v2.2.0. Windows packaging uses PowerShell's archive command. Downloads on the website must contain those newly built packages, not an older ZIP.
+Run `npm run package:pop` after changing extension source. Current development packages are v2.3.0. Windows packaging uses PowerShell's archive command. Downloads on the website must contain those newly built packages, not an older ZIP.
 
 Chromium: unzip the Chromium package, open `chrome://extensions`, enable Developer mode, click Load unpacked and select the folder containing `manifest.json`. Edge/Brave use their corresponding extension pages. After replacing files, reload the extension and refresh affected tabs.
 
@@ -266,3 +266,22 @@ Google OAuth is configured server-side on the live site. The callback is `https:
 The live exposure walkthrough checks supplied-document findings, masked export, the hosted Instagram permission queue and withdrawal, and an actual downloadable report PDF. Instagram public-reference search uses the explicitly approved providers shown on screen. A completed GitHub search does not mean Instagram posts or private accounts were inspected. Provider failures stay incomplete and never become invented findings.
 
 The chat launcher is anchored at the lower left so it cannot cover the default lower-right pet. The navigation regression also checks that left click produces a pet response, right click opens tools, and Minimise keeps the pet visible.
+
+
+## Pop 2.3: shared chat, link protection and evidence handoff
+
+Read `extension/README.md` for the installation and demonstration sequence. Chromium and Firefox packages are `pop-chromium-2.3.0.zip` and `pop-firefox-2.3.0.zip`. These remain development installations, not signed store releases.
+
+`api/pop-conversation.mjs` owns the single saved thread under `pop_conversations/<account>`. Website session cookies and paired extension bearer tokens resolve to the same account. A conditional-write lease prevents two windows overwriting simultaneous answers. The server supplies canonical history, not arbitrary client-provided history. Approved case context stays attached until changed/cleared; the UI identifies it. No page text, watchlist or screenshot is attached automatically. Signing out switches the website UI away from that account. Clearing the shared thread clears both interfaces, not provider-retained data.
+
+`extension/link-guard.js` computes a bounded list of likely .com misspellings locally. Chromium declarative rules block the main-frame request and navigation events show `link-warning.html`; Firefox uses blocking request interception after website permissions are granted. A one-time bypass affects only that tab. This is useful typo protection, not a universal suspicious-link detector. Tests visit a fictional intercepted route, so no real lookalike website is contacted.
+
+`api/pop-library.mjs` stores account-owned captures under `pop_evidence/<account>/<capture>` and an account index. It validates screenshot types/size, records hashes and server receive time, wraps HTML in a restrictive policy, and refuses overwriting an existing ID with different content. Downloads, deletion and attachment require the same owner. Attaching copies the screenshot and reviewed source notes into an owned case, increments its version and makes the evidence selectable for reports. Downloaded or case-attached copies remain if the library original is deleted.
+
+`PopEvidenceLibrary.tsx` supplies that gallery and Add to case controls in the website, Evidence tab and Report tab. `workspace.js` saves captures in IndexedDB first, then explicitly syncs through the scoped extension endpoint. Quick Save evidence asks for a name and confirms the upload/email request. Advanced capture keeps an explicit review step. Redactions are flattened into the image; HTML has its own editable review because image boxes do not remove HTML text. HTML excludes scripts, frames and form values and may omit oversized pages; it is not a complete offline archive of external resources.
+
+Email supports Gmail with an app password or Resend with a verified domain. The recipient belongs to the signed-in user, not a hardcoded developer. Missing delivery configuration leaves local save, website sync and downloads available. `report-smtp.mjs` saves an attempt receipt before submitting because SMTP has no equivalent to Resend's idempotency key; an uncertain attempt needs mailbox review rather than blindly sending duplicates. The account's normal Gmail password is never used.
+
+`tests/pop-shared.test.mjs` covers account isolation and shared chat/library attachment. `tests/pop-sync-browser.mjs` exercises an actual visible-tab capture and the live website. `tests/pop-browser.mjs chromium` and `firefox` install the actual extension into temporary profiles and check core tools, flattened redaction/export/deletion, link interception and explicit continuation. Firefox extension screens are inspected through Mozilla's debugger because Playwright excludes them.
+
+Pop defaults to contextual generative chat, shared across website and extension. `POP_REVIEWED_REPLIES_ONLY=true` is an optional fixed-response mode retained from the concurrent grounding update; it is false for this presentation. The report grounding controls are separate. Generative chat is useful guidance, not a guarantee of factual correctness.

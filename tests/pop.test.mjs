@@ -42,7 +42,8 @@ test('browser manifests share tools but use their own background implementations
   const firefox = JSON.parse(await readFile(new URL('../extension/manifest.firefox.json', import.meta.url)));
   assert.equal(chrome.background.service_worker, 'background.js');
   assert.equal(firefox.background.scripts.at(-1), 'background.js');
-  assert.deepEqual(chrome.permissions, firefox.permissions);
+  assert.deepEqual(chrome.permissions, firefox.permissions.filter(p=>!["webRequest","webRequestBlocking"].includes(p)));
+  assert.ok(firefox.permissions.includes("webRequestBlocking"));
   assert.ok(!chrome.permissions.includes('history'));
   for (const file of ['shared.js', 'pet.js', 'page-scan.js', 'sharing-guard.js', 'evidence.js', 'workspace.js']) {
     new vm.Script(await readFile(new URL('../extension/' + file, import.meta.url), 'utf8'));

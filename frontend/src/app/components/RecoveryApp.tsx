@@ -7,6 +7,7 @@ import {
 import { createReportsClient } from "../../../../shared/reports-client.js";
 import "./recovery.css";
 import { ExtensionSettings } from "./ExtensionSettings";
+import {PopEvidenceLibrary} from './PopEvidenceLibrary';
 
 const casesAPI = createReportingClient();
 const reportsAPI = createReportsClient();
@@ -438,6 +439,7 @@ export function RecoveryApp() {
               Get help
             </B>
             <B onClick={() => navigate("settings")}>Delivery & Pop</B>
+            <B onClick={()=>navigate('library')}>Pop evidence</B>
             <p className="nav-bottom">
               Your call. Always.
               <br />
@@ -462,6 +464,7 @@ export function RecoveryApp() {
                 {busy}
               </div>
             )}
+            {tab==='library'&&<PopEvidenceLibrary cases={items} onAttached={async(id:string)=>{await reload();await openCase(id,'evidence')}}/>}
             {tab === "home" && (
               <>
                 <span className="eyebrow">A LITTLE LESS OVERWHELMING</span>
@@ -611,9 +614,9 @@ export function RecoveryApp() {
                 <span className="eyebrow">PRIVATE EVIDENCE</span>
                 <h1>Keep the useful details.</h1>
                 <p>
-                  PNG, JPEG or PDF, up to 500 KB each. Pop captures must be
-                  downloaded and attached deliberately.
+                  PNG, JPEG or PDF, up to 500 KB each. Synced Pop captures can be attached directly below.
                 </p>
+                <PopEvidenceLibrary caseId={current.id} cases={items} onAttached={async(id:string)=>{await reload();await openCase(id,'evidence')}}/>
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -721,6 +724,7 @@ export function RecoveryApp() {
                   General official guidance plus the facts you choose to share.
                   Review every generated report before using it.
                 </p>
+                <details><summary>Add a synced Pop capture to this report's case</summary><PopEvidenceLibrary caseId={current.id} cases={items} onAttached={async(id:string)=>{await reload();await openCase(id,'report')}}/></details>
                 <details open={!job || job.stale}>
                   <summary>Review information and generate a report</summary>
                   <div className="mini-note">
@@ -746,7 +750,7 @@ export function RecoveryApp() {
                           )
                         }
                       />
-                      {e.file?.name || e.note.slice(0, 100)}
+                      {e.note.slice(0, 100)}{e.file ? " (" + e.file.name + ")" : ""}
                     </label>
                   ))}
                   <label className="check">
@@ -1176,10 +1180,10 @@ export function RecoveryApp() {
                       Your local watchlist, sharing checks, evidence capture and
                       a very pettable cat.
                     </p>
-                    <a href="/pop-chromium-2.2.0.zip" download>
+                    <a href="/pop-chromium-2.3.0.zip" download>
                       Chromium download ↓
                     </a>
-                    <a href="/pop-firefox-2.2.0.zip" download>
+                    <a href="/pop-firefox-2.3.0.zip" download>
                       Firefox / Zen download ↓
                     </a>
                   </article>
@@ -1294,10 +1298,10 @@ export function RecoveryApp() {
                     Then enable AI chat in the extension. Left-click Pop to pet;
                     right-click for tools.
                   </p>
-                  <a href="/pop-chromium-2.2.0.zip" download>
+                  <a href="/pop-chromium-2.3.0.zip" download>
                     Download Chromium ZIP
                   </a>
-                  <a href="/pop-firefox-2.2.0.zip" download>
+                  <a href="/pop-firefox-2.3.0.zip" download>
                     Download Firefox / Zen ZIP
                   </a>
                   <details>

@@ -50,13 +50,19 @@ export function PopPet({
       setQuote("Payment received. Suspiciously leafy.");
     } else
       setQuote(
-        count.current % 7 === 0
+        count.current === 7
           ? "Seven pats. Your tabs remain a disaster."
           : [
               "Cybersecurity department accepting head pats.",
               "Finally. Competent management.",
               "This meeting could have been a head pat.",
-            ][Math.floor(Math.random() * 3)],
+              "My threat model includes insufficient affection.",
+              "Updating my compensation package. In head pats.",
+              "The attitude is enterprise-grade. The ears are decorative.",
+              "Finally. A click with absolutely no phishing involved.",
+              "Continue. The audit requires additional samples.",
+              "Your password manager deserves this attention too.",
+            ][Math.floor(Math.random() * 9)],
       );
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
@@ -65,6 +71,11 @@ export function PopPet({
     }, 3000);
   }
   function open(section: string) {
+    if (section === "chat") {
+      window.dispatchEvent(new Event("strikeout-chat"));
+      setMenu(false);
+      return;
+    }
     window.dispatchEvent(
       new CustomEvent("strikeout-open", { detail: { section } }),
     );
@@ -142,6 +153,7 @@ export function PopPet({
             Pop.exe / Tools
           </strong>
           {[
+            ["chat", "Chat with Pop"],
             ["cases", "Cases & reports"],
             ["new", "Log an incident"],
             ["settings", "Connect & download extension"],

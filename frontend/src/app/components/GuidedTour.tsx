@@ -365,7 +365,7 @@ export function PopPet({
       targetPos: () => getTourPosition(1),
       facingLeft: true,
       highlightSelector: "#tour-popup-toggle",
-      highlightLabel: "Pop Toolbar Icon (v2.2.0)",
+      highlightLabel: "Pop Toolbar Icon (v2.3.0)",
       text: "Look up at your browser's extension toolbar: Pop's cat icon sits right next to the URL address bar! Whenever you are on any webpage, clicking Pop opens your personal 220px cybersecurity control panel.",
     },
     {

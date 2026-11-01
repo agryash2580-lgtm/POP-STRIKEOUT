@@ -1,6 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { createReportsClient } from "../../../../shared/reports-client.js";
-const reports = createReportsClient();
 export function GuideChat() {
   const [open, setOpen] = useState(false),
     [messages, setMessages] = useState<any[]>([]),
@@ -8,74 +6,153 @@ export function GuideChat() {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [context, setContext] = useState<any>(null),
-    [include, setInclude] = useState(false);
-  const log = useRef<HTMLDivElement>(null);
-  const accountEpoch = useRef(0);
+    [include, setInclude] = useState(false),
+    [sharedContext, setSharedContext] = useState<any>(null);
+  const log = useRef<HTMLDivElement>(null),
+    accountEpoch = useRef(0),
+    revision = useRef(-1),
+    synced = useRef(false),
+    busyRef = useRef(false),
+    contextChoice = useRef(false),
+    selectedContext = useRef<any>(null);
+  busyRef.current = busy;
+  async function loadHistory() {
+    const epoch = accountEpoch.current;
+    try {
+      const r = await fetch("/api/guide/conversation");
+      if (!r.ok) {
+        synced.current = false;
+        return;
+      }
+      const x = await r.json();
+      if (epoch !== accountEpoch.current || busyRef.current) return;
+      synced.current = true;
+      setSharedContext(x.context);
+      if (
+        !contextChoice.current &&
+        (!selectedContext.current ||
+          selectedContext.current.caseId === x.context?.caseId)
+      ) {
+        setInclude(!!x.context);
+        if (!selectedContext.current) setContext(x.context);
+      }
+      if (revision.current !== x.revision) {
+        revision.current = x.revision;
+        setMessages(x.messages || []);
+      }
+    } catch {}
+  }
   useEffect(() => {
     function update(e: any) {
+      selectedContext.current = e.detail;
       setContext(e.detail);
       setInclude(false);
+      contextChoice.current = false;
     }
     function show() {
       setOpen(true);
     }
-    function resetAccount() {
+    function reset() {
       accountEpoch.current++;
-      setContext(null);
-      setInclude(false);
+      revision.current = -1;
+      synced.current = false;
+      selectedContext.current = null;
       setMessages([]);
+      setContext(null);
+      setSharedContext(null);
+      setInclude(false);
       setInput("");
       setError("");
       setBusy(false);
+      loadHistory();
     }
-    window.addEventListener("strikeout-auth-changed", resetAccount);
+    window.addEventListener("strikeout-auth-changed", reset);
     window.addEventListener("strikeout-case-context", update);
     window.addEventListener("strikeout-chat", show);
     return () => {
+      window.removeEventListener("strikeout-auth-changed", reset);
       window.removeEventListener("strikeout-case-context", update);
       window.removeEventListener("strikeout-chat", show);
-      window.removeEventListener("strikeout-auth-changed", resetAccount);
     };
   }, []);
   useEffect(() => {
+    if (!open) return;
+    loadHistory();
+    const focus = () => loadHistory();
+    window.addEventListener("focus", focus);
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible" && synced.current)
+        loadHistory();
+    }, 5000);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", focus);
+    };
+  }, [open]);
+  useEffect(() => {
     log.current?.scrollTo(0, log.current.scrollHeight);
   }, [messages, busy]);
+  async function clearChat() {
+    try {
+      const r = await fetch("/api/guide/conversation", { method: "DELETE" });
+      if (!r.ok && r.status !== 401) {
+        const x = await r.json();
+        throw Error(x.error);
+      }
+      setMessages([]);
+      setSharedContext(null);
+      setInclude(false);
+      revision.current = -1;
+      setError("");
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
   async function send(e: any) {
     e.preventDefault();
     if (busy || !input.trim()) return;
-    const text = input.trim();
-    const epoch = accountEpoch.current;
-    setInput("");
-    setBusy(true);
-    setError("");
+    const text = input.trim(),
+      epoch = accountEpoch.current,
+      id = crypto.randomUUID();
     const history = messages
       .slice(-8)
       .map((m) => ({ role: m.role, text: m.text.slice(0, 6000) }));
-    setMessages((v) => [...v, { role: "user", text }]);
+    setBusy(true);
+    setInput("");
+    setError("");
+    setMessages((v) => [...v, { id, role: "user", text }]);
     try {
-      let answer;
-      if (include && context?.reportId && !context.stale) {
-        const x = await reports.ask(context.reportId, text);
-        answer = x.answer;
-      } else {
-        const r = await fetch("/api/guide/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: text,
-            history,
-            approved: true,
-            ...(include && context?.caseId ? { caseId: context.caseId } : {}),
-          }),
-        });
-        const x = await r.json();
-        if (!r.ok) throw Error(x.error || "Chat unavailable.");
-        answer = x.text;
+      const r = await fetch("/api/guide/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          history,
+          approved: true,
+          ...(contextChoice.current
+            ? {
+                caseId: include && context?.caseId ? context.caseId : null,
+                ...(include && context?.reportId
+                  ? { reportId: context.reportId }
+                  : {}),
+              }
+            : {}),
+        }),
+      });
+      const x = await r.json();
+      if (!r.ok) throw Error(x.error || "Chat unavailable");
+      if (epoch === accountEpoch.current) {
+        if (x.messages) {
+          setMessages(x.messages);
+          setSharedContext(x.context);
+          revision.current = x.revision;
+          synced.current = true;
+        } else setMessages((v) => [...v, { role: "assistant", text: x.text }]);
+        contextChoice.current = false;
       }
-      if (epoch === accountEpoch.current)
-        setMessages((v) => [...v, { role: "assistant", text: answer }]);
     } catch (e: any) {
       if (epoch === accountEpoch.current) {
+        setMessages((v) => v.filter((m) => m.id !== id));
         setError(e.message);
         setInput(text);
       }
@@ -168,14 +245,7 @@ export function GuideChat() {
             >
               Pop tutorial
             </button>
-            <button
-              style={btn}
-              disabled={busy}
-              onClick={() => {
-                setMessages([]);
-                setError("");
-              }}
-            >
+            <button style={btn} disabled={busy} onClick={clearChat}>
               Clear chat
             </button>
           </div>
@@ -234,6 +304,13 @@ export function GuideChat() {
             )}
           </div>
           <form onSubmit={send} style={{ padding: 8 }}>
+            <small>
+              Signed-in history and approved context are shared with the paired
+              extension.{" "}
+              {sharedContext
+                ? "Shared case: " + sharedContext.title
+                : "No case shared."}
+            </small>
             {context?.caseId && (
               <label
                 style={{
@@ -246,7 +323,10 @@ export function GuideChat() {
                 <input
                   type="checkbox"
                   checked={include}
-                  onChange={(e) => setInclude(e.target.checked)}
+                  onChange={(e) => {
+                    contextChoice.current = true;
+                    setInclude(e.target.checked);
+                  }}
                 />
                 Include selected case: {context.title}
               </label>

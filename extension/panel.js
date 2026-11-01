@@ -46,7 +46,7 @@ async function allow(allSites) {
       throw Error("Open an ordinary website first.");
     const origin = Pop.permissionPattern(activeTab.url);
     const granted = await PopAPI.permissions.request({
-      origins: allSites ? ["https://*/*", "http://*/*"] : [origin],
+      origins: allSites ? ["<all_urls>"] : [origin],
     });
     if (!granted)
       throw Error(
@@ -69,6 +69,8 @@ async function allow(allSites) {
 get("bring").onclick = () => run("POP_SHOW");
 get("scan").onclick = () => run("POP_SCAN");
 get("draft").onclick = () => run("POP_DRAFT");
+get("open-website").onclick=()=>send({type:"POP_WEBSITE"}).catch(error=>get("status").textContent=error.message);
+get("capture-review").onclick=async()=>{try{await send({type:'POP_CAPTURE',tabId:activeTab.id,askName:false});window.close()}catch(error){get('status').textContent=error.message}};
 get("review-page").onclick=async()=>{try{if(!activeTab?.id)throw Error("Choose a webpage.");await send({type:"POP_REVIEW_PAGE",tabId:activeTab.id});window.close();}catch(error){get("status").textContent=error.message;}};
 get("pet").onclick = () => {
   const desk = document.querySelector(".pet-desk");
@@ -95,7 +97,7 @@ get("capture").onclick = async () => {
   get("capture").disabled = true;
   try {
     if (!activeTab?.id) throw Error("Choose a website first.");
-    await send({ type: "POP_CAPTURE", tabId: activeTab.id });
+    await send({ type: "POP_CAPTURE", tabId: activeTab.id,askName:true });
     window.close();
   } catch (error) {
     get("status").textContent = error.message;

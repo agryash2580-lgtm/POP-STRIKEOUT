@@ -163,6 +163,35 @@ async function renderIncidents() {
       );
       entry.append(
         button(
+          item.websiteId ? "Sync again to website" : "Sync to website library",
+          async () => {
+            try {
+              await syncCapture(item);
+              status("Saved to your website evidence library.");
+              await renderIncidents();
+            } catch (error) {
+              report(error);
+            }
+          },
+        ),
+      );
+      if (item.html)
+        entry.append(
+          button("Download inert HTML snapshot", () =>
+            Evidence.download(
+              "pop-page-" + item.id + ".html",
+              new Blob(
+                [
+                  "<!doctype html><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:; form-action 'none'; base-uri 'none'\">" +
+                    item.html,
+                ],
+                { type: "text/html" },
+              ),
+            ),
+          ),
+        );
+      entry.append(
+        button(
           "Delete this record",
           async () => {
             if (!confirm("Delete this local evidence record?")) return;
@@ -325,12 +354,18 @@ async function loadCapture(id) {
   get("capture-meta").textContent =
     "Captured " +
     new Date(capture.capturedAt).toLocaleString() +
-    " (device clock). Only the visible tab area was captured.";
+    " (device clock). Only the visible tab area was captured. " +
+    (capture.htmlNote || "");
   get("capture-address").value = capture.address;
   get("capture-title").value = capture.title;
   get("capture-selection").value = capture.selectedText;
   get("capture-note").value = "";
-  get("capture-incident").value = "";
+  get("capture-incident").value = capture.incidentName || "";
+  get("capture-html").value = capture.html || "";
+  get("capture-html-include").checked = !!capture.quick;
+  get("capture-sync").checked = !!capture.quick;
+  get("capture-email").checked = !!capture.quick;
+  if (capture.quick) setTimeout(() => get("capture-save").click(), 100);
 }
 
 function discardCapture() {
@@ -348,6 +383,50 @@ function discardCapture() {
     "capture-incident",
   ])
     get(id).value = "";
+}
+
+async function syncCapture(record) {
+  let image = record.image;
+  if (image.size > 480 * 1024) {
+    const bitmap = await createImageBitmap(image),
+      canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    canvas.getContext("2d").drawImage(bitmap, 0, 0);
+    for (const quality of [0.92, 0.82, 0.65, 0.5]) {
+      image = await new Promise((r) => canvas.toBlob(r, "image/jpeg", quality));
+      if (image.size <= 480 * 1024) break;
+    }
+    bitmap.close();
+  }
+  if (image.size > 500 * 1024)
+    throw Error(
+      "Screenshot is too large to sync. Save it locally and crop the capture before retrying.",
+    );
+  const data = await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(image);
+  });
+  const result = await send({
+    type: "POP_EVIDENCE_SYNC",
+    evidence: {
+      id: record.id,
+      name: record.incident,
+      title: record.title,
+      address: record.address,
+      capturedAt: record.capturedAt,
+      selectedText: record.selectedText,
+      note: record.note,
+      redactionCount: record.redactionCount,
+      imageData: data,
+      html: record.html || "",
+    },
+  });
+  record.websiteId = result.item.id;
+  record.syncedAt = new Date().toISOString();
+  await Evidence.save(record);
+  return result;
 }
 
 get("capture-save").onclick = async () => {
@@ -378,8 +457,8 @@ get("capture-save").onclick = async () => {
       throw Error(
         "Local evidence is limited to 80 MB. Export and delete older records first.",
       );
-    await Evidence.save({
-      id: crypto.randomUUID(),
+    const record = {
+      id: capture.id || (capture.id = crypto.randomUUID()),
       incident,
       image,
       address,
@@ -388,10 +467,32 @@ get("capture-save").onclick = async () => {
       selectedText: get("capture-selection").value,
       note: get("capture-note").value,
       redactionCount: rectangles.length,
-    });
+      html: get("capture-html-include").checked
+        ? get("capture-html").value
+        : "",
+    };
+    await Evidence.save(record);
+    let message = "Saved locally.";
+    if (get("capture-sync").checked || get("capture-email").checked) {
+      try {
+        await syncCapture(record);
+        message =
+          "Saved to your website evidence library. Attach it to any case from Pop evidence.";
+        if (get("capture-email").checked) {
+          try {
+            await send({ type: "POP_EVIDENCE_EMAIL", id: record.id });
+            message += " Email service accepted the bundle.";
+          } catch (error) {
+            message += " Email not sent: " + error.message;
+          }
+        }
+      } catch (error) {
+        message += " Website sync failed: " + error.message;
+      }
+    }
     discardCapture();
     location.hash = "incidents";
-    status("Saved locally. Only the reviewed, flattened screenshot was saved.");
+    status(message);
   } catch (error) {
     report(error);
   } finally {
@@ -405,7 +506,16 @@ get("capture-discard").onclick = () => {
 };
 
 async function renderChat() {
-  const session = await PopAPI.storage.session.get("chatHistory");
+  let session = await PopAPI.storage.session.get("chatHistory");
+  try {
+    const shared = await send({ type: "POP_CHAT_HISTORY" });
+    session = { chatHistory: shared.messages };
+    get("chat-context").textContent = shared.context
+      ? "Shared context: " + shared.context.title
+      : "Shared context: no case included.";
+  } catch (error) {
+    get("chat-context").textContent = error.message;
+  }
   get("chat-log").replaceChildren();
   for (const message of session.chatHistory || []) {
     const bubble = document.createElement("div");
@@ -451,12 +561,25 @@ get("chat-form").onsubmit = async (event) => {
   }
 };
 get("chat-clear").onclick = async () => {
-  await PopAPI.storage.session.remove("chatHistory");
-  await renderChat();
-  status(
-    "Conversation cleared in this browser. This does not erase provider copies.",
-  );
+  try {
+    await send({ type: "POP_CHAT_CLEAR" });
+    await PopAPI.storage.session.remove("chatHistory");
+    await renderChat();
+    status(
+      "Shared conversation cleared on the website and extension. Provider copies are separate.",
+    );
+  } catch (error) {
+    report(error);
+  }
 };
+setInterval(() => {
+  if (
+    location.hash === "#chat" &&
+    document.visibilityState === "visible" &&
+    !chatBusy
+  )
+    renderChat().catch(() => {});
+}, 5000);
 
 async function renderSettings() {
   const redirectSettings = await PopAPI.storage.local.get("server");

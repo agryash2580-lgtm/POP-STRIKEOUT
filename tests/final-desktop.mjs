@@ -1,7 +1,7 @@
 import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
-const browser=await chromium.launch({headless:true,args:process.env.TEST_HOST_IP?['--host-resolver-rules=MAP '+new URL(process.env.DESKTOP_TEST_URL).hostname+' '+process.env.TEST_HOST_IP]:[]});const page=await browser.newPage({viewport:{width:1440,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1440,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
 const base=process.env.DESKTOP_TEST_URL||'http://localhost:3002';
 await mkdir('output/final',{recursive:true});
 try{
@@ -14,7 +14,7 @@ try{
  await page.getByRole('button',{name:'Report & PDF',exact:true}).click();await page.getByLabel('I reviewed this context').check();await page.screenshot({path:'output/final/report-workspace.png'});
  await page.getByRole('button',{name:'Check exposure ↗',exact:true}).click();await page.getByRole('heading',{name:'See what is exposed.'}).waitFor();
  await page.getByRole('button',{name:'Minimize STRIKEOUT / Check Exposure',exact:true}).click();
- await page.getByRole('button',{name:'Delivery & Pop',exact:true}).click();await page.getByRole('heading',{name:'Pop extension settings'}).waitFor();assert.equal(await page.getByRole('link',{name:'Download Chromium ZIP',exact:true}).getAttribute('href'),'/pop-chromium-2.2.0.zip');await page.screenshot({path:'output/final/settings.png'});
+ await page.getByRole('button',{name:'Delivery & Pop',exact:true}).click();await page.getByRole('heading',{name:'Pop extension settings'}).waitFor();assert.equal(await page.getByRole('link',{name:'Download Chromium ZIP',exact:true}).getAttribute('href'),'/pop-chromium-2.3.0.zip');await page.screenshot({path:'output/final/settings.png'});
  assert.deepEqual(errors,[]);console.log('PASS: actual frontend signup, private case, evidence, reviewed complaint export, report consent, OSINT screen and website Pop settings.');
  await page.request.delete(base+'/api/account');
 }catch(error){console.log('Visible website errors:',await page.locator('.error').allTextContents());await page.screenshot({path:'output/final/desktop-failure.png'});throw error;}finally{await browser.close();}

@@ -1,4 +1,5 @@
 import express from "express";
+import {evidenceLibraryRouter,deletePopLibrary} from './pop-library.mjs';
 import {
   randomBytes,
   randomUUID,
@@ -31,7 +32,7 @@ import {
 export const config = { maxDuration: 120 };
 const app = express();
 app.disable("x-powered-by");
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "5mb" }));
 const problem = (res, status, message, details = {}) =>
   res.status(status).json({ error: message, ...details });
 const guarded = (fn) => async (req, res, next) => {
@@ -178,7 +179,7 @@ async function owned(req) {
 app.get("/api/health", (req, res) =>
   res.json({
     ok: true,
-    version: "2.2.0",
+    version: "2.3.0",
     storage:
       usesCloud() && process.env.BLOB_READ_WRITE_TOKEN
         ? "private-durable-blob"
@@ -198,6 +199,7 @@ app.post(
 app.use("/api/reporting", reportingRouter({ user, guarded, limited }));
 app.use("/api/reports", reportsRouter({ user, guarded, limited }));
 app.use("/api/guide", websiteChatRouter({ user, guarded, limited }));
+app.use('/api/library',evidenceLibraryRouter({identity:async req=>(await user(req)).id,guarded,limited}));
 app.use("/api/osint", osintRouter({ user, guarded, limited }));
 const instagram = installInstagramBot(app, {
   user,
@@ -378,6 +380,7 @@ app.delete(
     const u = await user(req);
     await instagram.removeUser(u.id);
     await deleteAccountReportData(u);
+    await deletePopLibrary(u.id);
     await remove("workspaces/" + u.workspaceId);
     await remove("users/" + u.id);
     const t = cookie(req);
