@@ -234,3 +234,15 @@ test("real encrypted TOTP setup unlocks exposure, rejects replay, and disabling 
     else process.env.MFA_ENCRYPTION_KEY = previous;
   }
 });
+
+test("exposure rejection asks for a fresh TOTP rather than an unsupported recovery code", async () => {
+  const f = fixture();
+  f.req.body = { code: "000000" };
+  await assert.rejects(
+    f.auth.verify(f.req),
+    (error) =>
+      error.status === 401 &&
+      /next six-digit code/.test(error.message) &&
+      !/recovery/i.test(error.message),
+  );
+});

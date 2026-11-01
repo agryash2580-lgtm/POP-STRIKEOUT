@@ -57,49 +57,6 @@ export function MFAChallenge({ onComplete, onCancel }: any) {
             {error}
           </div>
         )}
-        {!state && !error && <p role="status">Loading account security…</p>}
-        {state && !state.configured && (
-          <div className="error" role="alert">
-            Authenticator setup is unavailable until the site operator
-            configures encryption.
-          </div>
-        )}
-        {state?.permanentAccountRequired && (
-          <div className="mini-note">
-            Create a permanent STRIKEOUT account before setting up your
-            authenticator.
-          </div>
-        )}
-        {!state?.enabled && state?.reauthenticationRequired && (
-          <div className="mini-note" role="status">
-            <p>
-              For your security, sign in again before adding an authenticator.
-              Your saved cases stay available.
-            </p>
-            {state.sso ? (
-              <a href="/api/auth/google/start">Sign in again with Google</a>
-            ) : (
-              <>
-                <p>
-                  Open Cases &amp; Reports, sign out, then sign in again with
-                  your STRIKEOUT username and password.
-                </p>
-                <button
-                  type="button"
-                  onClick={() =>
-                    window.dispatchEvent(
-                      new CustomEvent("strikeout-open", {
-                        detail: { section: "cases" },
-                      }),
-                    )
-                  }
-                >
-                  Open Cases &amp; Reports
-                </button>
-              </>
-            )}
-          </div>
-        )}
         <button disabled={busy} type="submit">
           Verify and sign in
         </button>
