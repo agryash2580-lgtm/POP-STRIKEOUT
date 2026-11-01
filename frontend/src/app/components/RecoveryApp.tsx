@@ -1161,6 +1161,14 @@ export function RecoveryApp() {
                           Download reviewed draft
                         </a>
                       )}
+                      {current.reporting.draftStatus === "approved" && (
+                        <B onClick={() => run("Emailing reviewed draft", async () => {
+                          if (!confirm("Send this exact reviewed draft to cyberdost@mha.gov.in? Only the draft text will be emailed.")) return;
+                          const x = await casesAPI.emailCyberdost(current.id, current.reporting.draft.text);
+                          setCurrent(x.case);
+                          setNotice("Email service accepted your message to cyberdost@mha.gov.in.");
+                        })}>Email CyberDost</B>
+                      )}
                     </div>
                   </>
                 )}

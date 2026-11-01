@@ -66,6 +66,8 @@ export function createReportingClient({
     editDraft: (id, text) => change(casePath(id) + "/draft", "PATCH", { text }),
     approveDraft: (id, text) =>
       change(casePath(id) + "/draft/approve", "POST", { text, reviewed: true }),
+    emailCyberdost: (id, text) =>
+      change(casePath(id) + "/draft/email-cyberdost", "POST", { text, confirm: true }),
     exportURL: (id, format = "text") =>
       base + casePath(id) + "/export?format=" + encodeURIComponent(format),
     recordSubmission: (id, record) =>

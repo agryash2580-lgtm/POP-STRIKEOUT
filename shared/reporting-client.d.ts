@@ -138,6 +138,7 @@ export interface ReportingClient {
   generateDraft(id: string, selection: ReportSelection): Promise<CaseResponse>;
   editDraft(id: string, text: string): Promise<CaseResponse>;
   approveDraft(id: string, exactText: string): Promise<CaseResponse>;
+  emailCyberdost(id: string, text: string): Promise<CaseResponse>;
   exportURL(id: string, format?: "text" | "html"): string;
   recordSubmission(id: string, record: SubmissionInput): Promise<CaseResponse>;
   addFollowUp(
