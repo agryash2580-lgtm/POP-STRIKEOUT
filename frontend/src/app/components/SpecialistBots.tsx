@@ -23,12 +23,13 @@ function BotChat({ kind, title }: { kind: string; title: string }) {
     <p>Only messages in this chat are shared with Google. Cases and attachments are not included. These two chats have separate histories and are cleared when you leave this screen. AI can make mistakes.</p>
     <div role="log" aria-label={`${title} conversation`} aria-live="polite">{messages.map((m, i) => <p key={i} style={{ whiteSpace: "pre-wrap" }}><strong>{m.role === "user" ? "You" : title}: </strong>{m.text}</p>)}</div>
     <form onSubmit={send}>
-      <label><input type="checkbox" checked={approved} onChange={e => setApproved(e.target.checked)} disabled={busy} />I approve sharing this chat with Google.</label>
+      <label className="check"><input type="checkbox" checked={approved} onChange={e => setApproved(e.target.checked)} disabled={busy} />I approve sharing this chat with Google.</label>
       <label>Message {title}<textarea value={input} onChange={e => setInput(e.target.value)} maxLength={3000} required disabled={busy} /></label>
       <button type="submit" disabled={!approved || busy || !input.trim()}>{busy ? "Replying…" : `Send to ${title}`}</button>
       <button type="button" onClick={clear}>Clear {title} chat</button>
       {error && <p role="alert" className="error">{error}</p>}
     </form>
+    {kind === "cybersecurity" && <p><a href="https://cybercrime.gov.in/" target="_blank" rel="noopener noreferrer">Open National Cyber Crime Reporting Portal ↗</a><br /><small>Submit your complaint yourself on the portal. Preparing a Strikeout draft or emailing your report does not file a government complaint or email an authority. No chat or case details are transferred by this link.</small></p>}
     {kind === "emotional_support" && <p><a href="https://trytherabot.com/" target="_blank" rel="noopener noreferrer">Open Therabot ↗</a><br /><small>External service with its own privacy terms. This opens Therabot separately; your Strikeout chat is not transferred. Our assistant is powered by Google, not Therabot.</small></p>}
   </section>;
 }
