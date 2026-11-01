@@ -3,6 +3,7 @@ import { runCheck, runPasswordRange } from "./osint/osint.mjs";
 import { reviewDocuments } from "./osint/documents.mjs";
 import { reverseImage } from "./osint/images.mjs";
 import { runDorks, dorkTemplates } from "./osint/dorks.mjs";
+import { flagReport, assessLinks } from "./osint/link-risk.mjs";
 export function osintRouter({ user, guarded, limited, imageOptions, searchOptions }) {
   const router = express.Router();
   router.use(
@@ -23,6 +24,7 @@ export function osintRouter({ user, guarded, limited, imageOptions, searchOption
         google_lens: true,
         serpapi: !!process.env.SERPAPI_API_KEY,
       },
+      linkFlagging: { enabled: true, method: "local_url_rules", threatFeedConfigured: false },
       dorkTemplates,
       imageLookup: { automatic: !!process.env.SERPAPI_API_KEY, handoff: "google_lens", publicImageUrlOnly: true },
       privateContentScanning: false,
@@ -35,7 +37,7 @@ export function osintRouter({ user, guarded, limited, imageOptions, searchOption
     guarded(async (req, res) => {
       limited({ ip: req.osintUser.id, headers: {} }, "osint", 12);
       try {
-        res.json(await fn(req.body));
+        res.json(flagReport(await fn(req.body)));
       } catch (e) {
         if (e.status) throw e;
         throw Object.assign(
@@ -62,5 +64,6 @@ export function osintRouter({ user, guarded, limited, imageOptions, searchOption
   );
   router.post("/images/reverse", handle((body) => reverseImage(body, imageOptions)));
   router.post("/dorks", handle((body) => runDorks(body, searchOptions)));
+  router.post("/links/assess", handle((body) => assessLinks(body)));
   return router;
 }

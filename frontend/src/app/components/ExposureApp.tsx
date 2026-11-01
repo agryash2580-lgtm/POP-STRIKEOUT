@@ -1,3 +1,4 @@
+import { ResultLink, RiskSummary, LinkChecker } from "./LinkRisk";
 import { AdvancedExposure } from "./AdvancedExposure";
 import React, { useEffect, useState } from "react";
 import { InstagramPanel } from "./InstagramPanel";
@@ -172,6 +173,7 @@ export function ExposureApp() {
           </small>
         )}
       </div>
+      <LinkChecker enabled={!!caps} />
       <InstagramPanel />
       <AdvancedExposure capabilities={caps} />
       <form id="tour-exposure-search-well" onSubmit={scan}>
@@ -383,6 +385,7 @@ export function ExposureApp() {
             Download exposure results
           </button>
           <h2>Check {result.status}</h2>
+          <RiskSummary summary={result.riskSummary} />
           {typeof result.coverage === "string" && <p>{result.coverage}</p>}
           {Array.isArray(result.coverage) && (
             <div className="mini-note">
@@ -428,10 +431,9 @@ export function ExposureApp() {
               </strong>
               <p>{f.snippet || f.evidence || f.dataClasses?.join(", ")}</p>
               {(f.url || f.source) && (
-                <a href={f.url || f.source} target="_blank" rel="noreferrer">
-                  Review source ↗
-                </a>
+                <ResultLink url={f.url || f.source} assessment={f.linkAssessment} exposure={f.exposureAssessment} />
               )}
+              {!(f.url || f.source) && f.exposureAssessment && <p><strong>{f.exposureAssessment.label}</strong><br /><small>{f.exposureAssessment.reason}</small></p>}
               {f.line && (
                 <small>
                   Document {f.document}, line {f.line}.{" "}

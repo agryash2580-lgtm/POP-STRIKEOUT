@@ -1,3 +1,4 @@
+import { ResultLink, RiskSummary } from "./LinkRisk";
 import React, { useEffect, useRef, useState } from 'react';
 
 export function AdvancedExposure({ capabilities }: { capabilities: any }) {
@@ -70,12 +71,13 @@ export function AdvancedExposure({ capabilities }: { capabilities: any }) {
     {result && <div aria-live="polite">
       <h3>{result.status === 'requires_user_search' ? 'Ready to open on Google — search not yet completed' : result.status === 'incomplete' ? 'Some automatic checks failed' : 'Automatic check completed'}</h3>
       <p>{result.coverage}</p>
+      <RiskSummary summary={result.riskSummary} />
       {(result.handoffs || (result.handoff ? [result.handoff] : [])).map((x: any, i: number) => <article className="mini-note" key={i}>
         {x.query && <p><code>{x.query}</code></p>}
         <a href={x.url} target="_blank" rel="noopener noreferrer">{result.service === 'reverse_image' ? 'Open Google Lens results ↗' : 'Open this Google search ↗'}</a>
         <p>{x.disclosure || 'Google receives this query when you open the link. Results are not automatically imported.'}</p>
       </article>)}
-      {(result.findings || []).map((x: any, i: number) => <article className="step-card" key={i}><strong>{x.title}</strong><p>{x.snippet}</p><a href={x.url} target="_blank" rel="noopener noreferrer">Review source ↗</a><p><small>{x.confidence.replaceAll('_', ' ')}</small></p></article>)}
+      {(result.findings || []).map((x: any, i: number) => <article className="step-card" key={i}><strong>{x.title}</strong><p>{x.snippet}</p><ResultLink url={x.url} assessment={x.linkAssessment} exposure={x.exposureAssessment} /><p><small>{x.confidence.replaceAll('_', ' ')}</small></p></article>)}
       {result.status === 'completed' && !result.findings?.length && <p>No matches returned within this provider response. This does not establish absence of exposure.</p>}
       {(result.limitations || []).map((x: string, i: number) => <p key={i}><small>{x}</small></p>)}
       <button onClick={() => {
