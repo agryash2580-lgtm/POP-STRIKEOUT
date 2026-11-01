@@ -108,4 +108,11 @@ The browser checks use a generated next-window TOTP for the separate exposure ve
 
 Phone and Instagram public-reference searches remain blocked until target ownership can be verified. The account authenticator does not prove ownership of those targets. This is intentional enforcement, not an authenticator failure.
 
-This audit does not certify every possible bug absent. Live provider credentials, a real Google account callback and hosted deployment of these new fixes remain separate checks. The existing no-text-error interface is preserved; rejected operations stay rejected even though their banners are hidden. No keys or session state are committed.
+This audit does not certify every possible bug absent. Live provider credentials, a real Google account callback and hosted deployment of these new fixes remain separate checks. Errors, alerts and security guidance must remain visible; rejected operations explain what the user needs to do next. No keys or session state are committed.
+
+
+## Live stale-session failure repaired
+
+Live testing found the setup request correctly rejected a session older than ten minutes, but global CSS hid the rejection message. The same selectors hid configuration alerts and fresh-code guidance. The UI now keeps errors, alerts and functional help visible, reports whether recent authentication is required, and offers Google reauthentication or instructions to reopen password sign-in. The ten-minute server enrollment check remains enforced.
+
+An old-session HTTP regression confirms status requests reauthentication and setup stays forbidden; a fresh login allows setup. Browser verification confirmed visible guidance and, after re-signing into a disposable local QA account, a rendered QR enrollment form. No user's real authenticator was enrolled or reset during diagnosis.
