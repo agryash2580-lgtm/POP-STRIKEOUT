@@ -1,6 +1,6 @@
 # Pop: install, demonstrate, explain
 
-Pop 2.3.1 is STRIKEOUT's browser companion. He finds information you asked him to watch,
+Pop 2.3.2 is STRIKEOUT's browser companion. He finds information you asked him to watch,
 warns after you paste it, and helps capture reviewed evidence. Petting him is a
 fully supported business operation.
 
@@ -25,7 +25,7 @@ bevelled controls, navy title bars and square windows.
 
 When updating, replace the extracted files and reload the extension in your browser's
 extension manager, then refresh already-open websites. The popup title bar should say
-`2.3.1`. The hosted website offers this version under the Pop app.
+`2.3.2`. The hosted website offers this version under the Pop app.
 
 Firefox:
 
@@ -107,15 +107,18 @@ browser's download manager. Pop does not inspect your other downloads.
 
 Evidence is limited to 50 records / 80 MB. Browser storage quotas can be lower.
 Export before uninstalling, deleting a profile or clearing extension storage.
-There is no encryption or cloud backup. Use the Delete controls to clear local
+Local records are not encrypted by Pop. Website copies exist only after successful
+account pairing and explicit sync. Use the Delete controls to clear local
 records. Exported copies and information already sent elsewhere remain elsewhere.
 
-During screenshot review the original exists only in that review window after the
-pending capture is consumed. Saving creates a new PNG from the redacted canvas;
-only that flattened PNG is stored. Review text fields separately: drawing on an
-image does not redact its selected-text field. Leaving the review window without
-saving loses that capture. A pending capture never opened remains until the browser
-session ends or local data is cleared.
+Capture opens a review screen: enter a name and press Save evidence. Before that,
+it is explicitly marked NOT SAVED. The pending original stays in session storage
+until Save or Discard, so refreshing that review URL can reopen it. Pending captures
+expire when the browser session ends. Saving stores a new flattened PNG in local
+IndexedDB and removes the pending original. Review selected text and HTML separately:
+image boxes do not redact either. Saved records appear in Pop's Evidence tab; use
+Download screenshot or Export incident for ordinary files. A successful website sync
+adds a separate library copy; choose Add to case before using it in a case report.
 
 The STRIKEOUT handoff asks for confirmation and opens an editable draft containing
 the saved address, time, selected text and note. It does not upload the image.
@@ -199,8 +202,8 @@ The test browses only its local fictional fixture. Native permission prompts and
 separate manual checks; a small popup test also exercises the denial branch.
 No personal browser profile is touched.
 
-Versioned packages are written to `public/pop-chromium-2.3.1.zip`,
-`public/pop-firefox-2.3.1.zip`, and
+Versioned packages are written to `public/pop-chromium-2.3.2.zip`,
+`public/pop-firefox-2.3.2.zip`, and
 extracted development folders under `dist/pop/`. The packaging helper currently
 uses Windows PowerShell's Compress-Archive. The extension itself has no framework,
 remote executable code or runtime npm dependency.

@@ -22,7 +22,13 @@ export function PopEvidenceLibrary({ caseId, cases = [], onAttached }: any) {
     load().catch((e) => setError(e.message));
     const refresh = () => load().catch(() => {});
     window.addEventListener("focus", refresh);
-    return () => window.removeEventListener("focus", refresh);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") refresh();
+    }, 5000);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      window.clearInterval(timer);
+    };
   }, []);
   useEffect(() => setTarget(caseId || ""), [caseId]);
   async function run(id: string, fn: () => Promise<any>) {

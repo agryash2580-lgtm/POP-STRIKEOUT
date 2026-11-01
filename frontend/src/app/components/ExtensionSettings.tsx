@@ -4,7 +4,7 @@ function bridge(action: string, value?: any): Promise<any> {
     const id = crypto.randomUUID();
     const timeout = setTimeout(() => {
       window.removeEventListener("message", listen);
-      reject(Error("Install Pop 2.3.1, refresh this page and try again."));
+      reject(Error("Install Pop 2.3.2, refresh this page and try again."));
     }, 12000);
     function listen(e: MessageEvent) {
       if (
@@ -61,7 +61,7 @@ export function ExtensionSettings() {
       {prefs && (
         <>
           <p>
-            Pop 2.3.1 /{" "}
+            Pop 2.3.2 /{" "}
             {prefs.paired ? "AI connection paired" : "AI connection not paired"}
           </p>
           <label className="check">

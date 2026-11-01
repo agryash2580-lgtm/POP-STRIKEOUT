@@ -97,13 +97,9 @@ async function captureEvidence(tabId, askName = false) {
   const snapshots = await PopAPI.scripting.executeScript({
     target: { tabId },
     func: (ask) => {
-      const name = ask
-        ? prompt(
-            "Name this evidence. OK syncs screenshot and inert HTML to your paired website account and requests email to your verified address. Email needs configured delivery. Cancel stops capture.",
-            "Incident evidence",
-          )
-        : "";
-      if (ask && name === null) return null;
+      // Ask for the name in our own review screen. Webpage dialogs can be
+      // suppressed or unavailable while the extension popup has focus.
+      const name = "";
       const copy = document.documentElement.cloneNode(true);
       copy
         .querySelectorAll(
