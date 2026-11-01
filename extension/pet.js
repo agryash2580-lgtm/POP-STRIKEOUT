@@ -1,6 +1,6 @@
 (() => {
   const existing = document.getElementById("strikeout-pop-pet");
-  if (existing?.dataset.popVersion === "2.1.3") return;
+  if (existing?.dataset.popVersion === "2.2.0") return;
   existing?.remove();
   const Pop = globalThis.Pop;
   const SIZE = 48;
@@ -11,6 +11,9 @@
   let speechTimer, snoozeTimer;
   let capturedHidden = false;
   let lastScan = null;
+  // Keep the tools registered, but let STRIKEOUT render its own single pet.
+  const onStrikeoutWebsite =
+    document.documentElement.hasAttribute("data-strikeout-app");
   const get = (id) => root.getElementById(id);
   const jokes = [
     "Excellent. Finally, competent management.",
@@ -112,6 +115,12 @@
     action("Pet Pop", petPop);
     action("Check this page", scan);
     action("Check my draft", () => Pop.checkDraft());
+    action("Review text on STRIKEOUT", async () => {
+      const result = await PopAPI.runtime.sendMessage({
+        type: "POP_REVIEW_SELF",
+      });
+      if (result?.error) throw Error(result.error);
+    });
     action("Save evidence", async () => {
       const r = await PopAPI.runtime.sendMessage({ type: "POP_CAPTURE_SELF" });
       if (r?.error) throw Error(r.error);
@@ -234,9 +243,11 @@
     if (document.getElementById("strikeout-pop-pet")) return;
     host = document.createElement("div");
     host.id = "strikeout-pop-pet";
-    host.dataset.popVersion = "2.1.3";
+    host.dataset.popVersion = "2.2.0";
     host.style.cssText =
       "position:fixed;width:48px;height:48px;z-index:2147483647;";
+    if (onStrikeoutWebsite)
+      host.style.setProperty("display", "none", "important");
     root = host.attachShadow({ mode: "closed" });
     root.innerHTML = `<style>
       :host{all:initial}*{box-sizing:border-box}[hidden]{display:none!important}
@@ -344,7 +355,7 @@
     PopAPI.runtime.onMessage.addListener((message, sender, reply) => {
       const result = () => ({
         ok: true,
-        version: "2.1.3",
+        version: "2.2.0",
         note: Pop.lastNote || "",
         count: lastScan?.count || 0,
       });
@@ -361,10 +372,14 @@
         reply(result());
       }
       if (message.type === "POP_SHOW") {
+        if (onStrikeoutWebsite)
+          window.dispatchEvent(new Event("strikeout-show-pet"));
         minimise();
         reply(result());
       }
       if (message.type === "POP_MINIMISE") {
+        if (onStrikeoutWebsite)
+          window.dispatchEvent(new Event("strikeout-minimise-pop"));
         minimise();
         reply({
           ...result(),
@@ -372,6 +387,14 @@
         });
       }
       if (message.type === "POP_PET") {
+        if (onStrikeoutWebsite) {
+          window.dispatchEvent(new Event("strikeout-pet-pop"));
+          reply({
+            ...result(),
+            note: "Head pats delivered to the website's Pop.",
+          });
+          return;
+        }
         if (!Pop.active)
           reply({
             error:

@@ -118,8 +118,8 @@ export function GetPopApp({
           {/* Direct Download Action Grid */}
           <div id="tour-getpop-downloads" style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
             <a
-              href="/pop-chromium-2.1.3.zip"
-              download="pop-chromium-2.1.3.zip"
+              href="/pop-chromium-2.2.0.zip"
+              download="pop-chromium-2.2.0.zip"
               style={{
                 ...raised,
                 background: "#166534",
@@ -135,12 +135,12 @@ export function GetPopApp({
               }}
             >
               <span>🌐</span>
-              <span>Download Chrome / Brave (v2.1.3)</span>
+              <span>Download Chrome / Brave (v2.2.0)</span>
             </a>
 
             <a
-              href="/pop-firefox-2.1.3.zip"
-              download="pop-firefox-2.1.3.zip"
+              href="/pop-firefox-2.2.0.zip"
+              download="pop-firefox-2.2.0.zip"
               style={{
                 ...raised,
                 background: "#c2410c",
@@ -156,7 +156,7 @@ export function GetPopApp({
               }}
             >
               <span>🦊</span>
-              <span>Download Firefox / Zen (v2.1.3)</span>
+              <span>Download Firefox / Zen (v2.2.0)</span>
             </a>
 
             {onOpenSimulator && (
@@ -316,7 +316,7 @@ export function GetPopApp({
 
         {activeBrowserTab === "chrome" ? (
           <ol style={{ fontSize: "13px", color: "#44403c", lineHeight: "1.6", margin: "0", paddingLeft: "20px" }}>
-            <li>Download <strong>pop-chromium-2.1.3.zip</strong> and unzip the folder to your disk.</li>
+            <li>Download <strong>pop-chromium-2.2.0.zip</strong> and unzip the folder to your disk.</li>
             <li>In Chrome or Brave, navigate to <code>chrome://extensions</code> in your address bar.</li>
             <li>Toggle <strong>Developer mode</strong> ON in the top right corner.</li>
             <li>Click <strong>Load unpacked</strong> and select the unzipped Pop extension folder.</li>
@@ -324,7 +324,7 @@ export function GetPopApp({
           </ol>
         ) : (
           <ol style={{ fontSize: "13px", color: "#44403c", lineHeight: "1.6", margin: "0", paddingLeft: "20px" }}>
-            <li>Download <strong>pop-firefox-2.1.3.zip</strong> and unzip the folder.</li>
+            <li>Download <strong>pop-firefox-2.2.0.zip</strong> and unzip the folder.</li>
             <li>In Firefox or Zen, navigate to <code>about:debugging#/runtime/this-firefox</code>.</li>
             <li>Click <strong>Load Temporary Add-on...</strong></li>
             <li>Select <code>manifest.json</code> from the unzipped folder.</li>

@@ -70,9 +70,26 @@ export function PopPet({
     );
     setMenu(false);
   }
+  useEffect(() => {
+    const pat = () => {
+      moved.current = false;
+      pet();
+    };
+    const quiet = () => {
+      setQuote("");
+      setMenu(false);
+    };
+    window.addEventListener("strikeout-pet-pop", pat);
+    window.addEventListener("strikeout-minimise-pop", quiet);
+    return () => {
+      window.removeEventListener("strikeout-pet-pop", pat);
+      window.removeEventListener("strikeout-minimise-pop", quiet);
+    };
+  }, [hasCatnip, onFeedCatnip]);
   if (!isOpen) return null;
   return (
     <div
+      id="strikeout-website-pet"
       style={{
         position: "fixed",
         left: pos.x,

@@ -1,5 +1,7 @@
 # STRIKEOUT: understand the code and present it honestly
 
+Production address: https://strikeout-mu20.vercel.app. The extension's current version is 2.2.0.
+
 Read sections 1–4 first. They explain the product and the main flow. Use the file map when someone asks where a feature is implemented.
 
 ## 1. What we built
@@ -7,6 +9,8 @@ Read sections 1–4 first. They explain the product and the main flow. Use the f
 STRIKEOUT helps someone organise the aftermath of an online incident. The website stores their case and evidence, prepares a reviewable complaint draft, generates an optional AI-assisted recovery report and PDF, and keeps a checklist of next steps. Check Exposure is a separate desktop app for consented public-reference searches, supplied-document checks and password-prefix breach checks. Pop is a real Chromium/Firefox extension with local identifier matching, sharing warnings, evidence capture and optional chat.
 
 The Windows 98 desktop is the interface. It is still a normal website running inside a browser. The terminal and monitor cannot inspect the computer's operating system. The extension simulator demonstrates fictional data; it is separate from the installed extension.
+
+Storage is a private JSON record store, not PostgreSQL, MongoDB or Firebase. Locally those records are files in the ignored `.data/` folder. Production uses private Vercel Blob objects under `strikeout/`: user records contain password hashes, cases and evidence; session records contain hashed session identifiers; report jobs contain reviewed snapshots, generated content and PDFs. Browser IndexedDB stores extension screenshots separately. The website's settings/wallpaper use browser localStorage. Clearing localStorage does not delete backend cases; account deletion uses authenticated backend deletion endpoints. Provider credentials stay in server environment variables, not these public assets.
 
 The supplied desktop and tutorial designs came from the frontend ZIP. Integration, account storage, reporting, AI, the installed extension and the OSINT connection are separate contributions. Preserve the supplied frontend's provenance notice. Do not claim every line or visual was originally authored by the team.
 
@@ -107,7 +111,7 @@ Before clicking Follow, the code checks the logged-in sender and the target prof
 
 Withdrawing permission stops future service actions. It does not magically remove an Instagram follow that already happened. The account owner can remove the service account inside Instagram. Account deletion removes that user's local queue records.
 
-The bot is local-only and unavailable in Vercel's serverless runtime. A follow request does not implement private-post extraction, private-image scanning or a complete social-account audit. Those capabilities must not be claimed in the presentation.
+Account owners can queue and withdraw requests on the live website. The operator's browser remains local-only and unavailable in Vercel's serverless runtime; processing hosted records locally requires private access to the same configured storage. A queued request is not a sent follow. A follow request does not implement private-post extraction, private-image scanning or a complete social-account audit. Those capabilities must not be claimed in the presentation.
 
 ## 8. Pop extension: how the real code works
 
@@ -132,6 +136,8 @@ The extension shares plain JavaScript across browsers, with separate manifests/b
 Clicking the cat pets it. Right-clicking opens tools. The cat's position belongs to its host, so hiding a menu does not move it to a different corner. The pet's shadow DOM keeps page styles from changing its interface. Site permissions determine where it can appear after navigation. It cannot run on browser-internal pages, extension stores or every inaccessible frame.
 
 Page scanning compares the local watchlist against rendered text. It does not inspect images or claim that a logged-in page is public. Sharing Guard warns after supported edits or pastes; a website may already have received the text. Remove changes text only after the user asks. No feature can guarantee prevention of all accidental sharing.
+
+The extension's More menu and right-click tools include “Review visible text on STRIKEOUT.” The user approves copying selected or rendered page text (bounded to 12,000 characters). It opens the website with a temporary URL fragment, which is not sent in the HTTP request. The app removes the fragment immediately and prefills Document Review. The user reviews text, chooses identifiers and explicitly submits before the server checks it. This works on an Instagram profile the user can view, including their own signed-in private profile; it does not establish public exposure. Nothing is automatically attached to Gemini. On the STRIKEOUT desktop the extension's cat is hidden, so only the website pet appears; toolbar tools remain usable.
 
 Screenshot capture checks the active tab, hides Pop's visual controls, captures the visible area and opens a review. Redaction boxes are painted onto the saved image. The original screenshot is not included in a saved redacted record. This is permanent image redaction, not a removable CSS rectangle. Original pending captures use session storage; saved records use IndexedDB.
 
@@ -226,7 +232,7 @@ For Google sign-in, create a Web application OAuth client and register the exact
 
 ## 12. Installing and demonstrating the extension
 
-Run `npm run package:pop` after changing extension source. Current development packages are v2.1.3. Windows packaging uses PowerShell's archive command. Downloads on the website must contain those newly built packages, not an older ZIP.
+Run `npm run package:pop` after changing extension source. Current development packages are v2.2.0. Windows packaging uses PowerShell's archive command. Downloads on the website must contain those newly built packages, not an older ZIP.
 
 Chromium: unzip the Chromium package, open `chrome://extensions`, enable Developer mode, click Load unpacked and select the folder containing `manifest.json`. Edge/Brave use their corresponding extension pages. After replacing files, reload the extension and refresh affected tabs.
 

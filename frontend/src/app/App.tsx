@@ -1003,6 +1003,18 @@ export default function App() {
   // Pop Pet assistant state: closed by default on loading
   const [popPetOpen, setPopPetOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  useEffect(() => {
+    const show = () => {
+      setTutorialOpen(false);
+      setPopPetOpen(true);
+    };
+    window.addEventListener("strikeout-show-pet", show);
+    window.addEventListener("strikeout-pet-pop", show);
+    return () => {
+      window.removeEventListener("strikeout-show-pet", show);
+      window.removeEventListener("strikeout-pet-pop", show);
+    };
+  }, []);
   const [simTab, setSimTab] = useState<"demo_browser" | "workspace">(
     "demo_browser",
   );
@@ -1181,7 +1193,9 @@ export default function App() {
       zIndex: 14,
     },
     exposure: {
-      isOpen: location.pathname === "/exposure",
+      isOpen:
+        location.pathname === "/exposure" ||
+        location.hash.startsWith("#pop-review="),
       isMinimized: false,
       x: 100,
       y: 48,
@@ -1814,7 +1828,7 @@ export default function App() {
       />
       <GuideChat />
       <PopPet
-        isOpen={popPetOpen}
+        isOpen={popPetOpen && !tutorialOpen}
         onClose={() => setPopPetOpen(false)}
         hasCatnip={hasCatnip}
         onFeedCatnip={() => {

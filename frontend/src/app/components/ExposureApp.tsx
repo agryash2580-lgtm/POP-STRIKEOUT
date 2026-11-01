@@ -31,6 +31,32 @@ export function ExposureApp() {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   useEffect(() => {
+    if (location.hash.startsWith("#pop-review=")) {
+      try {
+        const encoded = location.hash.slice(12);
+        if (encoded.length > 70000)
+          throw Error("This page handoff is too large.");
+        const value = JSON.parse(
+          new TextDecoder().decode(
+            Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0)),
+          ),
+        );
+        if (typeof value.text !== "string" || value.text.length > 12000)
+          throw Error("Invalid page handoff.");
+        const url = new URL(value.sourceUrl);
+        if (!["http:", "https:"].includes(url.protocol))
+          throw Error("Invalid source address.");
+        setService("documents");
+        setDocumentText(value.text);
+        setSource(url.href);
+        setConsent(false);
+      } catch (e: any) {
+        setError(e.message);
+      }
+      history.replaceState(null, "", location.pathname + location.search);
+    }
+  }, []);
+  useEffect(() => {
     function clearAccount() {
       setResult(null);
       setValue("");
@@ -172,6 +198,29 @@ export function ExposureApp() {
         )}
       </div>
       <InstagramPanel />
+      {service === "instagram" && (
+        <div className="mini-note">
+          <strong>Want to review your actual Instagram profile?</strong>
+          <p>
+            Open your own profile while signed into Instagram. In Pop's
+            extension toolbar, expand More and choose Review visible text on
+            STRIKEOUT. Review the imported text here and enter the identifiers
+            you want to find. This also works on private pages you can access;
+            it does not make them publicly exposed.
+          </p>
+          {/^[a-zA-Z0-9._]{1,30}$/.test(value.replace(/^@/, "")) && (
+            <a
+              href={
+                "https://www.instagram.com/" + value.replace(/^@/, "") + "/"
+              }
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open my Instagram profile
+            </a>
+          )}
+        </div>
+      )}
       <form id="tour-exposure-search-well" onSubmit={scan}>
         <label>
           Check type
@@ -380,17 +429,41 @@ export function ExposureApp() {
           >
             Download exposure results
           </button>
-          <h2>Check {result.status}</h2>
+          <h2>
+            {result.status === "incomplete"
+              ? "Some sources could not be checked"
+              : "Check completed"}
+          </h2>
           {typeof result.coverage === "string" && <p>{result.coverage}</p>}
           {Array.isArray(result.coverage) && (
             <div className="mini-note">
               {result.coverage.map((c: any, i: number) => (
                 <p key={i}>
                   <strong>
-                    {c.provider}: {c.status}
+                    {(
+                      {
+                        github_public: "GitHub public references",
+                        brave: "Web search",
+                        hibp: "Email breach records",
+                        local: "Local checks",
+                      } as any
+                    )[c.provider] || c.provider}
+                    :{" "}
+                    {(
+                      {
+                        completed: "Checked",
+                        rate_limited: "Temporarily rate-limited",
+                        network_error: "Connection failed",
+                        timeout: "Timed out",
+                        provider_error: "Provider unavailable",
+                        not_configured: "Not configured",
+                        partial: "Partial results",
+                      } as any
+                    )[c.status] || c.status}
                   </strong>
                   <br />
                   {c.scope}
+                  {c.message && <p role="status">{c.message}</p>}
                 </p>
               ))}
             </div>
@@ -400,6 +473,14 @@ export function ExposureApp() {
               One or more provider checks were incomplete. This is not a
               complete exposure assessment.
             </p>
+          )}
+          {result.status === "incomplete" && (
+            <button
+              disabled={busy}
+              onClick={() => scan({ preventDefault() {} })}
+            >
+              Retry exposure check
+            </button>
           )}
           {result.coverage
             ? null

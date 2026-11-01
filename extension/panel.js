@@ -69,6 +69,7 @@ async function allow(allSites) {
 get("bring").onclick = () => run("POP_SHOW");
 get("scan").onclick = () => run("POP_SCAN");
 get("draft").onclick = () => run("POP_DRAFT");
+get("review-page").onclick=async()=>{try{if(!activeTab?.id)throw Error("Choose a webpage.");await send({type:"POP_REVIEW_PAGE",tabId:activeTab.id});window.close();}catch(error){get("status").textContent=error.message;}};
 get("pet").onclick = () => {
   const desk = document.querySelector(".pet-desk");
   desk.classList.remove("petted");

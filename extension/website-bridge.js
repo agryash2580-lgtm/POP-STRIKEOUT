@@ -5,13 +5,13 @@
   api.storage.local.get("server").then((settings) => {
     enabled =
       location.origin ===
-        (settings.server || "https://strikeout-wheat.vercel.app") ||
-      ["http://localhost:3002", "http://127.0.0.1:3002"].includes(
+        (settings.server || "https://strikeout-mu20.vercel.app") ||
+      ["https://strikeout-mu20.vercel.app", "https://strikeout-wheat.vercel.app", "http://localhost:3002", "http://127.0.0.1:3002"].includes(
         location.origin,
       );
     if (enabled)
       window.postMessage(
-        { type: "POP_WEBSITE_READY", version: "2.1.3" },
+        { type: "POP_WEBSITE_READY", version: "2.2.0" },
         location.origin,
       );
   });
@@ -31,7 +31,7 @@
           {
             type: "POP_SETTINGS_RESULT",
             id,
-            result: { installed: true, version: "2.1.3" },
+            result: { installed: true, version: "2.2.0" },
           },
           location.origin,
         );
@@ -61,7 +61,7 @@
           sharingGuard: x.sharingGuard !== false,
           disabledSites: x.disabledSites || [],
           aiConsent: !!x.aiConsent,
-          server: x.server || "https://strikeout-wheat.vercel.app",
+          server: x.server || "https://strikeout-mu20.vercel.app",
           paired: !!x.popToken,
         };
       } else if (action === "save") {

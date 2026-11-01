@@ -178,14 +178,14 @@ async function owned(req) {
 app.get("/api/health", (req, res) =>
   res.json({
     ok: true,
-    version: "2.0",
+    version: "2.2.0",
     storage:
       usesCloud() && process.env.BLOB_READ_WRITE_TOKEN
         ? "private-durable-blob"
         : process.env.VERCEL
           ? "unconfigured"
           : "local-durable-files",
-    demo: true,
+    demonstrationSourcesAvailable: true,
   }),
 );
 app.post(

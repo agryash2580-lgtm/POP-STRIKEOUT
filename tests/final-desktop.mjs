@@ -14,7 +14,7 @@ try{
  await page.getByRole('button',{name:'Report & PDF',exact:true}).click();await page.getByLabel('I reviewed this context').check();await page.screenshot({path:'output/final/report-workspace.png'});
  await page.getByRole('button',{name:'Check exposure ↗',exact:true}).click();await page.getByRole('heading',{name:'See what is exposed.'}).waitFor();
  await page.getByRole('button',{name:'Minimize STRIKEOUT / Check Exposure',exact:true}).click();
- await page.getByRole('button',{name:'Delivery & Pop',exact:true}).click();await page.getByRole('heading',{name:'Pop extension settings'}).waitFor();assert.equal(await page.getByRole('link',{name:'Download Chromium ZIP',exact:true}).getAttribute('href'),'/pop-chromium-2.1.3.zip');await page.screenshot({path:'output/final/settings.png'});
+ await page.getByRole('button',{name:'Delivery & Pop',exact:true}).click();await page.getByRole('heading',{name:'Pop extension settings'}).waitFor();assert.equal(await page.getByRole('link',{name:'Download Chromium ZIP',exact:true}).getAttribute('href'),'/pop-chromium-2.2.0.zip');await page.screenshot({path:'output/final/settings.png'});
  assert.deepEqual(errors,[]);console.log('PASS: actual frontend signup, private case, evidence, reviewed complaint export, report consent, OSINT screen and website Pop settings.');
  await page.request.delete(base+'/api/account');
-}finally{await browser.close();}
+}catch(error){console.log('Visible website errors:',await page.locator('.error').allTextContents());await page.screenshot({path:'output/final/desktop-failure.png'});throw error;}finally{await browser.close();}

@@ -1,6 +1,6 @@
 # Pop: install, demonstrate, explain
 
-Pop 2.1.3 is STRIKEOUT's browser companion. He finds information you asked him to watch,
+Pop 2.2.0 is STRIKEOUT's browser companion. He finds information you asked him to watch,
 warns after you paste it, and helps capture reviewed evidence. Petting him is a
 fully supported business operation.
 
@@ -25,7 +25,7 @@ bevelled controls, navy title bars and square windows.
 
 When updating, replace the extracted files and reload the extension in your browser's
 extension manager, then refresh already-open websites. The popup title bar should say
-`2.1.3`. The hosted website may still offer an older ZIP until it is deployed.
+`2.2.0`. The hosted website may still offer an older ZIP until it is deployed.
 
 Firefox:
 
@@ -203,8 +203,8 @@ The test browses only its local fictional fixture. Native permission prompts and
 separate manual checks; a small popup test also exercises the denial branch.
 No personal browser profile is touched.
 
-Versioned packages are written to `public/pop-chromium-2.1.3.zip`,
-`public/pop-firefox-2.1.3.zip`, and
+Versioned packages are written to `public/pop-chromium-2.2.0.zip`,
+`public/pop-firefox-2.2.0.zip`, and
 extracted development folders under `dist/pop/`. The packaging helper currently
 uses Windows PowerShell's Compress-Archive. The extension itself has no framework,
 remote executable code or runtime npm dependency.

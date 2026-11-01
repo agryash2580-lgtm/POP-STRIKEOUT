@@ -191,13 +191,53 @@ async function chat(message, pageAddress) {
   return { text: result.text };
 }
 
+async function reviewVisiblePage(tabId) {
+  const tab = await PopAPI.tabs.get(tabId);
+  if (!/^https?:/.test(tab.url || ""))
+    throw Error("Choose an ordinary webpage.");
+  const results = await PopAPI.scripting.executeScript({
+    target: { tabId },
+    func: () => {
+      if (
+        !confirm(
+          "Open STRIKEOUT with up to 12,000 characters of text visible on this page? Review it there before running a check. No screenshots, passwords from form fields, watchlist or AI context are attached.",
+        )
+      )
+        return null;
+      return {
+        text: (
+          window.getSelection()?.toString() || document.body.innerText
+        ).slice(0, 12000),
+        sourceUrl: location.href,
+      };
+    },
+  });
+  const snapshot = results[0]?.result;
+  if (!snapshot) return { ok: true, cancelled: true };
+  snapshot.sourceUrl = Pop.cleanAddress(snapshot.sourceUrl);
+  const encoded = btoa(
+    String.fromCharCode(...new TextEncoder().encode(JSON.stringify(snapshot))),
+  );
+  const settings = await PopAPI.storage.local.get("server");
+  await PopAPI.tabs.create({
+    url: (settings.server || Pop.defaultServer) + "/#pop-review=" + encoded,
+  });
+  return { ok: true };
+}
+
 async function handleMessage(message, sender) {
+  if (message.type === "POP_REVIEW_SELF") {
+    if (!sender.tab?.id) throw Error("Choose an ordinary webpage.");
+    return reviewVisiblePage(sender.tab.id);
+  }
   if (message.type === "POP_WEBSITE_DISCONNECT") {
     const settings = await PopAPI.storage.local.get("server");
     const origin = new URL(sender.url).origin;
     if (
       ![
         settings.server || Pop.defaultServer,
+        Pop.defaultServer,
+        "https://strikeout-wheat.vercel.app",
         "http://localhost:3002",
         "http://127.0.0.1:3002",
       ].includes(origin)
@@ -214,6 +254,8 @@ async function handleMessage(message, sender) {
     if (
       ![
         settings.server || Pop.defaultServer,
+        Pop.defaultServer,
+        "https://strikeout-wheat.vercel.app",
         "http://localhost:3002",
         "http://127.0.0.1:3002",
       ].includes(origin)
@@ -230,6 +272,8 @@ async function handleMessage(message, sender) {
     if (
       ![
         settings.server || Pop.defaultServer,
+        Pop.defaultServer,
+        "https://strikeout-wheat.vercel.app",
         "http://localhost:3002",
         "http://127.0.0.1:3002",
       ].includes(origin)
@@ -272,6 +316,8 @@ async function handleMessage(message, sender) {
   if (!sender.url?.startsWith(PopAPI.runtime.getURL("")))
     throw Error("Open this tool from the Pop toolbar.");
   switch (message.type) {
+    case "POP_REVIEW_PAGE":
+      return reviewVisiblePage(message.tabId);
     case "POP_BRING":
       return bringPop(message.tabId, message.command);
     case "POP_SYNC":

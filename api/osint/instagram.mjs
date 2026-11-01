@@ -278,7 +278,6 @@ export function installInstagramBot(
   app.post(
     "/api/instagram/follow",
     guarded(async (req, res) => {
-      local(req);
       limited(req, "ig-request", 6);
       const u = await user(req);
       if (u.guest) fail(403, "Sign into Strikeout to request a follow.");
@@ -352,7 +351,6 @@ export function installInstagramBot(
   app.post(
     "/api/instagram/follow/:id/withdraw",
     guarded(async (req, res) => {
-      local(req);
       const u = await user(req);
       if (locked) fail(409, "Please wait for the current request to finish.");
       const id = req.params.id;

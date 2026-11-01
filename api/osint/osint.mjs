@@ -264,6 +264,9 @@ export async function runCheck(body, options = {}) {
       report.checks.push({
         provider: "github_public",
         status: e.code || "provider_error",
+        message: e.message,
+        retryAfter: e.retryAfter,
+        coverage: "Public GitHub issue and pull-request search only.",
       });
     }
     report.limitations.push(
@@ -313,13 +316,17 @@ export async function runCheck(body, options = {}) {
   report.coverage = report.checks.map((x) => ({
     provider: x.provider,
     status: x.status,
+    message: x.message,
+    retryAfter: x.retryAfter,
     scope:
       x.coverage ||
       (x.provider === "hibp"
         ? "HIBP breach records"
-        : x.provider === "local"
-          ? "Local metadata only"
-          : "Brave public web index"),
+        : x.provider === "github_public"
+          ? "Public GitHub issue and pull-request search only."
+          : x.provider === "local"
+            ? "Local metadata only"
+            : "Brave public web index"),
   }));
   if (report.checks.some((x) => x.status !== "completed"))
     report.status = "incomplete";
