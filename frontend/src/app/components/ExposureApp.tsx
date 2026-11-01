@@ -1,3 +1,4 @@
+import { AdvancedExposure } from "./AdvancedExposure";
 import React, { useEffect, useState } from "react";
 import { InstagramPanel } from "./InstagramPanel";
 import { documentText as extractDocumentText } from "../document-text";
@@ -172,6 +173,7 @@ export function ExposureApp() {
         )}
       </div>
       <InstagramPanel />
+      <AdvancedExposure capabilities={caps} />
       <form id="tour-exposure-search-well" onSubmit={scan}>
         <label>
           Check type
@@ -320,7 +322,7 @@ export function ExposureApp() {
           />
           This is my information and I approve the described check.
         </label>
-        <button disabled={!consent || busy}>
+        <button disabled={!consent || busy || !caps}>
           {busy ? "Checking…" : "Check my exposure"}
         </button>
       </form>
