@@ -1,6 +1,6 @@
 // Background code bridges the page companion and privileged browser APIs.
 if (typeof importScripts === "function")
-  importScripts("shared.js", "link-guard.js");
+  importScripts("shared.js", "link-domains.js", "link-guard.js");
 const Pop = globalThis.Pop;
 let scriptUpdate = Promise.resolve();
 

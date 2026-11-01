@@ -13,23 +13,7 @@ if (destination) {
   document.getElementById("destination").textContent = destination.hostname;
   document.getElementById("reason").textContent =
     "Check the full hostname before proceeding.";
-  const brands = [
-    "instagram.com",
-    "facebook.com",
-    "google.com",
-    "paypal.com",
-    "microsoft.com",
-    "amazon.com",
-    "netflix.com",
-    "discord.com",
-  ];
-  const word = destination.hostname.replace(/^www\./, "").split(".")[0];
-  const suggestion = brands.find((real) => {
-    const name = real.split(".")[0];
-    return (
-      word.slice(0, 3) === name.slice(0, 3) || word.slice(-4) === name.slice(-4)
-    );
-  });
+  const suggestion = globalThis.PopLookalikes.match(destination.hostname);
   if (suggestion) {
     document.getElementById("safe").href = "https://" + suggestion + "/";
     document.getElementById("safe").textContent = "Open " + suggestion;

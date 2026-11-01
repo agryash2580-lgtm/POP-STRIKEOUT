@@ -102,10 +102,22 @@ async function installFirefoxAddon(port, addonPath) {
 }
 
 async function checkLinkGuard(context,extensionURL,debugging){
+ if (!debugging) {
+   const worker=context.serviceWorkers()[0];
+   await worker.evaluate(async()=>{
+     for(let attempt=0;attempt<50;attempt++) {
+       const rules=await chrome.declarativeNetRequest.getDynamicRules();
+       if(rules.some(rule=>rule.condition.requestDomains?.includes('gmaail.com')))return;
+       await new Promise(resolve=>setTimeout(resolve,100));
+     }
+     throw Error('Lookalike rules did not finish installing');
+   });
+ }
+ for(const domain of ['instaagram.com','gmaail.com','gmmail.com','outllook.com','paypa1.com']) {
  const page=await context.newPage();let loads=0;
- await page.route('https://instaagram.com/**',route=>{loads++;return route.fulfill({contentType:'text/html',body:'<h1>Fictional route fixture, no real site visited.</h1>'})});
+ await page.route('https://'+domain+'/**',route=>{loads++;return route.fulfill({contentType:'text/html',body:'<h1>Fictional route fixture, no real site visited.</h1>'})});
  await page.waitForTimeout(700);
- await page.goto('https://instaagram.com/fictional-link-test',{timeout:5000}).catch(()=>{});
+ await page.goto('https://'+domain+'/fictional-link-test',{timeout:5000}).catch(()=>{});
  if(debugging){
   // Playwright deliberately excludes Firefox extension pages. Inspect the actual
   // tab/view using Mozilla's debugger, as for the other Firefox extension UI.
@@ -117,12 +129,16 @@ async function checkLinkGuard(context,extensionURL,debugging){
   assert.ok(warned,'Firefox must show its actual extension warning tab');assert.equal(loads,0);
   await debugging.evaluate("const view=browser.extension.getViews().find(v=>v.location.pathname.endsWith('/link-warning.html'));if(!view)throw Error('Warning view missing');view.document.getElementById('continue').click();");
  }else{
-  await page.waitForURL(url=>url.href.startsWith(extensionURL+'/link-warning.html'),{timeout:15000});
+  // Blocking aborts the original navigation; do not wait on its load event.
+  for(let attempt=0;attempt<100 && !page.url().startsWith(extensionURL+'/link-warning.html');attempt++)
+    await page.waitForTimeout(100);
+  assert.ok(page.url().startsWith(extensionURL+'/link-warning.html'), 'Actual warning page must open');
   assert.equal(loads,0,'Lookalike navigation must be blocked before destination loads');
   await page.getByRole('button',{name:'I understand. Continue once.',exact:true}).click();
  }
  await page.getByRole('heading',{name:'Fictional route fixture, no real site visited.'}).waitFor();assert.equal(loads,1);
- await page.close();console.log('Link guard blocked the lookalike before load and respected explicit one-time continuation.');
+ await page.close();console.log(domain+': blocked before load; explicit continuation worked.');
+ }
 }
 
 async function testBrowser(name) {

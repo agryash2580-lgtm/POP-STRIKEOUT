@@ -1,6 +1,6 @@
 (() => {
   const existing = document.getElementById("strikeout-pop-pet");
-  if (existing?.dataset.popVersion === "2.3.0") return;
+  if (existing?.dataset.popVersion === "2.3.1") return;
   existing?.remove();
   const Pop = globalThis.Pop;
   const SIZE = 48;
@@ -264,7 +264,7 @@
     if (document.getElementById("strikeout-pop-pet")) return;
     host = document.createElement("div");
     host.id = "strikeout-pop-pet";
-    host.dataset.popVersion = "2.3.0";
+    host.dataset.popVersion = "2.3.1";
     host.style.cssText =
       "position:fixed;width:48px;height:48px;z-index:2147483647;";
     if (onStrikeoutWebsite)
@@ -376,7 +376,7 @@
     PopAPI.runtime.onMessage.addListener((message, sender, reply) => {
       const result = () => ({
         ok: true,
-        version: "2.3.0",
+        version: "2.3.1",
         note: Pop.lastNote || "",
         count: lastScan?.count || 0,
       });

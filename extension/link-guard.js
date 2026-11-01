@@ -2,42 +2,7 @@
 globalThis.PopLinkGuard = (() => {
   const api = globalThis.browser || globalThis.chrome;
   const isFirefox = typeof api.runtime.getBrowserInfo === "function";
-  const brands = [
-    "instagram.com",
-    "facebook.com",
-    "google.com",
-    "paypal.com",
-    "microsoft.com",
-    "amazon.com",
-    "netflix.com",
-    "discord.com",
-  ];
-  const targets = new Map();
-  for (const domain of brands) {
-    const word = domain.split(".")[0];
-    const variants = new Set();
-    for (let i = 0; i < word.length; i++) {
-      variants.add(word.slice(0, i) + word[i] + word.slice(i));
-      variants.add(word.slice(0, i) + word.slice(i + 1));
-      if (i < word.length - 1)
-        variants.add(
-          word.slice(0, i) + word[i + 1] + word[i] + word.slice(i + 2),
-        );
-      const digit = { o: "0", i: "1", l: "1" }[word[i]];
-      if (digit) variants.add(word.slice(0, i) + digit + word.slice(i + 1));
-    }
-    for (const variant of variants) {
-      const typo = variant + ".com";
-      if (!brands.includes(typo) && variant.length > 3)
-        targets.set(typo, domain);
-    }
-  }
-  const match = (host) => {
-    host = host.toLowerCase();
-    for (const [typo, real] of targets)
-      if (host === typo || host.endsWith("." + typo)) return real;
-    return null;
-  };
+  const { targets, match } = globalThis.PopLookalikes;
   async function install() {
     if (!api.declarativeNetRequest) return;
     if (isFirefox) {
