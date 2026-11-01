@@ -176,6 +176,10 @@ export function installMFA(app, { user, guarded, limited, issueSession }) {
         configured: mfaConfigured(),
         recoveryRemaining: s.recoveryHashes?.length || 0,
         sso: owner.authProvider === "google",
+        permanentAccountRequired: !!owner.guest,
+        reauthenticationRequired:
+          !s.enabled &&
+          Date.now() - (req.strikeoutAuthSession?.issuedAt || 0) > 10 * 60000,
       });
     }),
   );
