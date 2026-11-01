@@ -1,6 +1,6 @@
 # Pop: install, demonstrate, explain
 
-Pop 2.3.2 is STRIKEOUT's browser companion. He finds information you asked him to watch,
+Pop 2.3.3 is STRIKEOUT's browser companion. He finds information you asked him to watch,
 warns after you paste it, and helps capture reviewed evidence. Petting him is a
 fully supported business operation.
 
@@ -25,7 +25,7 @@ bevelled controls, navy title bars and square windows.
 
 When updating, replace the extracted files and reload the extension in your browser's
 extension manager, then refresh already-open websites. The popup title bar should say
-`2.3.2`. The hosted website offers this version under the Pop app.
+`2.3.3`. The hosted website offers this version under the Pop app.
 
 Firefox:
 
@@ -96,6 +96,12 @@ Disconnect revokes the server token. If the server is unreachable, revocation mu
 be retried later; the UI does not falsely claim it succeeded.
 
 ## Where data lives
+
+Check this page searches the identifiers you saved in Pop settings. It is not a
+general AI scan of every possible personal detail. Scan results stay visible until
+dismissed; an empty watchlist shows an Open Pop settings button. Save identifiers
+before testing on the fictional pop-demo.html page. Refresh a webpage after
+reloading the extension so it uses the updated page scripts.
 
 - Watchlist/preferences/token: local extension storage, not browser sync.
 - Chat and pending captures: browser-session extension storage.
@@ -202,8 +208,8 @@ The test browses only its local fictional fixture. Native permission prompts and
 separate manual checks; a small popup test also exercises the denial branch.
 No personal browser profile is touched.
 
-Versioned packages are written to `public/pop-chromium-2.3.2.zip`,
-`public/pop-firefox-2.3.2.zip`, and
+Versioned packages are written to `public/pop-chromium-2.3.3.zip`,
+`public/pop-firefox-2.3.3.zip`, and
 extracted development folders under `dist/pop/`. The packaging helper currently
 uses Windows PowerShell's Compress-Archive. The extension itself has no framework,
 remote executable code or runtime npm dependency.

@@ -4,7 +4,7 @@ function bridge(action: string, value?: any): Promise<any> {
     const id = crypto.randomUUID();
     const timeout = setTimeout(() => {
       window.removeEventListener("message", listen);
-      reject(Error("Install Pop 2.3.2, refresh this page and try again."));
+      reject(Error("Install Pop 2.3.3, refresh this page and try again."));
     }, 12000);
     function listen(e: MessageEvent) {
       if (
@@ -43,6 +43,11 @@ export function ExtensionSettings() {
       setBusy(false);
     }
   }
+  async function readPreferences() {
+    const preferences = await bridge("get");
+    const installed = await bridge("ping");
+    return { ...preferences, version: installed.version };
+  }
   return (
     <section>
       <h2>Pop extension settings</h2>
@@ -54,14 +59,14 @@ export function ExtensionSettings() {
       {message && <p className="success">{message}</p>}
       <button
         disabled={busy}
-        onClick={() => run(async () => setPrefs(await bridge("get")))}
+        onClick={() => run(async () => setPrefs(await readPreferences()))}
       >
         {prefs ? "Refresh Pop settings" : "Connect installed Pop"}
       </button>
       {prefs && (
         <>
           <p>
-            Pop 2.3.2 /{" "}
+            Pop {prefs.version || "version not reported"} /{" "}
             {prefs.paired ? "AI connection paired" : "AI connection not paired"}
           </p>
           <label className="check">

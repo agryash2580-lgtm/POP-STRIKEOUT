@@ -1,6 +1,6 @@
 (() => {
   const existing = document.getElementById("strikeout-pop-pet");
-  if (existing?.dataset.popVersion === "2.3.2") return;
+  if (existing?.dataset.popVersion === "2.3.3") return;
   existing?.remove();
   const Pop = globalThis.Pop;
   const SIZE = 48;
@@ -63,15 +63,16 @@
     // Do not touch host coordinates here. Hiding speech must never move the cat.
   }
 
-  Pop.say = function (text, shortText = text) {
+  Pop.say = function (text, shortText = text, persistent = false) {
     Pop.lastNote = text;
     if (!host || !Pop.active) return;
     get("note").textContent = shortText;
+    get("scan-settings").hidden = true;
     get("body").hidden = false;
     const rect = host.getBoundingClientRect();
     position(rect.left, rect.top);
     clearTimeout(speechTimer);
-    speechTimer = setTimeout(minimise, 4500);
+    if (!persistent) speechTimer = setTimeout(minimise, 4500);
   };
 
   function petPop() {
@@ -116,16 +117,28 @@
       b.textContent = label;
       b.style.cssText =
         "display:block;width:calc(100% - 12px);text-align:left;margin:4px 6px";
-      b.onclick = () =>
-        Promise.resolve()
+      b.onclick = () => {
+        // A result must not appear underneath the menu that launched it.
+        tools?.remove();
+        tools = null;
+        return Promise.resolve()
           .then(callback)
-          .catch((e) => Pop.say(e.message));
+          .catch((e) => Pop.say(e.message, undefined, true));
+      };
       tools.append(b);
     }
     const open = (section) =>
       PopAPI.runtime.sendMessage({ type: "POP_OPEN", section });
     action("Pet Pop", petPop);
     action("Check this page", scan);
+    if (lastScan?.count) {
+      action("Next match", () => Pop.say(Pop.nextHighlight(1), undefined, true));
+      action("Previous match", () => Pop.say(Pop.nextHighlight(-1), undefined, true));
+      action("Clear highlights", () => {
+        Pop.clearHighlights(); lastScan = null;
+        Pop.say("Highlights cleared.");
+      });
+    }
     action("Check my draft", () => Pop.checkDraft());
     action("Review text on STRIKEOUT", async () => {
       const result = await PopAPI.runtime.sendMessage({
@@ -205,10 +218,14 @@
   async function scan() {
     const settings = await PopAPI.storage.local.get("watchlist");
     if (!settings.watchlist?.length) {
+      Pop.clearHighlights();
+      lastScan = null;
       Pop.say(
         "Add an email, phone or username in the extension’s Watchlist first.",
-        "Add your identifiers in Pop’s toolbar → Watchlist.",
+        "No identifiers saved. Add an email, phone or username first.",
+        true,
       );
+      get("scan-settings").hidden = false;
       return { ok: true, note: Pop.lastNote, count: 0 };
     }
     lastScan = Pop.scanPage(settings.watchlist);
@@ -217,8 +234,12 @@
         " match(es) found on this page." +
         (lastScan.limited ? " Large page: check limited." : "") +
         " This does not establish public visibility. Images, PDFs and embedded frames are not checked.",
-      lastScan.count + " watched match(es) here. Details in the toolbar.",
+      lastScan.count + " watched match(es) in rendered text." +
+        (lastScan.limited ? " Scan limited on this large page." : "") +
+        (location.hostname === "mail.google.com" ? " For unsent email, use Check my draft." : ""),
+      true,
     );
+    if (lastScan.count) Pop.nextHighlight(1);
     return { ok: true, note: Pop.lastNote, ...lastScan };
   }
 
@@ -264,7 +285,7 @@
     if (document.getElementById("strikeout-pop-pet")) return;
     host = document.createElement("div");
     host.id = "strikeout-pop-pet";
-    host.dataset.popVersion = "2.3.2";
+    host.dataset.popVersion = "2.3.3";
     host.style.cssText =
       "position:fixed;width:48px;height:48px;z-index:2147483647;";
     if (onStrikeoutWebsite)
@@ -286,7 +307,8 @@
       @keyframes pat{30%{transform:scale(1.12,.85) rotate(-6deg)}65%{transform:scale(.96,1.05) rotate(5deg)}}
       @keyframes heart{to{transform:translateY(-48px);opacity:0}}
       @media(prefers-reduced-motion:reduce){#cat img,.petted img,.heart{animation:none!important}}
-    </style><div id="body" role="status" hidden><p id="note"></p><button id="minimise" aria-label="Minimise speech">×</button></div><button id="cat" aria-label="Pet Pop; drag or use arrow keys to move" title="Click for head pats. Drag to move. Tools live in the extension icon."><img alt="Pop the pixel cat"></button>`;
+    </style><div id="body" role="status" hidden><p id="note"></p><button id="scan-settings" hidden>Open Pop settings</button><button id="minimise" aria-label="Minimise speech">×</button></div><button id="cat" aria-label="Pet Pop; drag or use arrow keys to move" title="Click for head pats. Drag to move. Tools live in the extension icon."><img alt="Pop the pixel cat"></button>`;
+    get("scan-settings").onclick = () => PopAPI.runtime.sendMessage({type: "POP_OPEN", section: "settings"}).catch(error => Pop.say(error.message));
     get("cat").querySelector("img").src = PopAPI.runtime.getURL("pop.png");
     document.documentElement.append(host);
     position(
@@ -376,7 +398,7 @@
     PopAPI.runtime.onMessage.addListener((message, sender, reply) => {
       const result = () => ({
         ok: true,
-        version: "2.3.2",
+        version: "2.3.3",
         note: Pop.lastNote || "",
         count: lastScan?.count || 0,
       });

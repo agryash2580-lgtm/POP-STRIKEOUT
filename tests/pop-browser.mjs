@@ -220,6 +220,7 @@ async function testBrowser(name) {
           const host = document.getElementById('strikeout-pop-pet');
           const root = chrome.dom.openOrClosedShadowRoot(host);
           if (action === 'click') root.getElementById(id).click();
+          if (action === 'menu-scan') { root.getElementById('cat').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true})); [...root.querySelectorAll('.warning button')].find(button=>button.textContent==='Check this page').click(); }
           if (action === 'remove') root.querySelector('.warning button:last-child').click();
           if (action === 'keyboard') root.getElementById('cat').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft', bubbles: true}));
           return {note: globalThis.Pop.lastNote || root.getElementById('note').textContent, hidden: host.hidden, bodyHidden: root.getElementById('body').hidden, hearts: root.querySelectorAll('.heart').length, warning: root.querySelector('.warning')?.textContent || '', left: host.getBoundingClientRect().left, top: host.getBoundingClientRect().top, width: host.offsetWidth, height: host.offsetHeight, pageMenu: !!root.getElementById('scan')};
@@ -258,9 +259,21 @@ async function testBrowser(name) {
     const beforeMove = (await pet('read')).left;
     await pet('keyboard');
     assert.ok((await pet('read')).left < beforeMove);
-    await workspace.evaluate(tabId => chrome.tabs.sendMessage(tabId, {type: 'POP_SCAN'}), tabId);
+    await pet('menu-scan');
+    await page.waitForFunction(()=>document.querySelectorAll('mark[data-pop-match]').length===3);
+    assert.equal((await pet('read')).warning,'','Scan menu must close instead of covering its result');
+    await page.waitForTimeout(4700);
+    assert.equal((await pet('read')).bodyHidden,false,'Scan result stays visible until dismissed');
     assert.equal(await page.locator('mark[data-pop-match]').count(), 3);
     assert.match((await pet('read')).note, /does not establish public visibility/);
+    const savedWatchlist = await workspace.evaluate(async()=> (await chrome.storage.local.get('watchlist')).watchlist);
+    await workspace.evaluate(()=>chrome.storage.local.set({watchlist:[]}));
+    await pet('menu-scan');
+    await page.waitForFunction(()=>document.querySelectorAll('mark[data-pop-match]').length===0);
+    assert.match((await pet('read')).note,/Watchlist first/);
+    assert.equal((await pet('read')).warning,'');
+    assert.equal((await pet('read')).bodyHidden,false);
+    await workspace.evaluate(watchlist=>chrome.storage.local.set({watchlist}),savedWatchlist);
     await workspace.evaluate(tabId => chrome.tabs.sendMessage(tabId, {type: 'POP_SCAN'}), tabId);
     assert.equal(await page.locator('mark[data-pop-match]').count(), 3, 'A second scan does not duplicate highlights');
 
@@ -379,7 +392,7 @@ async function testFirefox(context, debugging) {
   await page.waitForSelector('#strikeout-pop-pet', {state: 'attached'});
   const tabId = await evaluate('return (await browser.tabs.query({})).find(tab=>tab.url?.startsWith(' + JSON.stringify(origin) + ')).id;');
   async function pet(action, id) {
-    return evaluate('const result=await browser.scripting.executeScript({target:{tabId:' + tabId + '},func:({action,id})=>{const host=document.getElementById("strikeout-pop-pet");const root=host.openOrClosedShadowRoot;if(action==="click")root.getElementById(id).click();if(action==="remove")root.querySelector(".warning button:last-child").click();return {note:root.getElementById("note").textContent,hidden:host.hidden,warning:root.querySelector(".warning")?.textContent||""};},args:[' + JSON.stringify({action,id}) + ']});if(result[0].error)throw Error(result[0].error.message);return result[0].result;');
+    return evaluate('const result=await browser.scripting.executeScript({target:{tabId:' + tabId + '},func:({action,id})=>{const host=document.getElementById("strikeout-pop-pet");const root=host.openOrClosedShadowRoot;if(action==="click")root.getElementById(id).click();if(action==="menu-scan"){root.getElementById("cat").dispatchEvent(new MouseEvent("contextmenu",{bubbles:true,cancelable:true}));[...root.querySelectorAll(".warning button")].find(button=>button.textContent==="Check this page").click();}if(action==="remove")root.querySelector(".warning button:last-child").click();return {note:root.getElementById("note").textContent,bodyHidden:root.getElementById("body").hidden,hidden:host.hidden,warning:root.querySelector(".warning")?.textContent||""};},args:[' + JSON.stringify({action,id}) + ']});if(result[0].error)throw Error(result[0].error.message);return result[0].result;');
   }
   const resting = await page.locator('#strikeout-pop-pet').boundingBox();
   assert.equal(resting.width, 48); assert.equal(resting.height, 48);
@@ -388,8 +401,12 @@ async function testFirefox(context, debugging) {
   await pet('click', 'minimise');
   const minimised = await page.locator('#strikeout-pop-pet').boundingBox();
   assert.equal(minimised.x, resting.x); assert.equal(minimised.y, resting.y);
-  await evaluate('await browser.tabs.sendMessage(' + tabId + ',{type:"POP_SCAN"});');
-  assert.equal(await page.locator('mark[data-pop-match]').count(), 3);
+  await pet('menu-scan');
+  await page.waitForFunction(()=>document.querySelectorAll('mark[data-pop-match]').length===3);
+  assert.equal((await pet('read')).warning,'');
+  await page.waitForTimeout(4700);
+  assert.equal((await pet('read')).bodyHidden,false);
+  assert.equal(await page.locator('mark[data-pop-match]').count(),3);
   await page.locator('#bio').fill('Contact alex@example.com. Keep the rest.');
   await page.locator('#bio').dispatchEvent('paste');
   await page.waitForTimeout(100);
