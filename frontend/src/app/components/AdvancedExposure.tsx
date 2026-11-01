@@ -77,9 +77,9 @@ export function AdvancedExposure({ capabilities }: { capabilities: any }) {
         <a href={x.url} target="_blank" rel="noopener noreferrer">{result.service === 'reverse_image' ? 'Open Google Lens results ↗' : 'Open this Google search ↗'}</a>
         <p>{x.disclosure || 'Google receives this query when you open the link. Results are not automatically imported.'}</p>
       </article>)}
-      {(result.findings || []).map((x: any, i: number) => <article className="step-card" key={i}><strong>{x.title}</strong><p>{x.snippet}</p><ResultLink url={x.url} assessment={x.linkAssessment} exposure={x.exposureAssessment} /><p><small>{x.confidence.replaceAll('_', ' ')}</small></p></article>)}
+      {(result.findings || []).map((x: any, i: number) => <article className="step-card" key={i}><strong>{x.title}</strong><p>{x.snippet}</p><ResultLink url={x.url} assessment={x.linkAssessment} exposure={x.exposureAssessment} /></article>)}
       {result.status === 'completed' && !result.findings?.length && <p>No matches returned within this provider response. This does not establish absence of exposure.</p>}
-      {(result.limitations || []).map((x: string, i: number) => <p key={i}><small>{x}</small></p>)}
+
       <button onClick={() => {
         const url = URL.createObjectURL(new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' }));
         const a = document.createElement('a'); a.href = url; a.download = 'strikeout-search.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);

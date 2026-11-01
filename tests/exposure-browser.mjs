@@ -15,15 +15,15 @@ try{
  await exposure.getByLabel('Your emails to find', {exact:false}).fill('demo@example.org');
  await exposure.getByLabel('This is my information',{exact:false}).check();
  await exposure.getByRole('button',{name:'Check my exposure',exact:true}).click();
- await exposure.getByRole('heading',{name:'Check completed',exact:true}).waitFor();
+ await exposure.getByRole('heading',{name:'Exposure results',exact:true}).waitFor();
  const findings=await exposure.locator('.step-card').allTextContents();assert.ok(findings.some(x=>x.includes('email')));assert.ok(!findings.join(' ').includes('FictionalSecret123'));
  const downloadPromise=page.waitForEvent('download');await exposure.getByRole('button',{name:'Download exposure results',exact:true}).click();const download=await downloadPromise;const exported=JSON.parse(await readFile(await download.path(),'utf8'));assert.ok(exported.findings.length);assert.ok(!JSON.stringify(exported).includes('FictionalSecret123'));
  await exposure.locator('.instagram-panel > summary').click();
  await exposure.getByLabel('My account is',{exact:false}).selectOption('private');
  await exposure.getByLabel('My Instagram username',{exact:true}).fill('fictional_demo_example');
  await exposure.getByLabel('This account is mine.',{exact:false}).check();
- await exposure.getByRole('button',{name:'Request Pop follow',exact:true}).click();await exposure.getByText('Status: queued',{exact:true}).waitFor();
- await exposure.getByRole('button',{name:'Withdraw permission',exact:true}).click();await exposure.getByText('Status: withdrawn',{exact:true}).waitFor();
+ await exposure.getByRole('button',{name:'Request Pop follow',exact:true}).click();await exposure.getByRole('button',{name:'Withdraw permission',exact:true}).waitFor();
+ await exposure.getByRole('button',{name:'Withdraw permission',exact:true}).click();await exposure.getByRole('button',{name:'Withdraw permission',exact:true}).waitFor({state:'hidden'});
  await page.getByRole('button',{name:'Minimize STRIKEOUT / Check Exposure',exact:true}).click();
  await page.getByRole('button',{name:'+ New incident',exact:true}).click();
  await page.getByLabel('Give this incident a short title').fill('Fictional PDF demonstration');await page.getByLabel('Describe what happened').fill('Fictional demonstration only. I want to organise an account incident.');await page.getByRole('button',{name:'Save case & add evidence',exact:true}).click();

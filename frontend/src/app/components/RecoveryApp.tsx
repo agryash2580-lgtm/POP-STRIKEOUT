@@ -534,7 +534,7 @@ export function RecoveryApp() {
                     <IconCases size={48} />
                     <h2>A clean page.</h2>
                     <p>
-                      Create your first case. Unknown facts can stay unknown.
+                      Create your first case.
                     </p>
                   </div>
                 )}
@@ -930,12 +930,7 @@ export function RecoveryApp() {
                             {o.text} <small>{o.evidenceIds.join(", ")}</small>
                           </p>
                         ))}
-                        <h3>What remains unknown</h3>
-                        <ul>
-                          {job.report.unknowns.map((u: string, i: number) => (
-                            <li key={i}>{u}</li>
-                          ))}
-                        </ul>
+
                         <h3>Suggested next steps</h3>
                         {job.report.nextSteps.map((s: any) => (
                           <article key={s.id}>
@@ -1209,9 +1204,7 @@ export function RecoveryApp() {
                     >
                       Instagram recovery ↗
                     </a>
-                    <small>
-                      STRIKEOUT expert booking is not connected yet.
-                    </small>
+
                   </article>
                   <article>
                     <strong>Reporting assistance</strong>
@@ -1230,18 +1223,7 @@ export function RecoveryApp() {
                       Official cybercrime portal ↗
                     </a>
                   </article>
-                  <article>
-                    <strong>Emotional support</strong>
-                    <p>
-                      Take a break from the screen, contact someone you trust,
-                      or speak to a qualified counsellor. You choose what
-                      support feels useful.
-                    </p>
-                    <small>
-                      Therapist matching and appointment booking are not
-                      connected yet.
-                    </small>
-                  </article>
+
                   <article>
                     <strong>Pop, for everyday browsing</strong>
                     <p>
@@ -1255,17 +1237,7 @@ export function RecoveryApp() {
                       Firefox / Zen download ↓
                     </a>
                   </article>
-                  <article>
-                    <strong>Digital footprint assessment</strong>
-                    <p>
-                      Review your own public search references and password
-                      breach exposure.
-                    </p>
-                    <small>
-                      Use Check exposure in the sidebar. Provider availability
-                      is shown honestly.
-                    </small>
-                  </article>
+
                 </div>
               </>
             )}
@@ -1276,7 +1248,7 @@ export function RecoveryApp() {
                 <ExtensionSettings />
                 <section>
                   <h2>Report email</h2>
-                  <p>
+                  <p className="quiet-status-copy">
                     {caps.emailConfigured
                       ? "Verify an address before opting in to report delivery."
                       : "Email service is not configured. Report downloads still work."}

@@ -19,8 +19,8 @@ function BotChat({ kind, title }: { kind: string; title: string }) {
   }
   return <section aria-label={title} className="step-card">
     <h2>{title}</h2>
-    <p>{kind === "emotional_support" ? "AI emotional support, not a therapist or emergency service. In immediate danger, contact local emergency services or someone you trust." : "General defensive guidance. This assistant cannot inspect accounts, verify a breach or perform recovery actions."}</p>
-    <p>Only messages in this chat are shared with Google. Cases and attachments are not included. These two chats have separate histories and are cleared when you leave this screen. AI can make mistakes.</p>
+    <p>{kind === "emotional_support" ? "AI emotional support for coping with stressful online incidents." : "Guidance for account recovery, phishing, evidence preservation and online safety."}</p>
+    <p>Your messages are shared with Google after approval. Each chat stays separate and clears when you leave this screen.</p>
     <div role="log" aria-label={`${title} conversation`} aria-live="polite">{messages.map((m, i) => <p key={i} style={{ whiteSpace: "pre-wrap" }}><strong>{m.role === "user" ? "You" : title}: </strong>{m.text}</p>)}</div>
     <form onSubmit={send}>
       <label className="check"><input type="checkbox" checked={approved} onChange={e => setApproved(e.target.checked)} disabled={busy} />I approve sharing this chat with Google.</label>
@@ -31,7 +31,8 @@ function BotChat({ kind, title }: { kind: string; title: string }) {
     </form>
     {kind === "cybersecurity" && <p><a href="tel:1930">Call cybercrime helpline 1930</a><br /><small>India · Report online financial fraud.</small></p>}
     {kind === "cybersecurity" && <p><a href="https://cybercrime.gov.in/" target="_blank" rel="noopener noreferrer">Open National Cyber Crime Reporting Portal ↗</a><br /><small>Opens the government portal in a new tab.</small></p>}
-    {kind === "emotional_support" && <p><a href="https://trytherabot.com/" target="_blank" rel="noopener noreferrer">Open Therabot ↗</a><br /><small>External service with its own privacy terms. This opens Therabot separately; your Strikeout chat is not transferred. Our assistant is powered by Google, not Therabot.</small></p>}
+    {kind === "emotional_support" && <p><a href="https://www.uplife.in/" target="_blank" rel="noopener noreferrer">Explore UpLife counselling ↗</a></p>}
+    {kind === "emotional_support" && <p><a href="https://trytherabot.com/" target="_blank" rel="noopener noreferrer">Open Therabot ↗</a><br /><small>External support · Opens in a new tab.</small></p>}
   </section>;
 }
 export function SpecialistBots() { return <div><BotChat kind="cybersecurity" title="Cybersecurity assistant" /><BotChat kind="emotional_support" title="Emotional-support assistant" /></div>; }

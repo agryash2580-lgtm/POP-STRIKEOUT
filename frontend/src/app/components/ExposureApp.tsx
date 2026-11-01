@@ -193,7 +193,7 @@ function ExposureTools() {
     <>
       <span className="eyebrow">REVERSE OSINT / YOUR OWN INFORMATION</span>
       <h1>See what is exposed.</h1>
-      <p>
+      <p className="quiet-status-copy">
         Real checks from the integrated OSINT backend. Review possible matches
         before drawing conclusions.
       </p>
@@ -467,52 +467,8 @@ function ExposureTools() {
           >
             Download exposure results
           </button>
-          <h2>
-            {result.status === "incomplete"
-              ? "Some sources could not be checked"
-              : "Check completed"}
-          </h2>
+          <h2>Exposure results</h2>
           <RiskSummary summary={result.riskSummary} />
-          {typeof result.coverage === "string" && <p>{result.coverage}</p>}
-          {Array.isArray(result.coverage) && (
-            <div className="mini-note">
-              {result.coverage.map((c: any, i: number) => (
-                <p key={i}>
-                  <strong>
-                    {(
-                      {
-                        github_public: "GitHub public references",
-                        brave: "Web search",
-                        hibp: "Email breach records",
-                        local: "Local checks",
-                      } as any
-                    )[c.provider] || c.provider}
-                    :{" "}
-                    {(
-                      {
-                        completed: "Checked",
-                        rate_limited: "Temporarily rate-limited",
-                        network_error: "Connection failed",
-                        timeout: "Timed out",
-                        provider_error: "Provider unavailable",
-                        not_configured: "Not configured",
-                        partial: "Partial results",
-                      } as any
-                    )[c.status] || c.status}
-                  </strong>
-                  <br />
-                  {c.scope}
-                  {c.message && <p role="status">{c.message}</p>}
-                </p>
-              ))}
-            </div>
-          )}
-          {result.coverage && result.status === "incomplete" && (
-            <p className="error">
-              One or more provider checks were incomplete. This is not a
-              complete exposure assessment.
-            </p>
-          )}
           {result.status === "incomplete" && (
             <button
               disabled={busy}
@@ -520,29 +476,6 @@ function ExposureTools() {
             >
               Retry exposure check
             </button>
-          )}
-          {result.coverage
-            ? null
-            : (result.checks || []).map((c: any, i: number) => (
-                <p key={i}>
-                  {c.provider}: {c.status}
-                </p>
-              ))}
-          {result.coverage
-            ? null
-            : result.coverage === undefined &&
-              result.kind === "supplied_content_review" && (
-                <p>
-                  {result.documentsReviewed} document(s) reviewed. Supplied text
-                  only; no external requests.
-                </p>
-              )}
-          {!!result.findings?.length && (
-            <p>
-              Results ranked by potential severity: critical, high, medium, low;
-              stronger evidence breaks ties. Severity is a review priority, not
-              proof of harm.
-            </p>
           )}
           {(result.findings || []).map((f: any, i: number) => (
             <article className="step-card" key={f.id || i}>
@@ -553,14 +486,7 @@ function ExposureTools() {
               </strong>
               <p>{f.snippet || f.evidence || f.dataClasses?.join(", ")}</p>
               {f.priorityReason && (
-                <p>
-                  <strong>
-                    {f.severity
-                      ? f.severity.charAt(0).toUpperCase() + f.severity.slice(1)
-                      : "Review"}
-                  </strong>
-                  : {f.priorityReason}
-                </p>
+                <p><strong>{f.severity ? f.severity.charAt(0).toUpperCase() + f.severity.slice(1) : "Review"}</strong></p>
               )}
               {f.providers?.length > 0 && (
                 <small>Found by: {f.providers.join(", ")}</small>
@@ -584,23 +510,8 @@ function ExposureTools() {
                   Document {f.document}, line {f.line}.{" "}
                 </small>
               )}
-              <small>
-                {f.confidence?.replaceAll("_", " ") ||
-                  "Review this possible match."}
-              </small>
+
             </article>
-          ))}
-          {!result.findings?.length && (
-            <p>
-              {result.status === "incomplete"
-                ? "No confirmed findings returned; some checks failed or were partial."
-                : "No findings returned within the stated coverage. This is not proof of no exposure."}
-            </p>
-          )}
-          {(result.limitations || []).map((s: string, i: number) => (
-            <p key={i}>
-              <small>{s}</small>
-            </p>
           ))}
         </>
       )}
