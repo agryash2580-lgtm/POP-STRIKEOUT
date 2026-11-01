@@ -1,0 +1,13 @@
+# AI grounding controls
+
+Reports and saved-report help now use extractive guidance. Model text is rejected with a retryable error when it does not equal one whole cited source excerpt (apart from whitespace). A valid citation ID alone is insufficient. Observations must equal whole selected evidence notes with the correct evidence IDs. Attachments can still be shared by explicit consent, but observations cannot introduce unsupported interpretations of their contents.
+
+The server builds the summary and complaint from the supplied description, incident date and requested help, labels them user-reported/unsubmitted, assigns service titles from the product catalogue, and supplies fixed limitations. Generated narrative, titles and unknowns are not rendered. This sacrifices free-form synthesis to limit unsupported additions. Conflicting sources are not automatically reconciled; original sources still require user review.
+
+Saved-report guidance is restricted to unfinished saved steps with matching source IDs; summaries can quote the saved summary or cited source excerpts. Unsupported requests can return an explicit insufficient-evidence response. No new research is implied.
+
+Pop has no retrieval, page-reading or action tools. Gemini selects a response ID from a reviewed catalogue; the server renders the corresponding guidance. Free text, invented IDs, extra fields and truncated responses are rejected. This deliberately limits conversational flexibility; the model can still select an irrelevant response.
+
+Search-grounding excerpts are text supplied through Gemini grounding metadata, not independently fetched verbatim source documents. Bundled references retain their existing not-live-researched label. Exact matching prevents additional unsupported output, but does not prove source truth, resolve contradictions, verify user statements, or eliminate all hallucinations. No second model is treated as a truth oracle.
+
+Verification: tests/ai-grounding.test.mjs covers citation laundering, missing evidence, wrong-source quotes, invented outcomes, completed steps and abstention. The existing report adapter and authenticated Pop tests cover provider integration, rejection of extra claims, invalid JSON and truncated responses with synthetic provider responses. Live Gemini quality and live source accuracy require separate evaluation.
