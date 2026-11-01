@@ -72,3 +72,7 @@ A search engine cannot cover the entire internet. The OSINT teammate is responsi
 For the complete code map read CODE-GUIDE.md. For the extension read docs/POP-EXTENSION-EXPLAINED.md and extension/README.md. Report-grounding behavior is explained separately in AI-GROUNDING.md.
 
 For local MFA key generation, run `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"` and put the result only in your own .env.local. For local Google sign-in, register `http://localhost:3002/api/auth/google/callback` in the Google client and use it as your local redirect. These local values must not replace the deployed project settings.
+
+## GitHub deployment
+
+The existing Vercel project is connected to agryash2580-lgtm/POP-STRIKEOUT. The production branch is main and the live address remains https://strikeout-mu20.vercel.app. Vercel builds the repository source; extension ZIPs are downloadable assets, not the source of the website. Keep project secrets in Vercel Environment Variables. Merge reviewed changes into main and check the Vercel deployment result before presenting.
