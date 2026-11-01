@@ -77,15 +77,11 @@ For AI, the STRIKEOUT server needs `GEMINI_API_KEY` in its environment. An optio
 the server, never inside an extension file. Provider access and quotas are not
 bundled with this ZIP.
 
-1. In Pop Settings, keep the hosted STRIKEOUT address or save
-   `http://localhost:3002` for development. Approve access to that server.
-2. Choose **Open STRIKEOUT to get a pairing code**. Generate the code. This uses
-   your website session or creates a guest workspace.
-3. Paste the one-use code into Pop Settings and choose **Connect Pop**. Codes
-   expire in five minutes. Chat access expires in seven days.
-4. Enable AI chat after reading its disclosure. Firefox may also show its native
-   data-transmission permission request.
-5. Chat opens in an extension-owned window, outside the website's own page.
+1. Sign in on the hosted STRIKEOUT website. Open Cases & Reports > Delivery & Pop.
+2. Choose Connect installed Pop. Add your watchlist once and save preferences.
+3. Choose Pair Pop AI with my account. The website exchanges its one-use pairing code through the restricted extension bridge; you do not paste a secret into source code. Pairing expires after seven days and can be revoked.
+4. Enable AI chat after reading its disclosure. Firefox may show its native optional data-transmission permission screen.
+5. Open Chat from Pop's right-click menu. It shares the website account's saved conversation and reviewed case context. The chat window belongs to the extension and does not read an arbitrary webpage automatically.
 
 Each request includes your typed message, up to eight recent conversation messages,
 and an address only if you deliberately supplied one. The watchlist, screenshots,
