@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGemini, officialURL, researchURL } from '../api/report-ai.mjs';
+import { createGemini, officialURL, researchURL, validateReport } from '../api/report-ai.mjs';
 import { newCase } from '../api/reporting-core.mjs';
 
 test('research quota fallback identifies the cause without pretending to retrieve sources', async () => {
@@ -58,4 +58,14 @@ test('quota failure can retrieve current publisher text without calling it Googl
   assert.equal(research.sources[0].kind,'security_vendor');
   assert.match(research.limitation,/No fresh Google Search results/);
   assert.equal(requests.length,2);
+});
+
+test('report selection inserts stored excerpts and evidence instead of model paraphrases', () => {
+  const snapshot={details:{description:'Fictional account incident.'},evidence:[{id:'E1',note:'A fictional selected evidence note.'}]};
+  const research={sources:[{id:'S1',excerpts:['Use the official recovery flow.']}]};
+  const value={summary:'',complaintDraft:'',unknowns:[],observations:[{evidenceIds:['E1']}],nextSteps:[{id:'step1',serviceId:'reporting',sourceIds:['S1'],excerptIndex:0,detail:'Invented model paraphrase'}]};
+  const result=validateReport(value,snapshot,research);
+  assert.equal(result.nextSteps[0].detail,research.sources[0].excerpts[0]);
+  assert.equal(result.observations[0].text,snapshot.evidence[0].note);
+  assert.throws(()=>validateReport({...value,nextSteps:[{...value.nextSteps[0],excerptIndex:99}]},snapshot,research),/invalid source excerpt/);
 });

@@ -44,7 +44,7 @@ test('Pop only renders reviewed responses: free text, invented IDs and extra cla
 
 test('provider adapter rejects research URLs without grounded text and unsupported generated report claims',async()=>{
  const ungrounded = createGemini({env:{GEMINI_API_KEY:'test'},fetcher:async()=>Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:'Invented recovery guarantee'}]},groundingMetadata:{groundingChunks:[{web:{uri:'https://support.google.com/accounts/'}}]}}]})});
- await assert.rejects(()=>ungrounded.research({category:'account_takeover',platform:'Google'}),/usable official sources/);
+ await assert.rejects(()=>ungrounded.research({category:'account_takeover',platform:'Google'}),/usable official or approved security-provider sources/);
  await assert.rejects(()=>mockAI({...report,nextSteps:[{...report.nextSteps[0],detail:'The money was refunded.'}]}).write(snapshot,research),/unsupported guidance/);
 });
 

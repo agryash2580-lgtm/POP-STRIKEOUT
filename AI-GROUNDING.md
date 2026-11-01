@@ -16,6 +16,12 @@ description or identifier is sent to the publisher.
 
 Reports and saved-report help now use extractive guidance. Model text is rejected with a retryable error when it does not equal one whole cited source excerpt (apart from whitespace). A valid citation ID alone is insufficient. Observations must equal whole selected evidence notes with the correct evidence IDs. Attachments can still be shared by explicit consent, but observations cannot introduce unsupported interpretations of their contents.
 
+New report generation asks Gemini for a source ID and zero-based excerpt index,
+not a rewritten detail paragraph. The server validates those selectors and inserts
+the stored text. Evidence observations similarly select one reviewed evidence ID;
+the server inserts its note. Older text-bearing responses still pass the exact-text
+checks above. Model paraphrases are never rendered merely because a citation exists.
+
 The server builds the summary and complaint from the supplied description, incident date and requested help, labels them user-reported/unsubmitted, assigns service titles from the product catalogue, and supplies fixed limitations. Generated narrative, titles and unknowns are not rendered. This sacrifices free-form synthesis to limit unsupported additions. Conflicting sources are not automatically reconciled; original sources still require user review.
 
 Saved-report guidance is restricted to unfinished saved steps with matching source IDs; summaries can quote the saved summary or cited source excerpts. Unsupported requests can return an explicit insufficient-evidence response. No new research is implied.
