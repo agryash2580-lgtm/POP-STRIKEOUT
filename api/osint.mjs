@@ -4,7 +4,13 @@ import { reviewDocuments } from "./osint/documents.mjs";
 import { reverseImage } from "./osint/images.mjs";
 import { runDorks, dorkTemplates } from "./osint/dorks.mjs";
 import { flagReport, assessLinks } from "./osint/link-risk.mjs";
-export function osintRouter({ user, guarded, limited, imageOptions, searchOptions }) {
+export function osintRouter({
+  user,
+  guarded,
+  limited,
+  imageOptions,
+  searchOptions,
+}) {
   const router = express.Router();
   router.use(
     guarded(async (req, res, next) => {
@@ -23,10 +29,21 @@ export function osintRouter({ user, guarded, limited, imageOptions, searchOption
         pwned_passwords: true,
         google_lens: true,
         serpapi: !!process.env.SERPAPI_API_KEY,
+        serpapi_google: !!process.env.SERPAPI_API_KEY,
+        serpapi_bing: !!process.env.SERPAPI_API_KEY,
+        serpapi_duckduckgo: !!process.env.SERPAPI_API_KEY,
       },
-      linkFlagging: { enabled: true, method: "local_url_rules", threatFeedConfigured: false },
+      linkFlagging: {
+        enabled: true,
+        method: "local_url_rules",
+        threatFeedConfigured: false,
+      },
       dorkTemplates,
-      imageLookup: { automatic: !!process.env.SERPAPI_API_KEY, handoff: "google_lens", publicImageUrlOnly: true },
+      imageLookup: {
+        automatic: !!process.env.SERPAPI_API_KEY,
+        handoff: "google_lens",
+        publicImageUrlOnly: true,
+      },
       privateContentScanning: false,
       instagramBotConfigured: false,
       keylessCoverage:
@@ -62,8 +79,17 @@ export function osintRouter({ user, guarded, limited, imageOptions, searchOption
     "/passwords/range",
     handle((body) => runPasswordRange(body)),
   );
-  router.post("/images/reverse", handle((body) => reverseImage(body, imageOptions)));
-  router.post("/dorks", handle((body) => runDorks(body, searchOptions)));
-  router.post("/links/assess", handle((body) => assessLinks(body)));
+  router.post(
+    "/images/reverse",
+    handle((body) => reverseImage(body, imageOptions)),
+  );
+  router.post(
+    "/dorks",
+    handle((body) => runDorks(body, searchOptions)),
+  );
+  router.post(
+    "/links/assess",
+    handle((body) => assessLinks(body)),
+  );
   return router;
 }

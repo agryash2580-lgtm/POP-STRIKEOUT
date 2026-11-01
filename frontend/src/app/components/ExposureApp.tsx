@@ -28,6 +28,7 @@ export function ExposureApp() {
     [documentText, setDocumentText] = useState(""),
     [source, setSource] = useState(""),
     [consent, setConsent] = useState(false),
+    [webEnabled, setWebEnabled] = useState(true),
     [caps, setCaps] = useState<any>(null),
     [result, setResult] = useState<any>(null),
     [error, setError] = useState(""),
@@ -134,6 +135,11 @@ export function ExposureApp() {
                 ? { fullName: name, ...(employer ? { employer } : {}) }
                 : { profileUrl: value, ...(name ? { fullName: name } : {}) };
       const providers = ["github_public"];
+      if (webEnabled)
+        for (const engine of ["google", "bing", "duckduckgo"]) {
+          if (caps?.providers?.["serpapi_" + engine])
+            providers.push("serpapi_" + engine);
+        }
       if (caps?.providers?.brave) providers.push("brave");
       if (service === "email" && caps?.providers?.hibp) providers.push("hibp");
       setResult(
@@ -160,8 +166,9 @@ export function ExposureApp() {
       <div className="mini-note">
         <strong>No-key checks are available.</strong>
         <p>
-          Public-reference searches cover GitHub issues and pull requests, not
-          the whole web. Document review inspects only text you supply. Password
+          Public-reference searches combine Google, Bing and DuckDuckGo when
+          configured, plus GitHub issues and pull requests. No search covers the
+          whole web. Document review inspects only text you supply. Password
           checks use a five-character hash prefix.
         </p>
         {caps && (
@@ -177,6 +184,21 @@ export function ExposureApp() {
       <InstagramPanel />
       <AdvancedExposure capabilities={caps} />
       <form id="tour-exposure-search-well" onSubmit={scan}>
+        {caps?.providers?.serpapi &&
+          !["documents", "password"].includes(service) && (
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={webEnabled}
+                onChange={(e) => {
+                  setWebEnabled(e.target.checked);
+                  setConsent(false);
+                }}
+              />
+              Search Google, Bing and DuckDuckGo through SerpApi (up to six
+              searches). Results may overlap; private content is excluded.
+            </label>
+          )}
         <label>
           Check type
           <select
@@ -308,6 +330,9 @@ export function ExposureApp() {
           service !== "documents" && (
             <p className="mini-note">
               This sends the supplied identifier to GitHub public search
+              {webEnabled && caps?.providers?.serpapi
+                ? ", and Google, Bing and DuckDuckGo through SerpApi"
+                : ""}
               {caps?.providers?.brave ? ", Brave Search" : ""}
               {service === "email" && caps?.providers?.hibp
                 ? " and Have I Been Pwned"
@@ -430,10 +455,23 @@ export function ExposureApp() {
                   String(f.category || "Finding").replaceAll("_", " ")}
               </strong>
               <p>{f.snippet || f.evidence || f.dataClasses?.join(", ")}</p>
-              {(f.url || f.source) && (
-                <ResultLink url={f.url || f.source} assessment={f.linkAssessment} exposure={f.exposureAssessment} />
+              {f.providers?.length > 0 && (
+                <small>Found by: {f.providers.join(", ")}</small>
               )}
-              {!(f.url || f.source) && f.exposureAssessment && <p><strong>{f.exposureAssessment.label}</strong><br /><small>{f.exposureAssessment.reason}</small></p>}
+              {(f.url || f.source) && (
+                <ResultLink
+                  url={f.url || f.source}
+                  assessment={f.linkAssessment}
+                  exposure={f.exposureAssessment}
+                />
+              )}
+              {!(f.url || f.source) && f.exposureAssessment && (
+                <p>
+                  <strong>{f.exposureAssessment.label}</strong>
+                  <br />
+                  <small>{f.exposureAssessment.reason}</small>
+                </p>
+              )}
               {f.line && (
                 <small>
                   Document {f.document}, line {f.line}.{" "}
