@@ -58,7 +58,7 @@ export function cardReview(number) {
     sum += n;
   }
   return {
-    masked: "•••• " + digits.slice(-4),
+    masked: "â€¢â€¢â€¢â€¢ " + digits.slice(-4),
     length: digits.length,
     luhnValid: sum % 10 === 0,
     externalLookup: false,
@@ -308,7 +308,7 @@ export async function runCheck(body, options = {}) {
       "Select an approved provider: github_public works without a key; brave and hibp require optional keys.",
     );
   const seen = new Set();
-  report.findings = prioritizeFindings(report.findings).filter((x) => {
+  report.findings = prioritizeFindings(report.findings, { service }).filter((x) => {
     const key = x.url || x.name;
     if (seen.has(key)) return false;
     seen.add(key);

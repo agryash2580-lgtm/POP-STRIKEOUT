@@ -190,8 +190,8 @@ export function ExposureApp() {
         </p>
         {caps && (
           <small>
-            GitHub public search: enabled · Document review: enabled · Brave web
-            search: {caps.providers?.brave ? "configured" : "not configured"} ·
+            GitHub public search: enabled Â· Document review: enabled Â· Brave web
+            search: {caps.providers?.brave ? "configured" : "not configured"} Â·
             HIBP email breaches:{" "}
             {caps.providers?.hibp ? "configured" : "not configured"}
           </small>
@@ -370,7 +370,7 @@ export function ExposureApp() {
           This is my information and I approve the described check.
         </label>
         <button disabled={!consent || busy}>
-          {busy ? "Checking…" : "Check my exposure"}
+          {busy ? "Checkingâ€¦" : "Check my exposure"}
         </button>
       </form>
       {error && (
@@ -499,7 +499,7 @@ export function ExposureApp() {
                 </p>
               )}
           {!!result.findings?.length && (
-            <p>Results prioritized for review: high priority first, then stronger evidence.</p>
+            <p>Results ranked by potential severity: critical, high, medium, low; stronger evidence breaks ties. Severity is a review priority, not proof of harm.</p>
           )}
           {(result.findings || []).map((f: any, i: number) => (
             <article className="step-card" key={f.id || i}>
@@ -510,11 +510,11 @@ export function ExposureApp() {
               </strong>
               <p>{f.snippet || f.evidence || f.dataClasses?.join(", ")}</p>
               {f.priorityReason && (
-                <p><strong>{f.reviewPriority === "high" ? "High priority" : "Review"}</strong>: {f.priorityReason}</p>
+                <p><strong>{f.severity ? f.severity.charAt(0).toUpperCase() + f.severity.slice(1) : "Review"}</strong>: {f.priorityReason}</p>
               )}
               {(f.url || f.source) && (
                 <a href={f.url || f.source} target="_blank" rel="noreferrer">
-                  Review source ↗
+                  Review source â†—
                 </a>
               )}
               {f.line && (
