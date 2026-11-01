@@ -6,7 +6,7 @@ The exposure gate uses standard six-digit TOTP codes from an authenticator app, 
 
 The operator must configure the existing server-only `MFA_ENCRYPTION_KEY`: a stable base64-encoded 32-byte random secret. Generate it locally with `openssl rand -base64 32`, put it in Vercel's environment settings and redeploy. Never commit it or rotate an existing key casually: existing enrolled MFA secrets require that same key to decrypt. No Twilio account, API token or phone number is required.
 
-Users sign in with a permanent account, open Check Exposure and set up their authenticator using the embedded Account security panel. Scan the QR code or enter the private setup key in a TOTP app, confirm setup and save the one-use recovery codes. Click “I finished setup — refresh verification”, then enter a fresh code to unlock checks. A code already consumed for setup/sign-in cannot be reused; wait for the next 30-second code.
+Users sign in with a permanent account, open Check Exposure and set up their authenticator using the embedded Account security panel. Scan the QR code or enter the private setup key in a TOTP app, confirm setup and save the one-use recovery codes. After enabling MFA, save the recovery codes and click “I saved them”; the verification form opens automatically. “Check setup progress” explains unfinished enrollment instead of silently refreshing. Enter a fresh code to unlock checks. A code already consumed for setup/sign-in cannot be reused; wait for the next 30-second code.
 
 ## Enforcement
 

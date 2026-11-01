@@ -116,3 +116,12 @@ This audit does not certify every possible bug absent. Live provider credentials
 Live testing found the setup request correctly rejected a session older than ten minutes, but global CSS hid the rejection message. The same selectors hid configuration alerts and fresh-code guidance. The UI now keeps errors, alerts and functional help visible, reports whether recent authentication is required, and offers Google reauthentication or instructions to reopen password sign-in. The ten-minute server enrollment check remains enforced.
 
 An old-session HTTP regression confirms status requests reauthentication and setup stays forbidden; a fresh login allows setup. Browser verification confirmed visible guidance and, after re-signing into a disposable local QA account, a rendered QR enrollment form. No user's real authenticator was enrolled or reset during diagnosis.
+
+
+## Final local browser verification
+
+A disposable local account was used; no real user authenticator was changed. The setup-progress action was reproduced without feedback and replaced with a visible explanation of missing enrollment steps. QR setup rendered successfully. The fixture was enrolled through the real local MFA API; browser sign-in then accepted an independently generated current TOTP. Reusing that code for exposure produced a visible rejection; the next real 30-second code unlocked the exposure UI. A document check submitted from that UI returned classified credential/email findings with the fictional secret masked.
+
+The same browser test caught a login-challenge crash caused by setup-only state being referenced in MFAChallenge. That code is removed, and a regression test now renders the actual component, catching the runtime exception that a Vite build alone did not detect. Exposure rejection guidance now requests a fresh six-digit TOTP instead of suggesting recovery codes that the exposure step does not accept.
+
+Screenshots: workspace output/mfa-browser-check/setup-progress.png and verified.png. These show local test results, not a physical authenticator-app test or a production guarantee.

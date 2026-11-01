@@ -52,8 +52,18 @@ export function authenticatorAuthService({
       );
     if (typeof req.body?.code !== "string" || !/^\d{6}$/.test(req.body.code))
       fail(400, "Enter the six-digit code from your authenticator app.");
-    const key = binding(req),
+    const key = binding(req);
+    let account;
+    try {
       account = await consume(req.osintUser.id, req.body.code);
+    } catch (error) {
+      if (error.status === 401)
+        fail(
+          401,
+          "Code invalid or already used. Wait for the next six-digit code from your authenticator app.",
+        );
+      throw error;
+    }
     await store.write(key, {
       version: account.version,
       expires: now() + 1800000,
