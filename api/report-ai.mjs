@@ -234,8 +234,10 @@ export function validateReport(value, snapshot, research) {
         typeof s.id !== "string" ||
         !/^[a-z0-9_-]{1,60}$/.test(s.id) ||
         seen.has(s.id)
-      )
-        s.id = "step_" + (index + 1);
+      ) {
+        let suffix = index + 1;
+        do { s.id = "step_" + suffix++; } while (seen.has(s.id));
+      }
       seen.add(s.id);
       const refs = validateReferences(s.sourceIds, sourceIds, "source");
       if (!refs.length) fail(502, "A next step is missing its source.");
