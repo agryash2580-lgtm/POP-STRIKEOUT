@@ -1,3 +1,4 @@
+import { prioritizeFindings } from "./prioritize.mjs";
 import { luhn, redactEvidence } from "./redact.mjs";
 const invalid = (message) => Object.assign(Error(message), { status: 400 });
 function safeUrl(value) {
@@ -185,5 +186,6 @@ export function reviewDocuments(body) {
         });
     }
   });
+  report.findings = prioritizeFindings(report.findings);
   return report;
 }

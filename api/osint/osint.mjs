@@ -1,3 +1,4 @@
+import { prioritizeFindings } from "./prioritize.mjs";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import {
   webSearch,
@@ -307,7 +308,7 @@ export async function runCheck(body, options = {}) {
       "Select an approved provider: github_public works without a key; brave and hibp require optional keys.",
     );
   const seen = new Set();
-  report.findings = report.findings.filter((x) => {
+  report.findings = prioritizeFindings(report.findings).filter((x) => {
     const key = x.url || x.name;
     if (seen.has(key)) return false;
     seen.add(key);

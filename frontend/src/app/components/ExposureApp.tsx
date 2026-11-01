@@ -498,6 +498,9 @@ export function ExposureApp() {
                   only; no external requests.
                 </p>
               )}
+          {!!result.findings?.length && (
+            <p>Results prioritized for review: high priority first, then stronger evidence.</p>
+          )}
           {(result.findings || []).map((f: any, i: number) => (
             <article className="step-card" key={f.id || i}>
               <strong>
@@ -506,6 +509,9 @@ export function ExposureApp() {
                   String(f.category || "Finding").replaceAll("_", " ")}
               </strong>
               <p>{f.snippet || f.evidence || f.dataClasses?.join(", ")}</p>
+              {f.priorityReason && (
+                <p><strong>{f.reviewPriority === "high" ? "High priority" : "Review"}</strong>: {f.priorityReason}</p>
+              )}
               {(f.url || f.source) && (
                 <a href={f.url || f.source} target="_blank" rel="noreferrer">
                   Review source ↗
