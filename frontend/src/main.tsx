@@ -3,5 +3,9 @@
   import App from "./app/App.tsx";
   import "./styles/index.css";
 
-  createRoot(document.getElementById("root")!).render(<App />);
+  if (new URLSearchParams(location.search).has("pop-settings")) {
+    location.replace("/pop-settings.html");
+  } else {
+    createRoot(document.getElementById("root")!).render(<App />);
+  }
   
