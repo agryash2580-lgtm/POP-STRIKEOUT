@@ -13,7 +13,7 @@ try{
  if(process.env.PDF_TEST_FILE){await exposure.locator('input[type=file]').setInputFiles(process.env.PDF_TEST_FILE);await page.waitForFunction(()=>document.querySelector('.exposure-window textarea')?.value.length>100||document.querySelector('.exposure-window .error'));assert.ok((await exposure.getByLabel('Document text',{exact:true}).inputValue()).length>100,(await exposure.locator('.error').allTextContents()).join(' '));console.log('PASS: real PDF text extraction with the bundled local worker.');}
  await exposure.getByLabel('Document text',{exact:true}).fill('Fictional document: demo@example.org. password=FictionalSecret123. Employee badge: Demo Person.');
  await exposure.getByLabel('Your emails to find', {exact:false}).fill('demo@example.org');
- await exposure.getByLabel('This is my information',{exact:false}).check();
+ await exposure.locator('#tour-exposure-search-well').getByRole('checkbox').check();
  await exposure.getByRole('button',{name:'Check my exposure',exact:true}).click();
  await exposure.getByRole('heading',{name:'Exposure results',exact:true}).waitFor();
  const findings=await exposure.locator('.step-card').allTextContents();assert.ok(findings.some(x=>x.includes('email')));assert.ok(!findings.join(' ').includes('FictionalSecret123'));

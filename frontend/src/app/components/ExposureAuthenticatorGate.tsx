@@ -54,18 +54,21 @@ export function ExposureAuthenticatorGate({
     void refresh();
     const timer = setInterval(() => setClock(Date.now()), 1000),
       status = setInterval(refresh, 30000);
+    const securityChanged = () => { generation.current++; setCode(""); setBusy(false); void refresh(); };
     window.addEventListener("strikeout-auth-changed", changed);
+    window.addEventListener("strikeout-mfa-changed", securityChanged);
     return () => {
       generation.current++;
       clearInterval(timer);
       clearInterval(status);
       window.removeEventListener("strikeout-auth-changed", changed);
+      window.removeEventListener("strikeout-mfa-changed", securityChanged);
     };
   }, []);
   const verified = state?.verified && state.verifiedUntil > clock;
   return (
     <>
-      <section className="mini-note">
+      <section className="mini-note exposure-auth-gate">
         <h2>
           {verified ? "Authenticator verified" : "Verify to check exposure"}
         </h2>
@@ -97,7 +100,7 @@ export function ExposureAuthenticatorGate({
           <>
             {(!state.enabled || showSetup) && (
               <>
-                <AccountSecurity />
+                <AccountSecurity onSetupComplete={() => { setShowSetup(false); void refresh(); }} />
                 <button
                   type="button"
                   onClick={() => {

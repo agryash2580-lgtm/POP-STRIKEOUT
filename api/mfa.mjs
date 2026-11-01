@@ -159,7 +159,7 @@ export function installMFA(app, { user, guarded, limited, issueSession }) {
       const s = await securityState(p.userId);
       if (s.version !== p.version)
         fail(401, "Your security settings changed. Sign in again.");
-      await verifyMfaCode(p.userId, req.body.code);
+      await verifyMfaCode(p.userId, req.body?.code);
       await remove(p.key);
       res.clearCookie(cookieName, cookieOptions());
       await issueSession(res, p.userId, s.version);
@@ -173,7 +173,7 @@ export function installMFA(app, { user, guarded, limited, issueSession }) {
         s = await securityState(owner.id);
       res.json({
         enabled: !!s.enabled,
-        configured: !!process.env.MFA_ENCRYPTION_KEY,
+        configured: mfaConfigured(),
         recoveryRemaining: s.recoveryHashes?.length || 0,
         sso: owner.authProvider === "google",
       });
@@ -223,7 +223,7 @@ export function installMFA(app, { user, guarded, limited, issueSession }) {
         fail(400, "Setup expired. Start again.");
       const old = await securityState(owner.id);
       if (old.enabled) fail(409, "MFA is already enabled.");
-      const code = String(req.body.code || "").trim();
+      const code = String(req.body?.code || "").trim();
       const delta = authenticator(decrypt(enrollment.secret)).validate({
         token: code,
         window: 1,
@@ -258,7 +258,7 @@ export function installMFA(app, { user, guarded, limited, issueSession }) {
     guarded(async (req, res) => {
       const owner = await user(req);
       limited({ ip: owner.id, headers: {} }, "mfa-disable", 6);
-      await verifyMfaCode(owner.id, req.body.code);
+      await verifyMfaCode(owner.id, req.body?.code);
       const s = await securityState(owner.id);
       await write(
         securityKey(owner.id),
