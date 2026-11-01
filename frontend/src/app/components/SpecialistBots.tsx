@@ -29,7 +29,8 @@ function BotChat({ kind, title }: { kind: string; title: string }) {
       <button type="button" onClick={clear}>Clear {title} chat</button>
       {error && <p role="alert" className="error">{error}</p>}
     </form>
-    {kind === "cybersecurity" && <p><a href="https://cybercrime.gov.in/" target="_blank" rel="noopener noreferrer">Open National Cyber Crime Reporting Portal ↗</a><br /><small>Submit your complaint yourself on the portal. Preparing a Strikeout draft or emailing your report does not file a government complaint or email an authority. No chat or case details are transferred by this link.</small></p>}
+    {kind === "cybersecurity" && <p><a href="tel:1930">Call cybercrime helpline 1930</a><br /><small>India · Report online financial fraud.</small></p>}
+    {kind === "cybersecurity" && <p><a href="https://cybercrime.gov.in/" target="_blank" rel="noopener noreferrer">Open National Cyber Crime Reporting Portal ↗</a><br /><small>Opens the government portal in a new tab.</small></p>}
     {kind === "emotional_support" && <p><a href="https://trytherabot.com/" target="_blank" rel="noopener noreferrer">Open Therabot ↗</a><br /><small>External service with its own privacy terms. This opens Therabot separately; your Strikeout chat is not transferred. Our assistant is powered by Google, not Therabot.</small></p>}
   </section>;
 }
