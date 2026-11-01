@@ -1,4 +1,4 @@
-import { phoneAuthService } from "./osint/phone-auth.mjs";
+import { authenticatorAuthService } from "./osint/authenticator-auth.mjs";
 import express from "express";
 import { runCheck, runPasswordRange } from "./osint/osint.mjs";
 import { reviewDocuments } from "./osint/documents.mjs";
@@ -11,7 +11,7 @@ export function osintRouter({
   limited,
   imageOptions,
   searchOptions,
-  phoneAuth = phoneAuthService(),
+  exposureAuth = authenticatorAuthService(),
 }) {
   const router = express.Router();
   router.use(
@@ -21,22 +21,22 @@ export function osintRouter({
     }),
   );
   router.get(
-    "/phone/status",
-    guarded(async (req, res) => res.json(await phoneAuth.state(req))),
+    "/auth/status",
+    guarded(async (req, res) => res.json(await exposureAuth.state(req))),
   );
   router.post(
-    "/phone/send",
-    guarded(async (req, res) => res.json(await phoneAuth.send(req))),
-  );
-  router.post(
-    "/phone/verify",
-    guarded(async (req, res) => res.json(await phoneAuth.verify(req))),
+    "/auth/verify",
+    guarded(async (req, res) => {
+      limited({ ip: req.osintUser.id, headers: {} }, "exposure-auth", 10);
+      res.json(await exposureAuth.verify(req));
+    }),
   );
   router.get("/capabilities", (req, res) =>
     res.json({
       version: "0.3.0",
       authentication: {
-        phoneOtpRequired: true,
+        phoneOtpRequired: false,
+        authenticatorRequired: true,
         instagramOwnershipRequired: true,
       },
       providers: {
@@ -70,7 +70,7 @@ export function osintRouter({
   );
   const handle = (fn) =>
     guarded(async (req, res) => {
-      await phoneAuth.requireVerified(req);
+      await exposureAuth.requireVerified(req);
       limited({ ip: req.osintUser.id, headers: {} }, "osint", 12);
       try {
         res.json(flagReport(await fn(req.body)));

@@ -15,6 +15,11 @@ const cookieOptions = () => ({
   path: "/api/auth/mfa",
   maxAge: 5 * 60000,
 });
+export function mfaConfigured() {
+  return (
+    Buffer.from(process.env.MFA_ENCRYPTION_KEY || "", "base64").length === 32
+  );
+}
 function encryptionKey() {
   const key = Buffer.from(process.env.MFA_ENCRYPTION_KEY || "", "base64");
   if (key.length !== 32) fail(503, "Authenticator setup is not configured.");
@@ -80,7 +85,7 @@ async function pending(req) {
     ? { ...record, key: "mfa_challenges/" + hash(token) }
     : null;
 }
-async function consumeCode(id, code) {
+export async function verifyMfaCode(id, code) {
   const s = await securityState(id);
   if (!s.enabled) fail(409, "MFA settings changed. Sign in again.");
   if (s.lockedUntil > Date.now())
@@ -154,7 +159,7 @@ export function installMFA(app, { user, guarded, limited, issueSession }) {
       const s = await securityState(p.userId);
       if (s.version !== p.version)
         fail(401, "Your security settings changed. Sign in again.");
-      await consumeCode(p.userId, req.body.code);
+      await verifyMfaCode(p.userId, req.body.code);
       await remove(p.key);
       res.clearCookie(cookieName, cookieOptions());
       await issueSession(res, p.userId, s.version);
@@ -253,7 +258,7 @@ export function installMFA(app, { user, guarded, limited, issueSession }) {
     guarded(async (req, res) => {
       const owner = await user(req);
       limited({ ip: owner.id, headers: {} }, "mfa-disable", 6);
-      await consumeCode(owner.id, req.body.code);
+      await verifyMfaCode(owner.id, req.body.code);
       const s = await securityState(owner.id);
       await write(
         securityKey(owner.id),
