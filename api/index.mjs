@@ -666,10 +666,10 @@ app.post(
   guarded(async (req, res) => {
     limited(req, "ai", 6);
     await user(req);
-    if (!process.env.GEMINI_API_KEY)
-      fail(503, "Pop’s AI wording is unavailable. All core tools still work.");
     if (req.body.approved !== true)
       fail(400, "Review the context before asking Pop.");
+    if (!process.env.GEMINI_API_KEY)
+      fail(503, "Pop’s AI wording is unavailable. All core tools still work.");
     const context = String(req.body.context || "").slice(0, 6000),
       task = String(req.body.task || "Explain my next step").slice(0, 300);
     const model = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";

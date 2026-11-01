@@ -52,3 +52,9 @@ test('extracting a substring cannot drop negation and reverse guidance',()=>{
  const malicious={...report,nextSteps:[{...report.nextSteps[0],detail:'Share recovery codes.'}]};
  assert.throws(()=>validateReport(malicious,snapshot,{sources:[{id:'S1',excerpts:['Never Share recovery codes.']}]}),/unsupported guidance/);
 });
+
+test('fallback report step IDs remain unique and preserve independent progress',()=>{
+ const steps=['step_2','INVALID ID','step_2','step_4','INVALID ID'].map(id=>({...report.nextSteps[0],id}));
+ const result=validateReport({...report,nextSteps:steps},snapshot,research);
+ assert.equal(new Set(result.nextSteps.map(s=>s.id)).size,steps.length);
+});

@@ -1857,7 +1857,7 @@ export default function App() {
         isMobile={isMobile}
       >
         <GetPopApp
-          onSummonPet={() => setPopPetOpen(true)}
+          onSummonPet={() => { setTutorialOpen(false); setPopPetOpen(true); }}
           onStartTutorial={() => setTutorialOpen(true)}
           onOpenSimulator={() => openWindow("extsim")}
         />
