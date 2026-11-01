@@ -7,7 +7,6 @@ import {
 import { createReportsClient } from "../../../../shared/reports-client.js";
 import "./recovery.css";
 import { ExtensionSettings } from "./ExtensionSettings";
-import { ExposureApp } from "./ExposureApp";
 
 const casesAPI = createReportingClient();
 const reportsAPI = createReportsClient();
@@ -70,11 +69,7 @@ export function RecoveryApp() {
   const [items, setItems] = useState<any[]>([]),
     [current, setCurrent] = useState<any>(null),
     [tab, setTab] = useState(
-      location.search.includes("pop-settings")
-        ? "settings"
-        : location.pathname === "/exposure"
-          ? "exposure"
-          : "home",
+      location.search.includes("pop-settings") ? "settings" : "home",
     );
   const [form, setForm] = useState<any>(blank),
     [job, setJob] = useState<any>(null),
@@ -1097,7 +1092,6 @@ export function RecoveryApp() {
               </p>
             </>
           )}
-          {tab === "exposure" && <ExposureApp />}
           {tab === "services" && (
             <>
               <span className="eyebrow">THE RIGHT HELP FOR THE MOMENT</span>

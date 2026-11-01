@@ -97,8 +97,10 @@
         await api.runtime.sendMessage({ type: "POP_AI_PERMISSION" });
         result = { opened: true };
       } else if (action === "disconnect") {
-        await api.storage.local.remove(["popToken"]);
-        await api.storage.session.remove(["chatHistory"]);
+        const response = await api.runtime.sendMessage({
+          type: "POP_WEBSITE_DISCONNECT",
+        });
+        if (response?.error) throw Error(response.error);
         await api.storage.local.set({ aiConsent: false });
         result = { saved: true };
       } else if (action === "wake") {

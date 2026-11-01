@@ -31,6 +31,6 @@ export async function documentText(file: File): Promise<string> {
       );
     return text;
   } finally {
-    await pdf.destroy();
+    await task.destroy();
   }
 }

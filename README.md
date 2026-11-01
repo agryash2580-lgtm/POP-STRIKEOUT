@@ -41,6 +41,8 @@ Unzip, then load the Chromium folder at `chrome://extensions` with Developer mod
 ```powershell
 npm test
 node tests/final-desktop.mjs
+node tests/exposure-browser.mjs
+node tests/website-pop.mjs
 npm run test:pop:browser
 npm run build
 npm run package:pop

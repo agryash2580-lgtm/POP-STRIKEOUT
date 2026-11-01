@@ -238,9 +238,9 @@ Presentation sequence: create a fictional incident, add a note, generate a repor
 
 ## 13. Tests and practical limits
 
-`npm test` runs backend/data tests. `node tests/final-desktop.mjs` exercises real desktop signup, case/evidence, complaint export, report consent, exposure navigation and settings. `npm run test:pop:browser` installs temporary Chromium and Firefox extensions and verifies local tools, saved redaction pixels, export and deletion. `npm run check:reports:live` uses a fictional case to check actual Gemini research/writing and PDF generation without sending email.
+`npm test` runs backend/data tests. `node tests/final-desktop.mjs` exercises real desktop signup, case/evidence, complaint export, report consent, exposure navigation and settings. `node tests/website-pop.mjs` verifies the real Chromium website settings bridge, consent, watchlist save, scoped account pairing and disconnect. `npm run test:pop:browser` installs temporary Chromium and Firefox extensions and verifies local tools, saved redaction pixels, export and deletion. `npm run check:reports:live` uses a fictional case to check actual Gemini research/writing and PDF generation without sending email.
 
-Mock-provider tests verify our handling of responses and failures; they do not prove a provider account has quota or a private Instagram login works. Browser tests use temporary profiles rather than altering the user's normal installed extension.
+`node tests/exposure-browser.mjs` additionally checks masked supplied-document results, JSON download, the local Instagram consent queue/withdrawal and an actual downloadable local-report PDF. Set `PDF_TEST_FILE` to a fictional PDF to also test browser-local text extraction. Mock-provider tests verify our handling of responses and failures; they do not prove a provider account has quota or a private Instagram login works. Browser tests use temporary profiles rather than altering the user's normal installed extension.
 
 The current storage and rate limiting suit a hackathon prototype. Limits are process-local rather than distributed. A production service would need operational monitoring, backups, stronger account recovery, delivery webhooks, reviewed retention policies and a database designed for multi-instance transactions. Those are future engineering tasks, not features to claim as completed.
 

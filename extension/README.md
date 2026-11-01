@@ -19,7 +19,7 @@ Chromium means desktop Chrome, Edge, Brave and other compatible Chromium browser
 The toolbar is a compact 220px-wide window, with extra controls under **More**.
 The companion is a fixed 48px square. Speech is a small, temporary overlay and
 cannot change the cat's position. Minimise hides speech and leaves Pop where you
-placed him. Full controls appear only from the browser extension icon. The popup,
+placed him. Left-click the cat to pet him; right-click for tools. The browser extension icon also opens the toolbar. The popup,
 settings, chat and evidence screens share a Windows 98 theme: teal desktop, gray
 bevelled controls, navy title bars and square windows.
 

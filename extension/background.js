@@ -192,6 +192,22 @@ async function chat(message, pageAddress) {
 }
 
 async function handleMessage(message, sender) {
+  if (message.type === "POP_WEBSITE_DISCONNECT") {
+    const settings = await PopAPI.storage.local.get("server");
+    const origin = new URL(sender.url).origin;
+    if (
+      ![
+        settings.server || Pop.defaultServer,
+        "http://localhost:3002",
+        "http://127.0.0.1:3002",
+      ].includes(origin)
+    )
+      throw Error("Use the STRIKEOUT website.");
+    return handleMessage(
+      { type: "POP_DISCONNECT" },
+      { url: PopAPI.runtime.getURL("workspace.html") },
+    );
+  }
   if (message.type === "POP_AI_PERMISSION") {
     const origin = new URL(sender.url).origin;
     const settings = await PopAPI.storage.local.get("server");
@@ -229,6 +245,7 @@ async function handleMessage(message, sender) {
       origin,
     );
     await PopAPI.storage.local.set({ server: origin, popToken: result.token });
+    await PopAPI.storage.session.remove("chatHistory");
     return { ok: true };
   }
   if (message.type === "POP_CAPTURE_SELF") {
@@ -267,14 +284,18 @@ async function handleMessage(message, sender) {
         code: message.code,
       });
       await PopAPI.storage.local.set({ popToken: result.token });
+      await PopAPI.storage.session.remove("chatHistory");
       return { ok: true };
     }
     case "POP_DISCONNECT": {
       const settings = await PopAPI.storage.local.get("popToken");
-      if (settings.popToken)
-        await serverRequest("/api/pop/disconnect", {}, settings.popToken);
-      await PopAPI.storage.local.remove("popToken");
-      await PopAPI.storage.session.remove("chatHistory");
+      try {
+        if (settings.popToken)
+          await serverRequest("/api/pop/disconnect", {}, settings.popToken);
+      } finally {
+        await PopAPI.storage.local.remove("popToken");
+        await PopAPI.storage.session.remove("chatHistory");
+      }
       return { ok: true };
     }
     case "POP_CHAT":

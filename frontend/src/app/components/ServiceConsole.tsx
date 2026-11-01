@@ -1,3 +1,88 @@
-import React,{useState} from 'react';
-export function IconTerminal({size=32}:{size?:number}){return <svg width={size} height={size} viewBox="0 0 32 32"><path d="M2 4h28v22H2z" fill="#bbb" stroke="black"/><path d="M5 7h22v16H5z" fill="#001610"/><path d="m8 11 4 3-4 3m6 0h7" stroke="#00ef80" fill="none"/><path d="M10 26h12v3H10z" fill="#888"/></svg>}
-export function TerminalApp({onClose,onOpenPop}:any){const [input,setInput]=useState(''),[lines,setLines]=useState(['STRIKEOUT / Service console','Commands: help, health, pop, cases, clear, exit.']);async function execute(e:any){e.preventDefault();const command=input.trim().toLowerCase();setInput('');let output='Unknown command. Type help.';if(command==='clear'){setLines([]);return;}if(command==='help')output='health: check actual backend | cases: open workspace | pop: summon companion | exit: close';if(command==='health'){try{const r=await fetch('/api/health');output=JSON.stringify(await r.json(),null,2);}catch{output='Backend unreachable.';}}if(command==='pop'){onOpenPop();output='Pop summoned.';}if(command==='cases'){window.dispatchEvent(new CustomEvent('strikeout-open',{detail:{section:'cases'}}));output='Opening private workspace.';}if(command==='exit'){onClose();return;}setLines(v=>[...v,'> '+command,output].slice(-100));}return <div style={{background:'#001b13',color:'#8ce8ba',height:'100%',padding:18,font:'13px/1.7 monospace',overflow:'auto'}}><pre style={{whiteSpace:'pre-wrap'}}>{lines.join('\n')}</pre><form onSubmit={execute} style={{display:'flex',gap:8,marginTop:12}}><span>&gt;</span><input aria-label="Console command" value={input} onChange={e=>setInput(e.target.value)} style={{background:'transparent',color:'inherit',border:0,outline:'none',flex:1}} autoComplete="off"/></form><small>Browser utility console. No OS-level security monitoring.</small></div>}
+import React, { useState } from "react";
+export function IconTerminal({ size = 32 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32">
+      <path d="M2 4h28v22H2z" fill="#bbb" stroke="black" />
+      <path d="M5 7h22v16H5z" fill="#001610" />
+      <path d="m8 11 4 3-4 3m6 0h7" stroke="#00ef80" fill="none" />
+      <path d="M10 26h12v3H10z" fill="#888" />
+    </svg>
+  );
+}
+export function TerminalApp({ onClose, onOpenPop }: any) {
+  const [input, setInput] = useState(""),
+    [lines, setLines] = useState([
+      "STRIKEOUT / Service console",
+      "Commands: help, health, pop, cases, clear, exit.",
+    ]);
+  async function execute(e: any) {
+    e.preventDefault();
+    const command = input.trim().toLowerCase();
+    setInput("");
+    let output = "Unknown command. Type help.";
+    if (command === "clear") {
+      setLines([]);
+      return;
+    }
+    if (command === "help")
+      output =
+        "health: check actual backend | cases: open workspace | pop: summon companion | exit: close";
+    if (command === "health") {
+      try {
+        const r = await fetch("/api/health");
+        output = JSON.stringify(await r.json(), null, 2);
+      } catch {
+        output = "Backend unreachable.";
+      }
+    }
+    if (command === "pop") {
+      onOpenPop();
+      output = "Pop summoned.";
+    }
+    if (command === "cases") {
+      window.dispatchEvent(
+        new CustomEvent("strikeout-open", { detail: { section: "cases" } }),
+      );
+      output = "Opening private workspace.";
+    }
+    if (command === "exit") {
+      onClose();
+      return;
+    }
+    setLines((v) => [...v, "> " + command, output].slice(-100));
+  }
+  return (
+    <div
+      style={{
+        background: "#001b13",
+        color: "#8ce8ba",
+        height: "100%",
+        padding: 18,
+        font: "13px/1.7 monospace",
+        overflow: "auto",
+      }}
+    >
+      <pre style={{ whiteSpace: "pre-wrap" }}>{lines.join("\n")}</pre>
+      <form
+        onSubmit={execute}
+        style={{ display: "flex", gap: 8, marginTop: 12 }}
+      >
+        <span>&gt;</span>
+        <input
+          aria-label="Console command"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          style={{
+            background: "transparent",
+            color: "inherit",
+            border: 0,
+            outline: "none",
+            flex: 1,
+          }}
+          autoComplete="off"
+        />
+      </form>
+      <small>Browser utility console. No OS-level security monitoring.</small>
+    </div>
+  );
+}

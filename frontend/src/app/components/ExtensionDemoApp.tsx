@@ -684,8 +684,8 @@ export function ExtensionDemoApp({
                           if (onExportToCases && savedEvidence[0]) {
                             onExportToCases(
                               savedEvidence[0].title,
-                              `Imported from Pop Extension: ${savedEvidence[0].url}\nTimestamp: ${savedEvidence[0].date}\nNote: ${savedEvidence[0].note}`,
-                              "Browser Extension Capture"
+                              `Fictional extension simulator example, not a real capture: ${savedEvidence[0].url}\nDemo timestamp: ${savedEvidence[0].date}\nDemo note: ${savedEvidence[0].note}`,
+                              "Other"
                             );
                           }
                         }}
