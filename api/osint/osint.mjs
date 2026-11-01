@@ -1,3 +1,4 @@
+import { publicWebEngines, publicWebReferences } from "./public-web.mjs";
 import { prioritizeFindings } from "./prioritize.mjs";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import {
@@ -274,6 +275,22 @@ export async function runCheck(body, options = {}) {
       "Keyless public-reference coverage is limited to GitHub issues and pull requests. It does not cover the whole web, private profiles or email breach databases.",
     );
   }
+  const engines = publicWebEngines.filter((engine) =>
+    body.consent.providers?.includes("serpapi_" + engine),
+  );
+  const webResults = await Promise.all(
+    engines.map((engine) =>
+      publicWebReferences(engine, queries, needles, options),
+    ),
+  );
+  for (const result of webResults) {
+    report.checks.push(...result.checks);
+    report.findings.push(...result.findings);
+  }
+  if (engines.length)
+    report.limitations.push(
+      "Search engines have overlapping, incomplete and potentially stale indexes. This is a bounded multi-engine search, not whole-web coverage.",
+    );
   if (body.consent.providers?.includes("brave")) {
     for (const query of [...new Set(queries)].slice(0, 2)) {
       try {
@@ -305,15 +322,24 @@ export async function runCheck(body, options = {}) {
   }
   if (!report.checks.some((x) => x.provider !== "local"))
     throw invalid(
-      "Select an approved provider: github_public works without a key; brave and hibp require optional keys.",
+      "Select an approved provider: github_public works without a key; serpapi_google, serpapi_bing and serpapi_duckduckgo use SerpApi; brave and hibp require their keys.",
     );
-  const seen = new Set();
-  report.findings = prioritizeFindings(report.findings, { service }).filter((x) => {
-    const key = x.url || x.name;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  const merged = new Map();
+  for (const finding of prioritizeFindings(report.findings, { service })) {
+    let key = finding.url || finding.name;
+    if (finding.url) {
+      const url = new URL(finding.url);
+      url.hash = "";
+      key = url.href;
+    }
+    const previous = merged.get(key);
+    if (previous)
+      previous.providers = [
+        ...new Set([...previous.providers, finding.provider]),
+      ];
+    else merged.set(key, { ...finding, providers: [finding.provider] });
+  }
+  report.findings = [...merged.values()];
   report.coverage = report.checks.map((x) => ({
     provider: x.provider,
     status: x.status,

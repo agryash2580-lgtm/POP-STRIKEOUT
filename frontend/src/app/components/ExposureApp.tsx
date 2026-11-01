@@ -1,3 +1,6 @@
+import { ExposurePhoneGate } from "./ExposurePhoneGate";
+import { ResultLink, RiskSummary, LinkChecker } from "./LinkRisk";
+import { AdvancedExposure } from "./AdvancedExposure";
 import React, { useEffect, useState } from "react";
 import { InstagramPanel } from "./InstagramPanel";
 import { documentText as extractDocumentText } from "../document-text";
@@ -19,6 +22,13 @@ export function IconExposure({ size = 32 }: { size?: number }) {
   );
 }
 export function ExposureApp() {
+  return (
+    <ExposurePhoneGate>
+      <ExposureTools />
+    </ExposurePhoneGate>
+  );
+}
+function ExposureTools() {
   const [service, setService] = useState("email"),
     [value, setValue] = useState(""),
     [name, setName] = useState(""),
@@ -26,6 +36,7 @@ export function ExposureApp() {
     [documentText, setDocumentText] = useState(""),
     [source, setSource] = useState(""),
     [consent, setConsent] = useState(false),
+    [webEnabled, setWebEnabled] = useState(true),
     [caps, setCaps] = useState<any>(null),
     [result, setResult] = useState<any>(null),
     [error, setError] = useState(""),
@@ -158,6 +169,11 @@ export function ExposureApp() {
                 ? { fullName: name, ...(employer ? { employer } : {}) }
                 : { profileUrl: value, ...(name ? { fullName: name } : {}) };
       const providers = ["github_public"];
+      if (webEnabled)
+        for (const engine of ["google", "bing", "duckduckgo"]) {
+          if (caps?.providers?.["serpapi_" + engine])
+            providers.push("serpapi_" + engine);
+        }
       if (caps?.providers?.brave) providers.push("brave");
       if (service === "email" && caps?.providers?.hibp) providers.push("hibp");
       setResult(
@@ -184,20 +200,24 @@ export function ExposureApp() {
       <div className="mini-note">
         <strong>No-key checks are available.</strong>
         <p>
-          Public-reference searches cover GitHub issues and pull requests, not
-          the whole web. Document review inspects only text you supply. Password
+          Public-reference searches combine Google, Bing and DuckDuckGo when
+          configured, plus GitHub issues and pull requests. No search covers the
+          whole web. Document review inspects only text you supply. Password
           checks use a five-character hash prefix.
         </p>
         {caps && (
           <small>
-            GitHub public search: enabled Â· Document review: enabled Â· Brave web
-            search: {caps.providers?.brave ? "configured" : "not configured"} Â·
-            HIBP email breaches:{" "}
+            GitHub public search: enabled Â· Document review: enabled Â· Brave
+            web search:{" "}
+            {caps.providers?.brave ? "configured" : "not configured"} Â· HIBP
+            email breaches:{" "}
             {caps.providers?.hibp ? "configured" : "not configured"}
           </small>
         )}
       </div>
+      <LinkChecker enabled={!!caps} />
       <InstagramPanel />
+      <AdvancedExposure capabilities={caps} />
       {service === "instagram" && (
         <div className="mini-note">
           <strong>Want to review your actual Instagram profile?</strong>
@@ -222,6 +242,21 @@ export function ExposureApp() {
         </div>
       )}
       <form id="tour-exposure-search-well" onSubmit={scan}>
+        {caps?.providers?.serpapi &&
+          !["documents", "password"].includes(service) && (
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={webEnabled}
+                onChange={(e) => {
+                  setWebEnabled(e.target.checked);
+                  setConsent(false);
+                }}
+              />
+              Search Google, Bing and DuckDuckGo through SerpApi (up to six
+              searches). Results may overlap; private content is excluded.
+            </label>
+          )}
         <label>
           Check type
           <select
@@ -235,8 +270,8 @@ export function ExposureApp() {
               setConsent(false);
             }}
           >
-            <option value="instagram">
-              Instagram profile public references
+            <option value="instagram" disabled>
+              Instagram references (ownership verification required)
             </option>
             <option value="email">Email public references</option>
             <option value="phone">Phone public references</option>
@@ -353,6 +388,9 @@ export function ExposureApp() {
           service !== "documents" && (
             <p className="mini-note">
               This sends the supplied identifier to GitHub public search
+              {webEnabled && caps?.providers?.serpapi
+                ? ", and Google, Bing and DuckDuckGo through SerpApi"
+                : ""}
               {caps?.providers?.brave ? ", Brave Search" : ""}
               {service === "email" && caps?.providers?.hibp
                 ? " and Have I Been Pwned"
@@ -370,7 +408,7 @@ export function ExposureApp() {
           This is my information and I approve the described check.
         </label>
         <button disabled={!consent || busy}>
-          {busy ? "Checkingâ€¦" : "Check my exposure"}
+          {busy ? "Checking…" : "Check my exposure"}
         </button>
       </form>
       {error && (
@@ -434,6 +472,7 @@ export function ExposureApp() {
               ? "Some sources could not be checked"
               : "Check completed"}
           </h2>
+          <RiskSummary summary={result.riskSummary} />
           {typeof result.coverage === "string" && <p>{result.coverage}</p>}
           {Array.isArray(result.coverage) && (
             <div className="mini-note">
@@ -499,7 +538,11 @@ export function ExposureApp() {
                 </p>
               )}
           {!!result.findings?.length && (
-            <p>Results ranked by potential severity: critical, high, medium, low; stronger evidence breaks ties. Severity is a review priority, not proof of harm.</p>
+            <p>
+              Results ranked by potential severity: critical, high, medium, low;
+              stronger evidence breaks ties. Severity is a review priority, not
+              proof of harm.
+            </p>
           )}
           {(result.findings || []).map((f: any, i: number) => (
             <article className="step-card" key={f.id || i}>
@@ -510,12 +553,31 @@ export function ExposureApp() {
               </strong>
               <p>{f.snippet || f.evidence || f.dataClasses?.join(", ")}</p>
               {f.priorityReason && (
-                <p><strong>{f.severity ? f.severity.charAt(0).toUpperCase() + f.severity.slice(1) : "Review"}</strong>: {f.priorityReason}</p>
+                <p>
+                  <strong>
+                    {f.severity
+                      ? f.severity.charAt(0).toUpperCase() + f.severity.slice(1)
+                      : "Review"}
+                  </strong>
+                  : {f.priorityReason}
+                </p>
+              )}
+              {f.providers?.length > 0 && (
+                <small>Found by: {f.providers.join(", ")}</small>
               )}
               {(f.url || f.source) && (
-                <a href={f.url || f.source} target="_blank" rel="noreferrer">
-                  Review source â†—
-                </a>
+                <ResultLink
+                  url={f.url || f.source}
+                  assessment={f.linkAssessment}
+                  exposure={f.exposureAssessment}
+                />
+              )}
+              {!(f.url || f.source) && f.exposureAssessment && (
+                <p>
+                  <strong>{f.exposureAssessment.label}</strong>
+                  <br />
+                  <small>{f.exposureAssessment.reason}</small>
+                </p>
               )}
               {f.line && (
                 <small>
