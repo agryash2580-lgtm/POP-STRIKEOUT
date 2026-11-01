@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Pop.exe</title>
+    <link rel="stylesheet" href="panel.css" />
+  </head>
+  <body class="popup">
+    <header>
+      <img src="icon128.png" alt="" />
+      <h1>Pop.exe</h1>
+      <small>2.1.3</small>
+    </header>
+    <main>
+      <div class="pet-desk">
+        <button id="pet" title="Pet Pop"><img src="pop.png" alt="" />Pet</button
+        ><button id="bring">Show</button
+        ><button id="minimise" aria-label="Minimise" title="Minimise">_</button>
+      </div>
+      <div class="quick-tools" aria-label="Pop tools">
+        <button id="scan" title="Check this page for watched information">
+          Scan</button
+        ><button id="draft" title="Check the text field you selected">
+          Draft</button
+        ><button id="capture" title="Capture and review evidence">
+          Capture
+        </button>
+      </div>
+      <div class="quick-links">
+        <button id="chat">Chat</button
+        ><a href="workspace.html#watchlist" target="_blank">Watchlist</a
+        ><a href="workspace.html#incidents" target="_blank">Files</a>
+      </div>
+      <div id="matches" hidden>
+        <button id="previous">← Prev</button><button id="next">Next →</button
+        ><button id="clear">Clear</button>
+      </div>
+      <p id="status" role="status"></p>
+      <details>
+        <summary>More</summary>
+        <p id="site" class="site-line">Select a website.</p>
+        <button id="allow-site">Always appear here</button
+        ><button id="allow-all">Follow across websites</button
+        ><button id="snooze">Snooze 5 minutes</button
+        ><button id="disable">Disable on this site</button>
+        <div class="quick-links">
+          <a href="workspace.html#settings" target="_blank">Settings</a
+          ><a href="workspace.html#links" target="_blank">Inspect link</a>
+        </div>
+      </details>
+    </main>
+    <script src="shared.js"></script>
+    <script src="panel.js"></script>
+  </body>
+</html>

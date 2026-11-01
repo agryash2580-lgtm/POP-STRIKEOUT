@@ -1,0 +1,47 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+/* Custom Pixel Petting Hand Cursor for Pop */
+.pop-pet-cursor, .pop-pet-cursor * {
+  cursor: url('/pet-hand-cursor.png') 16 16, pointer !important;
+}
+
+/* When holding catnip cursor */
+body.holding-catnip, 
+body.holding-catnip *,
+body.holding-catnip .pop-pet-cursor,
+body.holding-catnip .pop-pet-cursor * {
+  cursor: url('/catnip-cursor.png') 16 16, pointer !important;
+}
+
+
+
+@keyframes popFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+@keyframes popSnack {
+  0% { transform: scale(1) rotate(0deg); }
+  100% { transform: scale(1.2) rotate(15deg); }
+}
+
+@keyframes bounce {
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(4px); }
+}
+
+
+
+
