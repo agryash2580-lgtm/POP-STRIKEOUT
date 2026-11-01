@@ -1,6 +1,6 @@
 (() => {
   const existing = document.getElementById("strikeout-pop-pet");
-  if (existing?.dataset.popVersion === "2.3.3") return;
+  if (existing?.dataset.popVersion === "2.3.4") return;
   existing?.remove();
   const Pop = globalThis.Pop;
   const SIZE = 48;
@@ -11,6 +11,7 @@
   let speechTimer, snoozeTimer;
   let capturedHidden = false;
   let lastScan = null;
+  let noticeEditor = null;
   // Keep the tools registered, but let STRIKEOUT render its own single pet.
   const onStrikeoutWebsite =
     document.documentElement.hasAttribute("data-strikeout-app");
@@ -172,10 +173,15 @@
   function closeNotice() {
     notice?.remove();
     notice = null;
+    noticeEditor = null;
   }
+  Pop.clearSharingWarning = (editor) => {
+    if (!editor || noticeEditor === editor) closeNotice();
+  };
 
   Pop.noticeSharing = function (editor, matches) {
     closeNotice();
+    noticeEditor = editor;
     Pop.lastNote =
       matches.length +
       " watched item(s) found in the selected field. Review the warning beside it.";
@@ -285,7 +291,7 @@
     if (document.getElementById("strikeout-pop-pet")) return;
     host = document.createElement("div");
     host.id = "strikeout-pop-pet";
-    host.dataset.popVersion = "2.3.3";
+    host.dataset.popVersion = "2.3.4";
     host.style.cssText =
       "position:fixed;width:48px;height:48px;z-index:2147483647;";
     if (onStrikeoutWebsite)
@@ -398,7 +404,7 @@
     PopAPI.runtime.onMessage.addListener((message, sender, reply) => {
       const result = () => ({
         ok: true,
-        version: "2.3.3",
+        version: "2.3.4",
         note: Pop.lastNote || "",
         count: lastScan?.count || 0,
       });

@@ -1,6 +1,6 @@
 # Pop: install, demonstrate, explain
 
-Pop 2.3.3 is STRIKEOUT's browser companion. He finds information you asked him to watch,
+Pop 2.3.4 is STRIKEOUT's browser companion. He finds information you asked him to watch,
 warns after you paste it, and helps capture reviewed evidence. Petting him is a
 fully supported business operation.
 
@@ -25,7 +25,7 @@ bevelled controls, navy title bars and square windows.
 
 When updating, replace the extracted files and reload the extension in your browser's
 extension manager, then refresh already-open websites. The popup title bar should say
-`2.3.3`. The hosted website offers this version under the Pop app.
+`2.3.4`. The hosted website offers this version under the Pop app.
 
 Firefox:
 
@@ -96,6 +96,13 @@ Disconnect revokes the server token. If the server is unreachable, revocation mu
 be retried later; the UI does not falsely claim it succeeded.
 
 ## Where data lives
+
+Sharing warnings respond to typing, paste and standard input/change events in
+supported text fields and rich-text editors, including the Gmail-style message
+body pattern. Checks wait 250 ms after typing; paste is checked immediately after
+the edit. Keep suppresses duplicate warnings for unchanged matches in that field.
+The guard uses saved watchlist identifiers, stays local and ignores passwords.
+It cannot prevent a website receiving the edit before the warning appears.
 
 Check this page searches the identifiers you saved in Pop settings. It is not a
 general AI scan of every possible personal detail. Scan results stay visible until
@@ -208,8 +215,8 @@ The test browses only its local fictional fixture. Native permission prompts and
 separate manual checks; a small popup test also exercises the denial branch.
 No personal browser profile is touched.
 
-Versioned packages are written to `public/pop-chromium-2.3.3.zip`,
-`public/pop-firefox-2.3.3.zip`, and
+Versioned packages are written to `public/pop-chromium-2.3.4.zip`,
+`public/pop-firefox-2.3.4.zip`, and
 extracted development folders under `dist/pop/`. The packaging helper currently
 uses Windows PowerShell's Compress-Archive. The extension itself has no framework,
 remote executable code or runtime npm dependency.

@@ -5,6 +5,8 @@
   let lastEditor = null;
   let watchlist = [];
   let enabled = true;
+  const pendingChecks = new WeakMap();
+  let warnedSignatures = new WeakMap();
 
   Pop.editable = function (element) {
     if (!(element instanceof Element)) return null;
@@ -29,9 +31,31 @@
     enabled = settings.sharingGuard !== false;
   });
   PopAPI.storage.onChanged.addListener((changes) => {
-    if (changes.watchlist) watchlist = changes.watchlist.newValue || [];
+    if (changes.watchlist) {
+      watchlist = changes.watchlist.newValue || [];
+      warnedSignatures = new WeakMap();
+    }
     if (changes.sharingGuard) enabled = changes.sharingGuard.newValue !== false;
   });
+
+  function scheduleCheck(editor, delay = 250) {
+    if (!editor) return;
+    clearTimeout(pendingChecks.get(editor));
+    pendingChecks.set(editor, setTimeout(() => {
+      if (!enabled || !Pop.active || !editor.isConnected) return;
+      const matches = Pop.findMatches(Pop.editorText(editor), watchlist);
+      if (!matches.length) {
+        warnedSignatures.delete(editor);
+        Pop.clearSharingWarning?.(editor);
+        return;
+      }
+      const signature = matches.map(match => match.kind + ":" + match.text.toLowerCase()).sort().join("|");
+      // Keep means keep: unrelated keystrokes must not reopen the same warning.
+      if (warnedSignatures.get(editor) === signature) return;
+      warnedSignatures.set(editor, signature);
+      checkEditor(editor);
+    }, delay));
+  }
 
   function checkEditor(editor) {
     if (!editor?.isConnected || !Pop.noticeSharing) return;
@@ -52,16 +76,16 @@
   });
   document.addEventListener("paste", (event) => {
     const editor = Pop.editable(event.target);
-    if (!enabled || !editor || !Pop.active) return;
     // Let the browser perform the paste. Never prevent, change or collect unrelated input.
-    setTimeout(() => {
-      if (
-        editor.isConnected &&
-        Pop.findMatches(Pop.editorText(editor), watchlist).length
-      )
-        checkEditor(editor);
-    }, 0);
-  });
+    scheduleCheck(editor, 0);
+  }, true);
+  document.addEventListener("input", (event) => {
+    if (event.isComposing) return;
+    const immediate = ["insertFromPaste", "insertFromDrop"].includes(event.inputType);
+    scheduleCheck(Pop.editable(event.target), immediate ? 0 : 250);
+  }, true);
+  document.addEventListener("change", event => scheduleCheck(Pop.editable(event.target), 0), true);
+  document.addEventListener("compositionend", event => scheduleCheck(Pop.editable(event.target), 0), true);
 
   Pop.checkDraft = function () {
     if (!lastEditor?.isConnected) {

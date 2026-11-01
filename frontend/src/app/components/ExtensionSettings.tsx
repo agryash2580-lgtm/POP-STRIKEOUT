@@ -4,7 +4,7 @@ function bridge(action: string, value?: any): Promise<any> {
     const id = crypto.randomUUID();
     const timeout = setTimeout(() => {
       window.removeEventListener("message", listen);
-      reject(Error("Install Pop 2.3.3, refresh this page and try again."));
+      reject(Error("Install Pop 2.3.4, refresh this page and try again."));
     }, 12000);
     function listen(e: MessageEvent) {
       if (
@@ -77,7 +77,7 @@ export function ExtensionSettings() {
                 setPrefs({ ...prefs, sharingGuard: e.target.checked })
               }
             />
-            Warn after pasting watched information
+            Warn when typing or pasting watched information
           </label>
           <label className="check">
             <input

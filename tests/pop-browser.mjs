@@ -222,6 +222,7 @@ async function testBrowser(name) {
           if (action === 'click') root.getElementById(id).click();
           if (action === 'menu-scan') { root.getElementById('cat').dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true})); [...root.querySelectorAll('.warning button')].find(button=>button.textContent==='Check this page').click(); }
           if (action === 'remove') root.querySelector('.warning button:last-child').click();
+          if (action === 'keep') [...root.querySelectorAll('.warning button')].find(button=>button.textContent==='Keep').click();
           if (action === 'keyboard') root.getElementById('cat').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft', bubbles: true}));
           return {note: globalThis.Pop.lastNote || root.getElementById('note').textContent, hidden: host.hidden, bodyHidden: root.getElementById('body').hidden, hearts: root.querySelectorAll('.heart').length, warning: root.querySelector('.warning')?.textContent || '', left: host.getBoundingClientRect().left, top: host.getBoundingClientRect().top, width: host.offsetWidth, height: host.offsetHeight, pageMenu: !!root.getElementById('scan')};
         }, args: [{action, id}]});
@@ -277,6 +278,19 @@ async function testBrowser(name) {
     await workspace.evaluate(tabId => chrome.tabs.sendMessage(tabId, {type: 'POP_SCAN'}), tabId);
     assert.equal(await page.locator('mark[data-pop-match]').count(), 3, 'A second scan does not duplicate highlights');
 
+    await page.locator('#plain').pressSequentially('alex@example.com', {delay:5});
+    await page.waitForTimeout(350);
+    assert.match((await pet('read')).warning,/1 watched/,'Typing email must warn without a paste event');
+    await pet('keep');
+    await page.locator('#plain').pressSequentially(' extra text', {delay:5});
+    await page.waitForTimeout(350);
+    assert.equal((await pet('read')).warning,'','Keep must survive unrelated typing');
+    await page.locator('#plain').pressSequentially(' +1 (202) 555-0147', {delay:5});
+    await page.waitForTimeout(350);
+    assert.match((await pet('read')).warning,/2 watched/,'Typing a watched phone must update the warning');
+    await page.locator('#plain').fill('Unrelated text only');
+    await page.waitForTimeout(350);
+    assert.equal((await pet('read')).warning,'','Removing watched values must clear the old warning');
     await page.locator('#bio').fill('Contact alex@example.com. Keep the rest.');
     await page.locator('#bio').dispatchEvent('paste');
     await page.waitForTimeout(100);
@@ -284,6 +298,10 @@ async function testBrowser(name) {
     await pet('remove');
     assert.equal(await page.locator('#bio').inputValue(), 'Contact . Keep the rest.');
     await page.locator('#rich').focus();
+    await page.locator('#rich').press('Control+End');
+    await page.locator('#rich').pressSequentially(' typed', {delay:5});
+    await page.waitForTimeout(350);
+    assert.match((await pet('read')).warning,/1 watched/,'Gmail-style rich editor typing must warn');
     await workspace.evaluate(tabId => chrome.tabs.sendMessage(tabId, {type: 'POP_DRAFT'}), tabId);
     await pet('remove');
     assert.ok(await page.locator('#rich strong').count(), 'Formatted editor preserves its structure');
@@ -392,7 +410,7 @@ async function testFirefox(context, debugging) {
   await page.waitForSelector('#strikeout-pop-pet', {state: 'attached'});
   const tabId = await evaluate('return (await browser.tabs.query({})).find(tab=>tab.url?.startsWith(' + JSON.stringify(origin) + ')).id;');
   async function pet(action, id) {
-    return evaluate('const result=await browser.scripting.executeScript({target:{tabId:' + tabId + '},func:({action,id})=>{const host=document.getElementById("strikeout-pop-pet");const root=host.openOrClosedShadowRoot;if(action==="click")root.getElementById(id).click();if(action==="menu-scan"){root.getElementById("cat").dispatchEvent(new MouseEvent("contextmenu",{bubbles:true,cancelable:true}));[...root.querySelectorAll(".warning button")].find(button=>button.textContent==="Check this page").click();}if(action==="remove")root.querySelector(".warning button:last-child").click();return {note:root.getElementById("note").textContent,bodyHidden:root.getElementById("body").hidden,hidden:host.hidden,warning:root.querySelector(".warning")?.textContent||""};},args:[' + JSON.stringify({action,id}) + ']});if(result[0].error)throw Error(result[0].error.message);return result[0].result;');
+    return evaluate('const result=await browser.scripting.executeScript({target:{tabId:' + tabId + '},func:({action,id})=>{const host=document.getElementById("strikeout-pop-pet");const root=host.openOrClosedShadowRoot;if(action==="click")root.getElementById(id).click();if(action==="menu-scan"){root.getElementById("cat").dispatchEvent(new MouseEvent("contextmenu",{bubbles:true,cancelable:true}));[...root.querySelectorAll(".warning button")].find(button=>button.textContent==="Check this page").click();}if(action==="remove")root.querySelector(".warning button:last-child").click();if(action==="keep")[...root.querySelectorAll(".warning button")].find(button=>button.textContent==="Keep").click();return {note:root.getElementById("note").textContent,bodyHidden:root.getElementById("body").hidden,hidden:host.hidden,warning:root.querySelector(".warning")?.textContent||""};},args:[' + JSON.stringify({action,id}) + ']});if(result[0].error)throw Error(result[0].error.message);return result[0].result;');
   }
   const resting = await page.locator('#strikeout-pop-pet').boundingBox();
   assert.equal(resting.width, 48); assert.equal(resting.height, 48);
@@ -407,6 +425,15 @@ async function testFirefox(context, debugging) {
   await page.waitForTimeout(4700);
   assert.equal((await pet('read')).bodyHidden,false);
   assert.equal(await page.locator('mark[data-pop-match]').count(),3);
+  await page.locator('#plain').pressSequentially('alex@example.com +1 (202) 555-0147',{delay:5});
+  await page.waitForTimeout(350);
+  assert.match((await pet('read')).warning,/2 watched/,'Firefox typing must warn without paste');
+  await pet('keep');
+  await page.locator('#plain').pressSequentially(' extra',{delay:5});
+  await page.waitForTimeout(350);
+  assert.equal((await pet('read')).warning,'');
+  await page.locator('#plain').fill('Unrelated text');
+  await page.waitForTimeout(350);
   await page.locator('#bio').fill('Contact alex@example.com. Keep the rest.');
   await page.locator('#bio').dispatchEvent('paste');
   await page.waitForTimeout(100);
@@ -414,6 +441,10 @@ async function testFirefox(context, debugging) {
   await pet('remove');
   assert.equal(await page.locator('#bio').inputValue(), 'Contact . Keep the rest.');
   await page.locator('#rich').focus();
+  await page.locator('#rich').press('Control+End');
+  await page.locator('#rich').pressSequentially(' typed',{delay:5});
+  await page.waitForTimeout(350);
+  assert.match((await pet('read')).warning,/1 watched/);
   await evaluate('await browser.tabs.sendMessage(' + tabId + ',{type:"POP_DRAFT"});');
   await pet('remove');
   assert.equal(await page.locator('#rich strong').count(), 1);

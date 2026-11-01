@@ -1232,10 +1232,10 @@ export function RecoveryApp() {
                       Your local watchlist, sharing checks, evidence capture and
                       a very pettable cat.
                     </p>
-                    <a href="/pop-chromium-2.3.3.zip" download>
+                    <a href="/pop-chromium-2.3.4.zip" download>
                       Chromium download ↓
                     </a>
-                    <a href="/pop-firefox-2.3.3.zip" download>
+                    <a href="/pop-firefox-2.3.4.zip" download>
                       Firefox / Zen download ↓
                     </a>
                   </article>
