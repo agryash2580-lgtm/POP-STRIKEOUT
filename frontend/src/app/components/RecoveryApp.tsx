@@ -1332,60 +1332,7 @@ export function RecoveryApp() {
                     </B>
                   </form>
                 </section>
-                <section>
-                  <h2>Connect Pop's AI chat</h2>
-                  <p>
-                    Install Pop, open its Settings and use this server address:{" "}
-                    <code>{location.origin}</code>
-                  </p>
-                  <B
-                    onClick={() =>
-                      run("Creating pairing code", async () => {
-                        const x = await api(
-                          "/api/pop/connect-code",
-                          "POST",
-                          {},
-                        );
-                        setPair(x.code);
-                      })
-                    }
-                  >
-                    Get five-minute pairing code
-                  </B>
-                  {pair && (
-                    <label>
-                      Paste this into Pop Settings
-                      <input
-                        readOnly
-                        value={pair}
-                        onFocus={(e) => e.target.select()}
-                      />
-                    </label>
-                  )}
-                  <p>
-                    Then enable AI chat in the extension. Left-click Pop to pet;
-                    right-click for tools.
-                  </p>
-                  <a href="/pop-chromium-2.3.0.zip" download>
-                    Download Chromium ZIP
-                  </a>
-                  <a href="/pop-firefox-2.3.0.zip" download>
-                    Download Firefox / Zen ZIP
-                  </a>
-                  <details>
-                    <summary>Installation instructions</summary>
-                    <p>
-                      Chromium: extract the ZIP, open chrome://extensions,
-                      enable Developer mode and Load unpacked.
-                    </p>
-                    <p>
-                      Firefox/Zen: extract its ZIP, open about:debugging, choose
-                      This Firefox, Load Temporary Add-on and select
-                      manifest.json. Firefox 142+ is required. Temporary
-                      installs last until restart.
-                    </p>
-                  </details>
-                </section>
+                <section><h2>Connect Pop</h2><p>Account connection and extension settings are in one place.</p><a href="/pop-settings.html">Open Pop settings and connect your account</a></section>
                 <section>
                   <h2>Privacy</h2>
                   <p>
