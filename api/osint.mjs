@@ -1,3 +1,4 @@
+import { phoneAuthService } from "./osint/phone-auth.mjs";
 import express from "express";
 import { runCheck, runPasswordRange } from "./osint/osint.mjs";
 import { reviewDocuments } from "./osint/documents.mjs";
@@ -10,6 +11,7 @@ export function osintRouter({
   limited,
   imageOptions,
   searchOptions,
+  phoneAuth = phoneAuthService(),
 }) {
   const router = express.Router();
   router.use(
@@ -18,9 +20,25 @@ export function osintRouter({
       next();
     }),
   );
+  router.get(
+    "/phone/status",
+    guarded(async (req, res) => res.json(await phoneAuth.state(req))),
+  );
+  router.post(
+    "/phone/send",
+    guarded(async (req, res) => res.json(await phoneAuth.send(req))),
+  );
+  router.post(
+    "/phone/verify",
+    guarded(async (req, res) => res.json(await phoneAuth.verify(req))),
+  );
   router.get("/capabilities", (req, res) =>
     res.json({
       version: "0.3.0",
+      authentication: {
+        phoneOtpRequired: true,
+        instagramOwnershipRequired: true,
+      },
       providers: {
         github_public: true,
         local_documents: true,
@@ -52,6 +70,7 @@ export function osintRouter({
   );
   const handle = (fn) =>
     guarded(async (req, res) => {
+      await phoneAuth.requireVerified(req);
       limited({ ip: req.osintUser.id, headers: {} }, "osint", 12);
       try {
         res.json(flagReport(await fn(req.body)));

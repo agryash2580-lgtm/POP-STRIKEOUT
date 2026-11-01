@@ -1,3 +1,4 @@
+import { ExposurePhoneGate } from "./ExposurePhoneGate";
 import { ResultLink, RiskSummary, LinkChecker } from "./LinkRisk";
 import { AdvancedExposure } from "./AdvancedExposure";
 import React, { useEffect, useState } from "react";
@@ -21,6 +22,13 @@ export function IconExposure({ size = 32 }: { size?: number }) {
   );
 }
 export function ExposureApp() {
+  return (
+    <ExposurePhoneGate>
+      <ExposureTools />
+    </ExposurePhoneGate>
+  );
+}
+function ExposureTools() {
   const [service, setService] = useState("email"),
     [value, setValue] = useState(""),
     [name, setName] = useState(""),
@@ -262,8 +270,8 @@ export function ExposureApp() {
               setConsent(false);
             }}
           >
-            <option value="instagram">
-              Instagram profile public references
+            <option value="instagram" disabled>
+              Instagram references (ownership verification required)
             </option>
             <option value="email">Email public references</option>
             <option value="phone">Phone public references</option>
