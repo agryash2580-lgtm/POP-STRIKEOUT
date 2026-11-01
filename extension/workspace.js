@@ -336,8 +336,7 @@ async function loadCapture(id) {
     throw Error(
       "This pending capture expired or was already opened. Capture the page again.",
     );
-  capture = pending[key];
-  await PopAPI.storage.session.remove(key);
+  capture = { ...pending[key], id, pendingKey: key };
   rectangles = [];
   captureImage = new Image();
   await new Promise((resolve, reject) => {
@@ -346,7 +345,8 @@ async function loadCapture(id) {
       reject(Error("The screenshot could not be opened."));
     captureImage.src = capture.screenshot;
   });
-  // The unredacted original is only held by this review screen until save/discard.
+  // The pending original stays in session storage until save/discard so a
+  // reload can reopen the review. It is not a saved evidence record yet.
   delete capture.screenshot;
   get("redaction").width = captureImage.naturalWidth;
   get("redaction").height = captureImage.naturalHeight;
@@ -365,7 +365,8 @@ async function loadCapture(id) {
   get("capture-html-include").checked = !!capture.quick;
   get("capture-sync").checked = !!capture.quick;
   get("capture-email").checked = !!capture.quick;
-  if (capture.quick) setTimeout(() => get("capture-save").click(), 100);
+  status("Screenshot captured, NOT SAVED yet. Enter an incident name, review the sharing options, then press Save evidence.");
+  get("capture-incident").focus();
 }
 
 function discardCapture() {
@@ -472,13 +473,20 @@ get("capture-save").onclick = async () => {
         : "",
     };
     await Evidence.save(record);
-    let message = "Saved locally.";
-    if (get("capture-sync").checked || get("capture-email").checked) {
+    const syncRequested = get("capture-sync").checked || get("capture-email").checked;
+    const emailRequested = get("capture-email").checked;
+    await PopAPI.storage.session.remove(capture.pendingKey);
+    discardCapture();
+    location.hash = "incidents";
+    await renderIncidents();
+    status(syncRequested ? "Saved locally. Syncing to your website account…" : "Saved locally in Pop → Evidence. This capture has NOT been uploaded to the website.");
+    let message = "Saved locally in Pop → Evidence. Not uploaded to the website.";
+    if (syncRequested) {
       try {
         await syncCapture(record);
         message =
           "Saved to your website evidence library. Attach it to any case from Pop evidence.";
-        if (get("capture-email").checked) {
+        if (emailRequested) {
           try {
             await send({ type: "POP_EVIDENCE_EMAIL", id: record.id });
             message += " Email service accepted the bundle.";
@@ -490,8 +498,7 @@ get("capture-save").onclick = async () => {
         message += " Website sync failed: " + error.message;
       }
     }
-    discardCapture();
-    location.hash = "incidents";
+    await renderIncidents();
     status(message);
   } catch (error) {
     report(error);
@@ -500,6 +507,7 @@ get("capture-save").onclick = async () => {
   }
 };
 get("capture-discard").onclick = () => {
+  if (capture?.pendingKey) PopAPI.storage.session.remove(capture.pendingKey).catch(report);
   discardCapture();
   location.hash = "incidents";
   status("Capture discarded.");
@@ -790,5 +798,8 @@ window.addEventListener("beforeunload", (event) => {
 PopAPI.storage.onChanged.addListener((changes, area) => {
   if (area === "session" && changes.chatHistory && !get("chat").hidden)
     renderChat().catch(report);
+});
+window.addEventListener("focus", () => {
+  if (!get("incidents").hidden) renderIncidents().catch(report);
 });
 navigate();

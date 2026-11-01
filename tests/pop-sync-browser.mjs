@@ -152,6 +152,11 @@ try {
   assert.ok(!result.error, result.error);
   const capture = await capturePromise;
   await capture.waitForURL(/workspace.html#capture/);
+  await capture.waitForFunction(() => document.getElementById('app-status')?.textContent.includes('NOT SAVED'));
+  assert.equal(await capture.evaluate(async () => (await PopEvidence.all()).length), 0, 'Capture review must not silently save or upload');
+  await capture.locator('#capture-incident').fill('Fictional quick capture');
+  await capture.locator('#capture-email').uncheck();
+  await capture.locator('#capture-save').click();
   await capture.waitForFunction(
     () =>
       document

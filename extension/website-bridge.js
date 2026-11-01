@@ -11,7 +11,7 @@
       );
     if (enabled)
       window.postMessage(
-        { type: "POP_WEBSITE_READY", version: "2.3.1" },
+        { type: "POP_WEBSITE_READY", version: "2.3.2" },
         location.origin,
       );
   });
@@ -31,7 +31,7 @@
           {
             type: "POP_SETTINGS_RESULT",
             id,
-            result: { installed: true, version: "2.3.1" },
+            result: { installed: true, version: "2.3.2" },
           },
           location.origin,
         );
