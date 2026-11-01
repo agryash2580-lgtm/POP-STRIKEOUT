@@ -18,6 +18,13 @@ try {
  await page.getByText('Tutorial: General 1/14',{exact:true}).waitFor();
  await page.getByRole('button',{name:/Next/}).click();
  await page.getByText('Tutorial: General 2/14',{exact:true}).waitFor();
+ await page.getByTitle('Hide Pop',{exact:true}).click();
+ await page.getByText('Pop',{exact:true}).first().click();
+ await page.getByRole('button',{name:'Show assistant',exact:true}).click();
+ const pet=page.getByRole('button',{name:'Pet Pop; right-click for tools',exact:true});
+ await pet.click();await page.locator('#strikeout-website-pet [role=status]').waitFor();
+ await pet.click({button:'right'});await page.getByRole('menu').getByRole('button',{name:'Minimise',exact:true}).click();
+ await pet.waitFor();assert.equal(await page.locator('#strikeout-website-pet').count(),1);
  assert.deepEqual(errors,[]);
  console.log('PASS: Start opens/dismisses, one Pop app, original guided tutorial launches/advances, no runtime errors.');
 } finally {await browser.close()}

@@ -96,7 +96,7 @@ export function GuideChat() {
     <div
       style={{
         position: "fixed",
-        right: 14,
+        left: 14,
         bottom: 42,
         zIndex: 99998,
         font: "13px/1.5 Tahoma,sans-serif",
