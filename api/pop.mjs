@@ -1,3 +1,4 @@
+import { securityState } from "./mfa.mjs";
 import { chatReplies, validateChatSelection } from "./ai-grounding.mjs";
 import express from "express";
 import { randomBytes } from "node:crypto";
@@ -19,6 +20,7 @@ export async function createPopCode(account) {
   const expires = Date.now() + 5 * 60 * 1000;
   await write("pop-pair/" + hash(code), {
     userId: account.id,
+    authVersion: (await securityState(account.id)).version || 0,
     expires,
     claimed: false,
   });
@@ -37,6 +39,11 @@ async function authorize(req) {
     !(await read("users/" + session.userId))
   )
     fail(401, "Pop’s connection expired. Pair again in Settings.");
+  if (
+    (session.authVersion || 0) !==
+    ((await securityState(session.userId)).version || 0)
+  )
+    fail(401, "Account security changed. Pair Pop again after signing in.");
   return { key, session };
 }
 
@@ -253,10 +260,16 @@ export function popRouter({ guarded, limited }) {
           401,
           "This pairing code expired or was already used. Get a new one.",
         );
+      if (
+        (pairing.authVersion || 0) !==
+        ((await securityState(pairing.userId)).version || 0)
+      )
+        fail(401, "Security changed. Generate a fresh pairing code.");
       await write(key, { ...pairing, claimed: true }, pairing._etag);
       const token = randomBytes(32).toString("hex");
       await write("pop-sessions/" + hash(token), {
         userId: pairing.userId,
+        authVersion: pairing.authVersion || 0,
         expires: Date.now() + 7 * 86400000,
         count: 0,
         day: "",
