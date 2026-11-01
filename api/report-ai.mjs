@@ -1,4 +1,5 @@
 import { requireExtract, sourcePassages, insufficientEvidence } from "./ai-grounding.mjs";
+import { load } from "cheerio";
 // Only this module talks to Gemini. Search never receives private case text.
 import { fail, text, facts, sourceFingerprint } from "./reporting-core.mjs";
 
@@ -79,6 +80,14 @@ export function officialURL(address) {
     return false;
   }
 }
+export function researchURL(address) {
+  if (officialURL(address)) return true;
+  try {
+    const url = new URL(address);
+    return url.protocol === "https:" && !url.username && !url.password &&
+      ["eset.com", "www.eset.com", "mcafee.com", "www.mcafee.com"].includes(url.hostname);
+  } catch { return false; }
+}
 export function researchTopic(incident) {
   const platform =
     platforms.find(
@@ -103,9 +112,9 @@ export function researchTopic(incident) {
     Microsoft: "support.microsoft.com",
     Other: "cybercrime.gov.in i4c.mha.gov.in cert-in.org.in",
   };
-  const scope = [...new Set((platformHosts[platform] + " cybercrime.gov.in i4c.mha.gov.in cert-in.org.in").split(" "))]
+  const scope = [...new Set((platformHosts[platform] + " cybercrime.gov.in i4c.mha.gov.in cert-in.org.in eset.com mcafee.com").split(" "))]
     .map(host => "site:" + host).join(" OR ");
-  return `Use Google Search with this exact site-restricted query: (${scope}) ${platform} ${topics[incident.category] || topics.other}. Keep the site: restrictions in search queries. Find guidance for an individual victim in India. Give at most five concise steps with citations, prioritising the platform's recovery flow. Cite only the specified official domains. Exclude third-party blogs and paid recovery agents. Do not apply obligations for companies or organisations to an individual victim. Do not search for any individual.`;
+  return `Use Google Search with this site-restricted query: (${scope}) ${platform} ${topics[incident.category] || topics.other}. Find guidance for an individual victim in India. Give at most five concise steps with citations, prioritising official platform recovery instructions. ESET and McAfee's own security guidance is also allowed and must not be described as official platform instructions. Exclude other blogs, forums and paid recovery agents. Do not apply obligations for companies or organisations to an individual victim. Do not search for any individual.`;
 }
 export function caseSnapshot(incident, options) {
   if (options.aiApproved !== true)
@@ -266,6 +275,45 @@ export function validateReport(value, snapshot, research) {
   };
 }
 
+async function directGuidance(incident, fetcher, reason) {
+  if (String(incident.platform).toLowerCase() !== "instagram") return null;
+  // Fixed public source, not a user-supplied URL. Never send case details here.
+  const url = "https://www.eset.com/blog/en/home-topics/privacy-and-identity-protection/recover-hacked-instagram-account/";
+  try {
+    const response = await fetcher(url, { redirect: "manual", signal: AbortSignal.timeout(10000) });
+    if (!response.ok || !response.headers.get("content-type")?.includes("text/html")) return null;
+    const reader = response.body.getReader();
+    const chunks = []; let bytes = 0;
+    for (;;) {
+      const part = await reader.read();
+      if (part.done) break;
+      bytes += part.value.length;
+      if (bytes > 1500000) { await reader.cancel(); return null; }
+      chunks.push(Buffer.from(part.value));
+    }
+    const page = load(Buffer.concat(chunks).toString("utf8"));
+    page("script,style,nav,header,footer,aside,form").remove();
+    const excerpts = []; let words = 0;
+    for (const paragraph of page("p").toArray()) {
+      const text = page(paragraph).text().replace(/\s+/g, " ").trim();
+      const count = text.split(/\s+/).length;
+      if (text.length < 40 || text.length > 700 || words + count > 140) continue;
+      if (!/instagram|account|password|security/i.test(text) || !/go to|use |change|secure|enable|turn on|visit|log out|request|follow|don.t|avoid/i.test(text)) continue;
+      if (/subscribe|free trial|discount|chances are|likely take|guarantee/i.test(text)) continue;
+      excerpts.push(text); words += count;
+      if (excerpts.length === 3) break;
+    }
+    if (!excerpts.length) return null;
+    const at = new Date().toISOString();
+    return {
+      mode: "live_source_retrieval", model: "direct_source_retrieval", searchedAt: at,
+      limitation: (reason === "quota_exhausted" ? "Google Search's API quota was exhausted. " : "Google Search did not supply usable approved citations. ") + "Current guidance was fetched directly from the cited security publisher. No fresh Google Search results are claimed.",
+      sources: [{ id: "S1", title: page("h1").first().text().trim().slice(0,250) || "ESET Instagram recovery guidance", url, kind: "security_vendor", excerpts, retrievedAt: at }],
+      searchEntryPoint: "", searchQueries: [],
+    };
+  } catch { return null; }
+}
+
 export function createGemini({ fetcher = fetch, env = process.env } = {}) {
   async function generate(prompt, { schema, search = false, files = [] } = {}) {
     if (!env.GEMINI_API_KEY)
@@ -358,7 +406,7 @@ export function createGemini({ fetcher = fetch, env = process.env } = {}) {
   async function resolveSource(address) {
     // Grounding sometimes supplies a Google redirect instead of a source URL.
     for (let i = 0; i < 4; i++) {
-      if (officialURL(address)) return address;
+      if (researchURL(address)) return address;
       let u;
       try {
         u = new URL(address);
@@ -375,11 +423,13 @@ export function createGemini({ fetcher = fetch, env = process.env } = {}) {
       try {
         const r = await fetcher(address, {
           redirect: "manual",
-          signal: AbortSignal.timeout(3000),
+          signal: AbortSignal.timeout(10000),
         });
-        if (r.status < 300 || r.status >= 400 || !r.headers.get("location"))
+        const location = r.headers.get("location");
+        if (r.body) await r.body.cancel().catch(() => {});
+        if (r.status < 300 || r.status >= 400 || !location)
           return null;
-        address = new URL(r.headers.get("location"), address).href;
+        address = new URL(location, address).href;
       } catch {
         return null;
       }
@@ -393,6 +443,8 @@ export function createGemini({ fetcher = fetch, env = process.env } = {}) {
         result = await generate(researchTopic(incident), { search: true });
       } catch (error) {
         if (error.status !== 503) throw error;
+        const live = await directGuidance(incident, fetcher, error.code === "AI_QUOTA_EXCEEDED" ? "quota_exhausted" : "provider_unavailable");
+        if (live) return live;
         const refs = [
           {
             title: "National Cyber Crime Reporting Portal",
@@ -464,15 +516,19 @@ export function createGemini({ fetcher = fetch, env = process.env } = {}) {
           id: "S" + (sources.length + 1),
           title: String(entry.title || new URL(url).hostname).slice(0, 250),
           url,
+          kind: officialURL(url) ? "official" : "security_vendor",
           excerpts: excerpts.slice(0, 5),
           retrievedAt: new Date().toISOString(),
         });
       }
-      if (!sources.length)
+      if (!sources.length) {
+        const live = await directGuidance(incident, fetcher, "no_approved_citations");
+        if (live) return live;
         fail(
           502,
-          "Search did not provide usable official sources. Retry research; no researched report was invented.",
+          "Search did not provide usable official or approved security-provider sources. Retry research; no researched report was invented.",
         );
+      }
       return {
         topic: researchTopic(incident),
         sources,

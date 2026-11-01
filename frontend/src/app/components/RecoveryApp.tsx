@@ -868,7 +868,7 @@ export function RecoveryApp() {
                           ? "Case changed: update needed"
                           : (
                               {
-                                research: "Collecting official guidance",
+                                research: "Collecting cited guidance",
                                 writing: "Writing the report",
                                 pdf: "Creating PDF",
                                 email: "Sending email",
@@ -940,12 +940,13 @@ export function RecoveryApp() {
                             <small>Sources: {s.sourceIds.join(", ")}</small>
                           </article>
                         ))}
-                        <h3>Official sources</h3>
+                        <h3>Guidance sources</h3>
                         {job.research.sources.map((s: any) => (
                           <p key={s.id}>
                             <a href={s.url} target="_blank" rel="noreferrer">
                               [{s.id}] {s.title} ↗
                             </a>
+                            <small>{s.kind === "security_vendor" ? " — Security-provider guidance" : " — Official source"}</small>
                           </p>
                         ))}
                         {job.research.searchEntryPoint && (

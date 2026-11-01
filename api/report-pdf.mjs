@@ -123,9 +123,9 @@ export async function reportPDF(job) {
     ),
   );
   section(
-    "Official guidance sources",
+    "Guidance sources",
     job.research.sources.map(
-      (s) => `[${s.id}] ${s.title}\n${s.url}\nRetrieved: ${s.retrievedAt}`,
+      (s) => `[${s.id}] ${s.title} (${s.kind === "security_vendor" ? "security-provider guidance" : "official source"})\n${s.url}\nRetrieved: ${s.retrievedAt}`,
     ),
   );
   section("Reading this document", [

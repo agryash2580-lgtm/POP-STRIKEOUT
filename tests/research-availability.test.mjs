@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGemini, officialURL } from '../api/report-ai.mjs';
+import { createGemini, officialURL, researchURL } from '../api/report-ai.mjs';
 import { newCase } from '../api/reporting-core.mjs';
 
 test('research quota fallback identifies the cause without pretending to retrieve sources', async () => {
@@ -34,4 +34,28 @@ test('incident dates reject the year 4000 while unknown dates remain allowed', (
 test('official Meta recovery sources are accepted without allowing lookalike hosts', () => {
   assert.equal(officialURL('https://www.meta.com/account-recovery-support/'),true);
   assert.equal(officialURL('https://meta.com.attacker.invalid/account-recovery-support/'),false);
+});
+
+test('vetted security publishers stay distinct from official sources and reject spoofed domains', () => {
+  assert.equal(researchURL('https://www.eset.com/blog/recovery/'),true);
+  assert.equal(officialURL('https://www.eset.com/blog/recovery/'),false);
+  assert.equal(researchURL('https://www.mcafee.com/blogs/recovery/'),true);
+  assert.equal(researchURL('https://eset.com.attacker.invalid/recovery/'),false);
+  assert.equal(researchURL('https://random-recovery-agent.example/'),false);
+});
+
+test('quota failure can retrieve current publisher text without calling it Google Search', async () => {
+  const excerpt='Use Instagram account recovery through the official app and secure your email account.';
+  const requests=[];
+  const ai=createGemini({env:{GEMINI_API_KEY:'fictional-key'},fetcher:async(url)=>{
+    requests.push(String(url));
+    if(String(url).includes('generativelanguage.googleapis.com'))return Response.json({}, {status:429});
+    return new Response('<h1>Recovery guidance</h1><article><p>'+excerpt+'</p></article>',{headers:{'Content-Type':'text/html'}});
+  }});
+  const research=await ai.research({platform:'Instagram',category:'account_takeover'});
+  assert.equal(research.mode,'live_source_retrieval');
+  assert.equal(research.sources[0].excerpts[0],excerpt);
+  assert.equal(research.sources[0].kind,'security_vendor');
+  assert.match(research.limitation,/No fresh Google Search results/);
+  assert.equal(requests.length,2);
 });

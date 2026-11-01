@@ -86,7 +86,7 @@ test('Gemini adapter sends search tools, resolves grounding redirects, rejects e
   assert.ok(!JSON.stringify(requests[0]).includes(details.description));
   assert.equal(requests[1].generationConfig.responseMimeType, 'application/json');
   const empty = createGemini({env: {GEMINI_API_KEY: 'test-only'}, fetcher: async () => Response.json({candidates: [{content: {parts: [{text: 'Uncited text'}]}}]})});
-  await assert.rejects(() => empty.research(details), /usable official sources/);
+  await assert.rejects(() => empty.research(details), /usable official or approved security-provider sources/);
   const bad = createGemini({env: {GEMINI_API_KEY: 'test-only'}, fetcher: async () => Response.json({candidates: [{finishReason: 'MAX_TOKENS', content: {parts: [{text: '{}'}]}}]})});
   await assert.rejects(() => bad.write(snapshot, research), /complete answer/);
 });
