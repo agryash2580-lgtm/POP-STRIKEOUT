@@ -356,7 +356,7 @@ export function ExtensionDemoApp({
             }}
           >
             <img src="/pop.png" alt="" style={{ width: "16px", height: "16px", imageRendering: "pixelated" }} />
-            Pop Toolbar (v2.1.3)
+            Pop Toolbar (v2.3.0)
           </button>
 
           <button

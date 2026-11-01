@@ -1,6 +1,6 @@
 # Pop: install, demonstrate, explain
 
-Pop 2.1.3 is STRIKEOUT's browser companion. He finds information you asked him to watch,
+Pop 2.3.0 is STRIKEOUT's browser companion. He finds information you asked him to watch,
 warns after you paste it, and helps capture reviewed evidence. Petting him is a
 fully supported business operation.
 
@@ -25,7 +25,7 @@ bevelled controls, navy title bars and square windows.
 
 When updating, replace the extracted files and reload the extension in your browser's
 extension manager, then refresh already-open websites. The popup title bar should say
-`2.1.3`. The hosted website may still offer an older ZIP until it is deployed.
+`2.3.0`. The hosted website offers this version under the Pop app.
 
 Firefox:
 
@@ -77,25 +77,21 @@ For AI, the STRIKEOUT server needs `GEMINI_API_KEY` in its environment. An optio
 the server, never inside an extension file. Provider access and quotas are not
 bundled with this ZIP.
 
-1. In Pop Settings, keep the hosted STRIKEOUT address or save
-   `http://localhost:3002` for development. Approve access to that server.
-2. Choose **Open STRIKEOUT to get a pairing code**. Generate the code. This uses
-   your website session or creates a guest workspace.
-3. Paste the one-use code into Pop Settings and choose **Connect Pop**. Codes
-   expire in five minutes. Chat access expires in seven days.
-4. Enable AI chat after reading its disclosure. Firefox may also show its native
-   data-transmission permission request.
-5. Chat opens in an extension-owned window, outside the website's own page.
+1. Sign in on the hosted STRIKEOUT website. Open Cases & Reports > Delivery & Pop.
+2. Choose Connect installed Pop. Add your watchlist once and save preferences.
+3. Choose Pair Pop AI with my account. The website exchanges its one-use pairing code through the restricted extension bridge; you do not paste a secret into source code. Pairing expires after seven days and can be revoked.
+4. Enable AI chat after reading its disclosure. Firefox may show its native optional data-transmission permission screen.
+5. Open Chat from Pop's right-click menu. It shares the website account's saved conversation and reviewed case context. The chat window belongs to the extension and does not read an arbitrary webpage automatically.
 
 Each request includes your typed message, up to eight recent conversation messages,
 and an address only if you deliberately supplied one. The watchlist, screenshots,
 page body and other open tabs are not attached. Address queries, fragments and
 credentials are stripped; review paths because they can contain personal data.
-The server does not persist chat bodies; the AI provider has its own data policies.
+The server saves your paired account conversation so website and extension Pop share the same history and approved case context. The AI provider has its own data policies.
 
 Limits are six requests per minute per connection and 100 attempts per UTC day.
 Failed provider attempts consume the daily allowance too. Errors are shown plainly.
-Clear conversation deletes this browser's session history, not provider copies.
+Clear conversation clears the shared website/extension thread, not provider copies.
 Disconnect revokes the server token. If the server is unreachable, revocation must
 be retried later; the UI does not falsely claim it succeeded.
 
@@ -203,11 +199,24 @@ The test browses only its local fictional fixture. Native permission prompts and
 separate manual checks; a small popup test also exercises the denial branch.
 No personal browser profile is touched.
 
-Versioned packages are written to `public/pop-chromium-2.1.3.zip`,
-`public/pop-firefox-2.1.3.zip`, and
+Versioned packages are written to `public/pop-chromium-2.3.0.zip`,
+`public/pop-firefox-2.3.0.zip`, and
 extracted development folders under `dist/pop/`. The packaging helper currently
 uses Windows PowerShell's Compress-Archive. The extension itself has no framework,
 remote executable code or runtime npm dependency.
 
 The older unversioned download aliases are also updated when they are not locked
 by an open archive window. Use the versioned ZIPs to make sure you have this build.
+
+
+## Final 2.3 workflow
+
+1. Install only one copy of Pop. Replace/reload the existing development installation and refresh your open tabs.
+2. Open STRIKEOUT, sign in, and open Cases & Reports > Delivery & Pop. Connect the installed extension, enter identifiers once, save preferences, then pair Pop with this account and approve optional AI. Page scanning and paste warnings use that same local watchlist.
+3. Open an ordinary webpage and choose Show. Left click pets Pop; right click opens quick tools. Minimise hides speech/menu without changing the cat's coordinates. Use the website shortcut to return to STRIKEOUT.
+4. Follow across websites asks for broad website access. This allows Pop to return after navigation and supports Firefox request interception and screenshots. The spelling guard covers selected duplicated/deleted/transposed/digit-substituted .com names for Instagram, Facebook, Google, PayPal, Microsoft, Amazon, Netflix and Discord. It is a local heuristic, not a malware database or guarantee. The warning offers Back, the real site and explicit Continue once.
+5. Save evidence from the cat asks for a name. Confirming captures the visible screenshot plus an inert rendered HTML snapshot, saves locally, and attempts to sync/email through the paired account. If email is not configured, the capture still remains in the website library. Advanced Capture & review lets you draw permanent opaque image redactions and review/edit/omit HTML before uploading. Image boxes do not edit HTML. Scripts, embedded frames and form values are stripped; large HTML is omitted with a message. This is a rendered-page snapshot, not every remote resource or the server's original response.
+6. In the website, open Pop evidence, choose a case and Add to case. The capture is then selectable in Report & PDF. The library offers screenshot, HTML and manifest downloads. Device capture time, server receive time, source address, selected text and SHA-256 hashes make the bundle more useful than an unexplained screenshot. Hashes support file comparison, not proof of authenticity or admissibility.
+7. Signed-in website chat and paired extension chat use one server conversation. History and approved case context follow you; another account cannot read them. New messages appear on refresh/focus or within about five seconds while open. Offline tools still work.
+
+Email requires a delivery account: either Resend with a verified sending domain or Gmail SMTP_USER plus SMTP_APP_PASSWORD. The normal Google login password is not supported. Each recipient must be verified in their own website account; Google sign-in can establish that verification. SMTP acceptance is not proof of inbox delivery. No email success is claimed if configuration is missing.

@@ -1,21 +1,28 @@
 {
   "manifest_version": 3,
   "name": "Pop by STRIKEOUT",
-  "version": "2.1.3",
+  "version": "2.3.0",
   "description": "A pet with a job: find watched information, catch accidental sharing and save reviewed evidence.",
   "permissions": [
     "storage",
     "activeTab",
     "scripting",
     "contextMenus",
-    "downloads"
+    "downloads",
+    "declarativeNetRequest",
+    "webNavigation"
   ],
   "host_permissions": [
-    "https://strikeout-wheat.vercel.app/*",
+    "https://strikeout-mu20.vercel.app/*",
     "http://localhost:3002/*",
-    "http://127.0.0.1:3002/*"
+    "http://127.0.0.1:3002/*",
+    "https://strikeout-wheat.vercel.app/*"
   ],
-  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*",
+    "<all_urls>"
+  ],
   "action": {
     "default_popup": "panel.html",
     "default_title": "Pop's tools"
@@ -32,8 +39,16 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["pop.png"],
-      "matches": ["http://*/*", "https://*/*"]
+      "resources": [
+        "pop.png",
+        "link-warning.html",
+        "link-warning.js",
+        "panel.css"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
     }
   ],
   "content_security_policy": {
@@ -42,11 +57,14 @@
   "content_scripts": [
     {
       "matches": [
-        "https://strikeout-wheat.vercel.app/*",
+        "https://strikeout-mu20.vercel.app/*",
         "http://localhost:3002/*",
-        "http://127.0.0.1:3002/*"
+        "http://127.0.0.1:3002/*",
+        "https://strikeout-wheat.vercel.app/*"
       ],
-      "js": ["website-bridge.js"],
+      "js": [
+        "website-bridge.js"
+      ],
       "run_at": "document_idle"
     }
   ]

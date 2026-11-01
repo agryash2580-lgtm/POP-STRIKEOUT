@@ -34,6 +34,32 @@ export function ExposureApp() {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   useEffect(() => {
+    if (location.hash.startsWith("#pop-review=")) {
+      try {
+        const encoded = location.hash.slice(12);
+        if (encoded.length > 70000)
+          throw Error("This page handoff is too large.");
+        const value = JSON.parse(
+          new TextDecoder().decode(
+            Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0)),
+          ),
+        );
+        if (typeof value.text !== "string" || value.text.length > 12000)
+          throw Error("Invalid page handoff.");
+        const url = new URL(value.sourceUrl);
+        if (!["http:", "https:"].includes(url.protocol))
+          throw Error("Invalid source address.");
+        setService("documents");
+        setDocumentText(value.text);
+        setSource(url.href);
+        setConsent(false);
+      } catch (e: any) {
+        setError(e.message);
+      }
+      history.replaceState(null, "", location.pathname + location.search);
+    }
+  }, []);
+  useEffect(() => {
     function clearAccount() {
       setResult(null);
       setValue("");
@@ -173,9 +199,10 @@ export function ExposureApp() {
         </p>
         {caps && (
           <small>
-            GitHub public search: enabled · Document review: enabled · Brave web
-            search: {caps.providers?.brave ? "configured" : "not configured"} ·
-            HIBP email breaches:{" "}
+            GitHub public search: enabled Â· Document review: enabled Â· Brave
+            web search:{" "}
+            {caps.providers?.brave ? "configured" : "not configured"} Â· HIBP
+            email breaches:{" "}
             {caps.providers?.hibp ? "configured" : "not configured"}
           </small>
         )}
@@ -183,6 +210,29 @@ export function ExposureApp() {
       <LinkChecker enabled={!!caps} />
       <InstagramPanel />
       <AdvancedExposure capabilities={caps} />
+      {service === "instagram" && (
+        <div className="mini-note">
+          <strong>Want to review your actual Instagram profile?</strong>
+          <p>
+            Open your own profile while signed into Instagram. In Pop's
+            extension toolbar, expand More and choose Review visible text on
+            STRIKEOUT. Review the imported text here and enter the identifiers
+            you want to find. This also works on private pages you can access;
+            it does not make them publicly exposed.
+          </p>
+          {/^[a-zA-Z0-9._]{1,30}$/.test(value.replace(/^@/, "")) && (
+            <a
+              href={
+                "https://www.instagram.com/" + value.replace(/^@/, "") + "/"
+              }
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open my Instagram profile
+            </a>
+          )}
+        </div>
+      )}
       <form id="tour-exposure-search-well" onSubmit={scan}>
         {caps?.providers?.serpapi &&
           !["documents", "password"].includes(service) && (
@@ -349,7 +399,7 @@ export function ExposureApp() {
           />
           This is my information and I approve the described check.
         </label>
-        <button disabled={!consent || busy || !caps}>
+        <button disabled={!consent || busy}>
           {busy ? "Checking…" : "Check my exposure"}
         </button>
       </form>
@@ -409,7 +459,11 @@ export function ExposureApp() {
           >
             Download exposure results
           </button>
-          <h2>Check {result.status}</h2>
+          <h2>
+            {result.status === "incomplete"
+              ? "Some sources could not be checked"
+              : "Check completed"}
+          </h2>
           <RiskSummary summary={result.riskSummary} />
           {typeof result.coverage === "string" && <p>{result.coverage}</p>}
           {Array.isArray(result.coverage) && (
@@ -417,10 +471,30 @@ export function ExposureApp() {
               {result.coverage.map((c: any, i: number) => (
                 <p key={i}>
                   <strong>
-                    {c.provider}: {c.status}
+                    {(
+                      {
+                        github_public: "GitHub public references",
+                        brave: "Web search",
+                        hibp: "Email breach records",
+                        local: "Local checks",
+                      } as any
+                    )[c.provider] || c.provider}
+                    :{" "}
+                    {(
+                      {
+                        completed: "Checked",
+                        rate_limited: "Temporarily rate-limited",
+                        network_error: "Connection failed",
+                        timeout: "Timed out",
+                        provider_error: "Provider unavailable",
+                        not_configured: "Not configured",
+                        partial: "Partial results",
+                      } as any
+                    )[c.status] || c.status}
                   </strong>
                   <br />
                   {c.scope}
+                  {c.message && <p role="status">{c.message}</p>}
                 </p>
               ))}
             </div>
@@ -430,6 +504,14 @@ export function ExposureApp() {
               One or more provider checks were incomplete. This is not a
               complete exposure assessment.
             </p>
+          )}
+          {result.status === "incomplete" && (
+            <button
+              disabled={busy}
+              onClick={() => scan({ preventDefault() {} })}
+            >
+              Retry exposure check
+            </button>
           )}
           {result.coverage
             ? null
@@ -447,6 +529,13 @@ export function ExposureApp() {
                   only; no external requests.
                 </p>
               )}
+          {!!result.findings?.length && (
+            <p>
+              Results ranked by potential severity: critical, high, medium, low;
+              stronger evidence breaks ties. Severity is a review priority, not
+              proof of harm.
+            </p>
+          )}
           {(result.findings || []).map((f: any, i: number) => (
             <article className="step-card" key={f.id || i}>
               <strong>
@@ -455,6 +544,16 @@ export function ExposureApp() {
                   String(f.category || "Finding").replaceAll("_", " ")}
               </strong>
               <p>{f.snippet || f.evidence || f.dataClasses?.join(", ")}</p>
+              {f.priorityReason && (
+                <p>
+                  <strong>
+                    {f.severity
+                      ? f.severity.charAt(0).toUpperCase() + f.severity.slice(1)
+                      : "Review"}
+                  </strong>
+                  : {f.priorityReason}
+                </p>
+              )}
               {f.providers?.length > 0 && (
                 <small>Found by: {f.providers.join(", ")}</small>
               )}

@@ -1,6 +1,6 @@
 (() => {
   const existing = document.getElementById("strikeout-pop-pet");
-  if (existing?.dataset.popVersion === "2.1.3") return;
+  if (existing?.dataset.popVersion === "2.3.0") return;
   existing?.remove();
   const Pop = globalThis.Pop;
   const SIZE = 48;
@@ -11,12 +11,27 @@
   let speechTimer, snoozeTimer;
   let capturedHidden = false;
   let lastScan = null;
+  // Keep the tools registered, but let STRIKEOUT render its own single pet.
+  const onStrikeoutWebsite =
+    document.documentElement.hasAttribute("data-strikeout-app");
   const get = (id) => root.getElementById(id);
   const jokes = [
     "Excellent. Finally, competent management.",
     "Cybersecurity department accepting head pats.",
     "Payment received. In head pats. Obviously.",
     "My qualifications? Soft. Available.",
+    "Another head pat. Updating my compensation package.",
+    "Yes, yes. The tiny security consultant is pleased.",
+    "You may continue. I have inspected this finger.",
+    "Your password manager deserves this attention too.",
+    "Finally. A click with absolutely no phishing involved.",
+    "I accept praise in precisely this format.",
+    "My threat model includes insufficient affection.",
+    "This is now a scheduled security maintenance window.",
+    "The ears are decorative. The attitude is enterprise-grade.",
+    "You clicked the correct cat. Remarkable progress.",
+    "I have promoted you to Assistant Head-Patter.",
+    "Continue. The audit requires additional samples.",
     "This meeting could have been a head pat.",
   ];
 
@@ -64,9 +79,9 @@
     pats = now - lastPet < 3000 ? pats + 1 : 1;
     lastPet = now;
     Pop.say(
-      pats >= 7
+      pats === 7
         ? "That's seven. Your tabs remain a disaster."
-        : pats >= 4
+        : pats >= 4 && pats < 7
           ? "You may continue. I cancelled my next meeting."
           : jokes[Math.floor(Math.random() * jokes.length)],
     );
@@ -112,13 +127,25 @@
     action("Pet Pop", petPop);
     action("Check this page", scan);
     action("Check my draft", () => Pop.checkDraft());
+    action("Review text on STRIKEOUT", async () => {
+      const result = await PopAPI.runtime.sendMessage({
+        type: "POP_REVIEW_SELF",
+      });
+      if (result?.error) throw Error(result.error);
+    });
     action("Save evidence", async () => {
-      const r = await PopAPI.runtime.sendMessage({ type: "POP_CAPTURE_SELF" });
+      const r = await PopAPI.runtime.sendMessage({
+        type: "POP_CAPTURE_SELF",
+        askName: true,
+      });
       if (r?.error) throw Error(r.error);
     });
     action("Chat", () => open("chat"));
     action("Evidence files", () => open("incidents"));
     action("Watchlist & settings", () => open("settings"));
+    action("Open STRIKEOUT", () =>
+      PopAPI.runtime.sendMessage({ type: "POP_WEBSITE" }),
+    );
     action("Minimise", minimise);
     action("Disable on this site", disableSite);
     root.append(tools);
@@ -217,12 +244,15 @@
   }
 
   async function disableSite() {
-    const settings = await PopAPI.storage.local.get("disabledSites");
-    await PopAPI.storage.local.set({
-      disabledSites: [
-        ...new Set([...(settings.disabledSites || []), location.hostname]),
-      ],
-    });
+    const settings = await PopAPI.storage.local.get([
+      "disabledSites",
+      "snoozedUntil",
+    ]);
+    settings.disabledSites = [
+      ...new Set([...(settings.disabledSites || []), location.hostname]),
+    ];
+    await PopAPI.storage.local.set({ disabledSites: settings.disabledSites });
+    applyPreferences(settings);
   }
 
   async function start() {
@@ -234,12 +264,14 @@
     if (document.getElementById("strikeout-pop-pet")) return;
     host = document.createElement("div");
     host.id = "strikeout-pop-pet";
-    host.dataset.popVersion = "2.1.3";
+    host.dataset.popVersion = "2.3.0";
     host.style.cssText =
       "position:fixed;width:48px;height:48px;z-index:2147483647;";
+    if (onStrikeoutWebsite)
+      host.style.setProperty("display", "none", "important");
     root = host.attachShadow({ mode: "closed" });
     root.innerHTML = `<style>
-      :host{all:initial}*{box-sizing:border-box}[hidden]{display:none!important}
+      :host{all:initial}:host([hidden]){display:none!important}*{box-sizing:border-box}[hidden]{display:none!important}
       button{font:11px Tahoma,Arial,sans-serif;color:#000;cursor:pointer}
       button:focus-visible{outline:1px dotted #000;outline-offset:2px}
       #cat{position:relative;display:block;width:48px;height:48px;border:0;padding:0;background:none;touch-action:none;cursor:grab}
@@ -344,7 +376,7 @@
     PopAPI.runtime.onMessage.addListener((message, sender, reply) => {
       const result = () => ({
         ok: true,
-        version: "2.1.3",
+        version: "2.3.0",
         note: Pop.lastNote || "",
         count: lastScan?.count || 0,
       });
@@ -361,10 +393,14 @@
         reply(result());
       }
       if (message.type === "POP_SHOW") {
+        if (onStrikeoutWebsite)
+          window.dispatchEvent(new Event("strikeout-show-pet"));
         minimise();
         reply(result());
       }
       if (message.type === "POP_MINIMISE") {
+        if (onStrikeoutWebsite)
+          window.dispatchEvent(new Event("strikeout-minimise-pop"));
         minimise();
         reply({
           ...result(),
@@ -372,6 +408,14 @@
         });
       }
       if (message.type === "POP_PET") {
+        if (onStrikeoutWebsite) {
+          window.dispatchEvent(new Event("strikeout-pet-pop"));
+          reply({
+            ...result(),
+            note: "Head pats delivered to the website's Pop.",
+          });
+          return;
+        }
         if (!Pop.active)
           reply({
             error:

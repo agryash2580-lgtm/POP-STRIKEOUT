@@ -1,5 +1,7 @@
 # STRIKEOUT + Pop
 
+Live website: https://strikeout-mu20.vercel.app
+
 A Windows 98 style recovery workspace with private incident cases, evidence, reviewed complaint drafts, optional Gemini reports/PDFs, guided next steps, a separate Check Exposure app and a Chromium/Firefox companion extension.
 
 **Start with [CODE-GUIDE.md](CODE-GUIDE.md).** It explains the actual code, file locations, data flow, setup, demo and limitations for a beginner presenting this project.
@@ -31,8 +33,8 @@ Instagram public-reference checks are available. Consented follow requests use t
 
 ## Extension development packages
 
-- [Chromium v2.1.3](frontend/public/pop-chromium-2.1.3.zip)
-- [Firefox/Zen v2.1.3](frontend/public/pop-firefox-2.1.3.zip)
+- [Chromium v2.3.0](frontend/public/pop-chromium-2.3.0.zip)
+- [Firefox/Zen v2.3.0](frontend/public/pop-firefox-2.3.0.zip)
 
 Unzip, then load the Chromium folder at `chrome://extensions` with Developer mode, or load the Firefox `manifest.json` through `about:debugging#/runtime/this-firefox`. Firefox installation is temporary and requires version 142+. Website Delivery & Pop manages the installed extension's preferences after approval. Left-click Pop to pet; right-click for tools.
 
@@ -62,3 +64,5 @@ Live checks using fictional inputs: `node scripts/check-osint-live.mjs` and `npm
 The supplied shell/tutorial originated in the frontend ZIP; see [frontend provenance](frontend/THIRD-PARTY-NOTICE.md). The extension simulator uses fictional demonstration content. No complaints are automatically submitted, no appointments are booked, and no no-findings result proves absence of exposure.
 
 Never commit `.env.local`, `.data`, browser profiles, provider credentials or personal incident exports. See `.env.example` and the guide for the exact optional settings and deployment requirements.
+
+Pop 2.3 adds local lookalike-link blocking, shared account chat/context, a synced evidence library and case/report attachment. See [extension installation and demo](extension/README.md) and [code guide](CODE-GUIDE.md). Gmail email needs an app password; missing email configuration never prevents saving/syncing/downloading evidence.

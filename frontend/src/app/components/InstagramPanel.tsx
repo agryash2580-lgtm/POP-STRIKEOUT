@@ -83,8 +83,8 @@ export function InstagramPanel() {
     <details className="instagram-panel">
       <summary>Instagram / Request Pop for my private account</summary>
       <p>
-        Public-reference checks are below. This separate local service can
-        request permission for <strong>@popyourproblemsaway</strong> to follow
+        Public-reference checks are below. You can request operator review for
+        <strong>@popyourproblemsaway</strong> to follow
         your private account. It does not import or scan your posts.
       </p>
       {!status && (
@@ -96,12 +96,11 @@ export function InstagramPanel() {
       )}
       {status && !status.local && (
         <p className="mini-note">
-          The Instagram browser runs on the operator's computer. Open this
-          service at localhost:3002 to request a follow. Public-reference checks
-          below work independently.
+          Your request is saved for operator review. A queued request has not
+          been sent to Instagram. You can withdraw permission here at any time.
         </p>
       )}
-      {status?.local && (
+      {status && (
         <>
           <label>
             My account is

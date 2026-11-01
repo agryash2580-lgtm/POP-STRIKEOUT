@@ -5,7 +5,7 @@ globalThis.PopAPI = globalThis.browser || globalThis.chrome;
 (() => {
   const Pop = globalThis.Pop;
   Pop.scriptFiles = ["shared.js", "page-scan.js", "sharing-guard.js", "pet.js"];
-  Pop.defaultServer = "https://strikeout-wheat.vercel.app";
+  Pop.defaultServer = "https://strikeout-mu20.vercel.app";
   Pop.permissionPattern = function (address) {
     const url = new URL(address);
     // WebExtension host patterns cover the host across ports.

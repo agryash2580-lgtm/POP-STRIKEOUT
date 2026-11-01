@@ -1,4 +1,13 @@
+import { specialistBotsRouter } from "./specialist-bots.mjs";
+import {
+  startLogin,
+  securityState,
+  installMFA,
+  deleteMFA,
+  clearMfaChallenge,
+} from "./mfa.mjs";
 import express from "express";
+import { evidenceLibraryRouter, deletePopLibrary } from "./pop-library.mjs";
 import {
   randomBytes,
   randomUUID,
@@ -31,7 +40,7 @@ import {
 export const config = { maxDuration: 120 };
 const app = express();
 app.disable("x-powered-by");
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "5mb" }));
 const problem = (res, status, message, details = {}) =>
   res.status(status).json({ error: message, ...details });
 const guarded = (fn) => async (req, res, next) => {
@@ -143,12 +152,20 @@ async function user(req, required = true) {
     if (required) fail(401, "Sign in again.");
     return null;
   }
+  const security = await securityState(u.id);
+  if ((session.authVersion || 0) !== (security.version || 0)) {
+    if (required) fail(401, "Account security changed. Sign in again.");
+    return null;
+  }
+  req.strikeoutAuthSession = session;
   return u;
 }
-async function session(res, id) {
+async function issueSession(res, id, authVersion = 0) {
   const token = randomBytes(32).toString("hex");
   await write("sessions/" + hash(token), {
     userId: id,
+    authVersion,
+    issuedAt: Date.now(),
     expires: Date.now() + 7 * 86400000,
   });
   res.cookie("strikeout_session", token, {
@@ -158,6 +175,9 @@ async function session(res, id) {
     maxAge: 7 * 86400000,
     path: "/",
   });
+}
+async function session(res, id) {
+  return startLogin(res, id, issueSession);
 }
 const safeUser = (u) => ({
   id: u.id,
@@ -178,14 +198,14 @@ async function owned(req) {
 app.get("/api/health", (req, res) =>
   res.json({
     ok: true,
-    version: "2.0",
+    version: "2.3.0",
     storage:
       usesCloud() && process.env.BLOB_READ_WRITE_TOKEN
         ? "private-durable-blob"
         : process.env.VERCEL
           ? "unconfigured"
           : "local-durable-files",
-    demo: true,
+    demonstrationSourcesAvailable: true,
   }),
 );
 app.post(
@@ -198,6 +218,15 @@ app.post(
 app.use("/api/reporting", reportingRouter({ user, guarded, limited }));
 app.use("/api/reports", reportsRouter({ user, guarded, limited }));
 app.use("/api/guide", websiteChatRouter({ user, guarded, limited }));
+app.use("/api/assistants", specialistBotsRouter({ user, guarded, limited }));
+app.use(
+  "/api/library",
+  evidenceLibraryRouter({
+    identity: async (req) => (await user(req)).id,
+    guarded,
+    limited,
+  }),
+);
 app.use("/api/osint", osintRouter({ user, guarded, limited }));
 const instagram = installInstagramBot(app, {
   user,
@@ -227,6 +256,7 @@ app.get(
     res.json({ user: u ? safeUser(u) : null });
   }),
 );
+installMFA(app, { user, guarded, limited, issueSession });
 installGoogleAuth(app, {
   guarded,
   limited,
@@ -269,6 +299,7 @@ app.post(
       const t = cookie(req);
       if (t) await remove("sessions/" + hash(t));
       res.clearCookie("strikeout_session", { path: "/" });
+      await clearMfaChallenge(req, res);
       return res.json({ ok: true });
     }
     const username = String(req.body.username || "")
@@ -323,8 +354,8 @@ app.post(
           "Username or password did not match. Your draft is still here.",
         );
     } else fail(404, "Unknown account action.");
-    await session(res, id);
-    res.json({ user: safeUser(u) });
+    const login = await session(res, id);
+    res.json(login.mfaRequired ? login : { user: safeUser(u) });
   }),
 );
 app.get(
@@ -378,6 +409,8 @@ app.delete(
     const u = await user(req);
     await instagram.removeUser(u.id);
     await deleteAccountReportData(u);
+    await deletePopLibrary(u.id);
+    await deleteMFA(u.id);
     await remove("workspaces/" + u.workspaceId);
     await remove("users/" + u.id);
     const t = cookie(req);
@@ -635,13 +668,13 @@ app.post(
   guarded(async (req, res) => {
     limited(req, "ai", 6);
     await user(req);
-    if (!process.env.GEMINI_API_KEY)
-      fail(503, "Pop’s AI wording is unavailable. All core tools still work.");
     if (req.body.approved !== true)
       fail(400, "Review the context before asking Pop.");
+    if (!process.env.GEMINI_API_KEY)
+      fail(503, "Pop’s AI wording is unavailable. All core tools still work.");
     const context = String(req.body.context || "").slice(0, 6000),
       task = String(req.body.task || "Explain my next step").slice(0, 300);
-    const model = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
+    const model = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
     let r;
     try {
       r = await fetch(

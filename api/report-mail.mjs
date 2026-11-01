@@ -1,13 +1,31 @@
+import { sendGmail } from "./report-smtp.mjs";
 import { fail } from "./reporting-core.mjs";
 
 export function createMailer({ fetcher = fetch, env = process.env } = {}) {
   return {
-    configured: () => !!(env.RESEND_API_KEY && env.REPORT_EMAIL_FROM),
-    async send({ to, subject, text, attachment, key }) {
+    configured: () =>
+      !!(
+        (env.SMTP_USER && env.SMTP_APP_PASSWORD) ||
+        (env.RESEND_API_KEY && env.REPORT_EMAIL_FROM)
+      ),
+    async send({ to, subject, text, attachment, attachments, key }) {
+      if (env.SMTP_USER && env.SMTP_APP_PASSWORD)
+        return sendGmail({
+          env,
+          to,
+          subject,
+          text,
+          key,
+          attachments:
+            attachments ||
+            (attachment
+              ? [{ filename: "strikeout-report.pdf", content: attachment }]
+              : []),
+        });
       if (!env.RESEND_API_KEY || !env.REPORT_EMAIL_FROM)
         fail(
           503,
-          "Email is not configured. Set RESEND_API_KEY and a verified REPORT_EMAIL_FROM. PDF downloads still work.",
+          "Email is not configured. Set SMTP_USER and a Gmail SMTP_APP_PASSWORD, or configure Resend with a verified sender. Downloads and website sync still work.",
         );
       let response;
       try {
@@ -23,13 +41,15 @@ export function createMailer({ fetcher = fetch, env = process.env } = {}) {
             to: [to],
             subject,
             text,
-            ...(attachment
-              ? {
-                  attachments: [
-                    { filename: "strikeout-report.pdf", content: attachment },
-                  ],
-                }
-              : {}),
+            ...(attachments
+              ? { attachments }
+              : attachment
+                ? {
+                    attachments: [
+                      { filename: "strikeout-report.pdf", content: attachment },
+                    ],
+                  }
+                : {}),
           }),
           signal: AbortSignal.timeout(12000),
         });

@@ -1,5 +1,6 @@
 // Background code bridges the page companion and privileged browser APIs.
-if (typeof importScripts === "function") importScripts("shared.js");
+if (typeof importScripts === "function")
+  importScripts("shared.js", "link-guard.js");
 const Pop = globalThis.Pop;
 let scriptUpdate = Promise.resolve();
 
@@ -82,7 +83,7 @@ async function bringPop(tabId, command) {
   return { ok: true };
 }
 
-async function captureEvidence(tabId) {
+async function captureEvidence(tabId, askName = false) {
   const tab = await PopAPI.tabs.get(tabId);
   if (!/^https?:/.test(tab.url || ""))
     throw Error("Use an ordinary website for evidence capture.");
@@ -93,6 +94,50 @@ async function captureEvidence(tabId) {
   if (active[0]?.id !== tab.id)
     throw Error("The active tab changed. Select the page and try again.");
   let metadata = { selectedText: "" };
+  const snapshots = await PopAPI.scripting.executeScript({
+    target: { tabId },
+    func: (ask) => {
+      const name = ask
+        ? prompt(
+            "Name this evidence. OK syncs screenshot and inert HTML to your paired website account and requests email to your verified address. Email needs configured delivery. Cancel stops capture.",
+            "Incident evidence",
+          )
+        : "";
+      if (ask && name === null) return null;
+      const copy = document.documentElement.cloneNode(true);
+      copy
+        .querySelectorAll(
+          'script,iframe,object,embed,input[type=password],input[type=hidden],meta[http-equiv="refresh"],#strikeout-pop-pet',
+        )
+        .forEach((e) => e.remove());
+      copy.querySelectorAll("input,textarea,select").forEach((e) => {
+        e.removeAttribute("value");
+        if (e.tagName !== "INPUT") e.textContent = "";
+      });
+      copy.querySelectorAll("*").forEach((e) => {
+        for (const attr of [...e.attributes])
+          if (
+            /^on/i.test(attr.name) ||
+            attr.name === "srcdoc" ||
+            attr.name === "nonce"
+          )
+            e.removeAttribute(attr.name);
+      });
+      return {
+        html: copy.outerHTML,
+        name: String(name || "").slice(0, 100),
+        quick: ask,
+      };
+    },
+    args: [askName],
+  });
+  if (!snapshots[0]?.result) throw Error("Capture cancelled.");
+  const snapshot = snapshots[0].result;
+  if (snapshot.html.length > 1500000) {
+    snapshot.html = "";
+    snapshot.htmlNote =
+      "HTML exceeded the capture limit; this capture contains the screenshot only.";
+  }
   let hasPet = false;
   try {
     const response = await PopAPI.tabs.sendMessage(tabId, {
@@ -126,6 +171,10 @@ async function captureEvidence(tabId) {
   await PopAPI.storage.session.set({
     ["capture:" + id]: {
       screenshot,
+      html: snapshot.html,
+      htmlNote: snapshot.htmlNote || "",
+      incidentName: snapshot.name,
+      quick: snapshot.quick,
       address: Pop.cleanAddress(tab.url),
       title: tab.title || "",
       capturedAt: new Date().toISOString(),
@@ -136,11 +185,17 @@ async function captureEvidence(tabId) {
   return { ok: true };
 }
 
-async function serverRequest(path, body, token, serverOverride) {
+async function serverRequest(
+  path,
+  body,
+  token,
+  serverOverride,
+  method = "POST",
+) {
   const settings = await PopAPI.storage.local.get(["server"]);
   const server = serverOverride || settings.server || Pop.defaultServer;
   const response = await fetch(server + path, {
-    method: "POST",
+    method,
     credentials: "omit",
     referrerPolicy: "no-referrer",
     headers: {
@@ -182,22 +237,65 @@ async function chat(message, pageAddress) {
     },
     settings.popToken,
   );
-  const next = [
+  const next = result.messages || [
     ...history,
     { role: "user", text: message },
     { role: "assistant", text: result.text },
-  ].slice(-12);
-  await PopAPI.storage.session.set({ chatHistory: next });
+  ];
+  await PopAPI.storage.session.set({
+    chatHistory: next,
+    chatRevision: result.revision,
+  });
   return { text: result.text };
 }
 
+async function reviewVisiblePage(tabId) {
+  const tab = await PopAPI.tabs.get(tabId);
+  if (!/^https?:/.test(tab.url || ""))
+    throw Error("Choose an ordinary webpage.");
+  const results = await PopAPI.scripting.executeScript({
+    target: { tabId },
+    func: () => {
+      if (
+        !confirm(
+          "Open STRIKEOUT with up to 12,000 characters of text visible on this page? Review it there before running a check. No screenshots, passwords from form fields, watchlist or AI context are attached.",
+        )
+      )
+        return null;
+      return {
+        text: (
+          window.getSelection()?.toString() || document.body.innerText
+        ).slice(0, 12000),
+        sourceUrl: location.href,
+      };
+    },
+  });
+  const snapshot = results[0]?.result;
+  if (!snapshot) return { ok: true, cancelled: true };
+  snapshot.sourceUrl = Pop.cleanAddress(snapshot.sourceUrl);
+  const encoded = btoa(
+    String.fromCharCode(...new TextEncoder().encode(JSON.stringify(snapshot))),
+  );
+  const settings = await PopAPI.storage.local.get("server");
+  await PopAPI.tabs.create({
+    url: (settings.server || Pop.defaultServer) + "/#pop-review=" + encoded,
+  });
+  return { ok: true };
+}
+
 async function handleMessage(message, sender) {
+  if (message.type === "POP_REVIEW_SELF") {
+    if (!sender.tab?.id) throw Error("Choose an ordinary webpage.");
+    return reviewVisiblePage(sender.tab.id);
+  }
   if (message.type === "POP_WEBSITE_DISCONNECT") {
     const settings = await PopAPI.storage.local.get("server");
     const origin = new URL(sender.url).origin;
     if (
       ![
         settings.server || Pop.defaultServer,
+        Pop.defaultServer,
+        "https://strikeout-wheat.vercel.app",
         "http://localhost:3002",
         "http://127.0.0.1:3002",
       ].includes(origin)
@@ -214,6 +312,8 @@ async function handleMessage(message, sender) {
     if (
       ![
         settings.server || Pop.defaultServer,
+        Pop.defaultServer,
+        "https://strikeout-wheat.vercel.app",
         "http://localhost:3002",
         "http://127.0.0.1:3002",
       ].includes(origin)
@@ -230,6 +330,8 @@ async function handleMessage(message, sender) {
     if (
       ![
         settings.server || Pop.defaultServer,
+        Pop.defaultServer,
+        "https://strikeout-wheat.vercel.app",
         "http://localhost:3002",
         "http://127.0.0.1:3002",
       ].includes(origin)
@@ -251,7 +353,7 @@ async function handleMessage(message, sender) {
   if (message.type === "POP_CAPTURE_SELF") {
     if (!sender.tab?.id || !/^https?:/.test(sender.url || ""))
       throw Error("Use Pop on an ordinary webpage.");
-    return captureEvidence(sender.tab.id);
+    return captureEvidence(sender.tab.id, !!message.askName);
   }
   // The page companion gets only narrow actions, never arbitrary server access.
   if (message.type === "POP_OPEN")
@@ -272,13 +374,79 @@ async function handleMessage(message, sender) {
   if (!sender.url?.startsWith(PopAPI.runtime.getURL("")))
     throw Error("Open this tool from the Pop toolbar.");
   switch (message.type) {
+    case "POP_LINK_CONTINUE": {
+      if (
+        !sender.tab?.id ||
+        !sender.url.startsWith(PopAPI.runtime.getURL("link-warning.html"))
+      )
+        throw Error("Use the link warning screen.");
+      return PopLinkGuard.continueOnce(sender.tab.id, message.address);
+    }
+    case "POP_CHAT_HISTORY": {
+      const settings = await PopAPI.storage.local.get("popToken");
+      if (!settings.popToken)
+        throw Error("Pair Pop with your website account first.");
+      const result = await serverRequest(
+        "/api/pop/conversation",
+        undefined,
+        settings.popToken,
+        undefined,
+        "GET",
+      );
+      const old = await PopAPI.storage.session.get("chatRevision");
+      if (old.chatRevision !== result.revision)
+        await PopAPI.storage.session.set({
+          chatHistory: result.messages,
+          chatRevision: result.revision,
+        });
+      return result;
+    }
+    case "POP_CHAT_CLEAR": {
+      const settings = await PopAPI.storage.local.get("popToken");
+      const result = await serverRequest(
+        "/api/pop/conversation",
+        undefined,
+        settings.popToken,
+        undefined,
+        "DELETE",
+      );
+      await PopAPI.storage.session.remove("chatHistory");
+      return result;
+    }
+    case "POP_EVIDENCE_SYNC": {
+      const settings = await PopAPI.storage.local.get("popToken");
+      if (!settings.popToken)
+        throw Error(
+          "Pair Pop with your website account before syncing evidence.",
+        );
+      return serverRequest(
+        "/api/pop/evidence",
+        message.evidence,
+        settings.popToken,
+      );
+    }
+    case "POP_EVIDENCE_EMAIL": {
+      const settings = await PopAPI.storage.local.get("popToken");
+      return serverRequest(
+        "/api/pop/evidence/" + encodeURIComponent(message.id) + "/email",
+        {},
+        settings.popToken,
+      );
+    }
+    case "POP_WEBSITE": {
+      const settings = await PopAPI.storage.local.get("server");
+      await PopAPI.tabs.create({ url: settings.server || Pop.defaultServer });
+      return { ok: true };
+    }
+    case "POP_REVIEW_PAGE":
+      return reviewVisiblePage(message.tabId);
     case "POP_BRING":
       return bringPop(message.tabId, message.command);
     case "POP_SYNC":
       await syncScripts();
       return { ok: true };
     case "POP_CAPTURE":
-      return captureEvidence(message.tabId);
+      return captureEvidence(message.tabId, !!message.askName);
     case "POP_PAIR": {
       const result = await serverRequest("/api/pop/pair", {
         code: message.code,

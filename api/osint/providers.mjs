@@ -1,12 +1,19 @@
 export class ProviderError extends Error {
-  constructor(code, message) {
+  constructor(code, message, details = {}) {
     super(message);
     this.code = code;
+    Object.assign(this, details);
   }
 }
 export async function request(
   url,
-  { headers = {}, json = true, missingIsEmpty = false, fetcher = fetch } = {},
+  {
+    headers = {},
+    json = true,
+    missingIsEmpty = false,
+    fetcher = fetch,
+    attempt = 0,
+  } = {},
 ) {
   try {
     const response = await fetcher(url, {
@@ -18,11 +25,37 @@ export async function request(
       signal: AbortSignal.timeout(15000),
     });
     if (response.status === 404 && missingIsEmpty) return [];
-    if (!response.ok)
-      throw new ProviderError(
-        "provider_error",
-        "Provider returned HTTP " + response.status + ".",
+    if (!response.ok) {
+      if (attempt === 0 && [502, 503, 504].includes(response.status))
+        return request(url, {
+          headers,
+          json,
+          missingIsEmpty,
+          fetcher,
+          attempt: 1,
+        });
+      const limited =
+        response.status === 429 ||
+        (response.status === 403 &&
+          response.headers.get("x-ratelimit-remaining") === "0");
+      const reset = Number(response.headers.get("x-ratelimit-reset"));
+      const retryAfter = Math.max(
+        1,
+        Number(response.headers.get("retry-after")) ||
+          (reset ? Math.ceil(reset - Date.now() / 1000) : 60),
       );
+      throw new ProviderError(
+        limited ? "rate_limited" : "provider_error",
+        limited
+          ? "The provider's request limit was reached. Try again after " +
+              retryAfter +
+              " seconds."
+          : "Provider returned HTTP " +
+              response.status +
+              ". No exposure conclusion is available.",
+        { httpStatus: response.status, ...(limited ? { retryAfter } : {}) },
+      );
+    }
     const reader = response.body?.getReader();
     if (!reader) throw Error("Empty response");
     let size = 0;
@@ -41,8 +74,18 @@ export async function request(
     return json ? JSON.parse(raw) : raw;
   } catch (e) {
     if (e instanceof ProviderError) throw e;
+    if (attempt === 0)
+      return request(url, {
+        headers,
+        json,
+        missingIsEmpty,
+        fetcher,
+        attempt: 1,
+      });
     throw new ProviderError(
-      "provider_error",
+      e.name === "TimeoutError" || e.name === "AbortError"
+        ? "timeout"
+        : "network_error",
       "Provider network, response or timeout failure. No conclusion available.",
     );
   }

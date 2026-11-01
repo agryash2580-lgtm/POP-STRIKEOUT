@@ -118,18 +118,22 @@
         </label>
         <div class="row">
           <button id="capture-save" class="primary">
-            Save reviewed evidence locally</button
+            Save evidence</button
           ><button id="capture-discard">Discard capture</button>
         </div>
+        <label><input id="capture-sync" type="checkbox">Sync this capture to my website evidence library</label>
+        <label><input id="capture-email" type="checkbox">Also email the bundle to my verified address</label>
+        <label><input id="capture-html-include" type="checkbox">Include the HTML below. Image redactions do not redact HTML.</label>
+        <details><summary>Review / redact inert HTML snapshot</summary><textarea id="capture-html" rows="8" spellcheck="false"></textarea></details>
       </section>
       <section id="chat" hidden>
         <h2>Ask Pop.</h2>
         <p class="hint">
           Messages and recent conversation go through STRIKEOUT to Gemini. No
           automatic page reading. Don't send passwords, OTPs or recovery codes.
-          History lasts for this browser session.
+          Paired chat history and approved case context are shared with your website account.
         </p>
-        <div id="chat-log" role="log" aria-live="polite"></div>
+        <p id="chat-context" class="hint"></p><div id="chat-log" role="log" aria-live="polite"></div>
         <form id="chat-form">
           <label
             >Your message<textarea

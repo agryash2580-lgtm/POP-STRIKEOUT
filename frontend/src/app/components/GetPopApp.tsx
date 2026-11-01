@@ -16,11 +16,13 @@ const sunken: React.CSSProperties = {
 
 export function GetPopApp({
   onSummonPet,
+  onStartTutorial,
   onOpenSimulator,
   activeBrowserTab: controlledTab,
   onTabChange,
 }: {
   onSummonPet?: () => void;
+  onStartTutorial?: () => void;
   onOpenSimulator?: () => void;
   activeBrowserTab?: "chrome" | "firefox";
   onTabChange?: (tab: "chrome" | "firefox") => void;
@@ -45,6 +47,10 @@ export function GetPopApp({
         padding: "24px 32px",
       }}
     >
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        <button onClick={onStartTutorial}>Start guided tutorial</button>
+        <button onClick={onSummonPet}>Show assistant</button>
+      </div>
       {/* ─── Hero Header ──────────────────────────────────────────────────── */}
       <div style={{ display: "flex", gap: "24px", alignItems: "center", marginBottom: "24px" }}>
         <div
@@ -82,7 +88,7 @@ export function GetPopApp({
               cursor: "pointer",
             }}
           >
-            🐾 Summon Desktop Pop
+            Summon Pop
           </button>
         </div>
 
@@ -112,14 +118,14 @@ export function GetPopApp({
             Meet Pop: Your Everyday Guardian
           </h2>
           <div style={{ fontSize: "13px", color: "#57534e", lineHeight: "1.45", maxWidth: "480px" }}>
-            Pop floats gently in your browser and desktop, intercepts sensitive credential leaks before they happen, captures cryptographic evidence, and keeps you grounded.
+            Pop checks supported page text, warns when watched information is pasted, and saves evidence with source details and integrity hashes. Left click to pet him; right click for tools.
           </div>
 
           {/* Direct Download Action Grid */}
           <div id="tour-getpop-downloads" style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
             <a
-              href="/pop-chromium-2.1.3.zip"
-              download="pop-chromium-2.1.3.zip"
+              href="/pop-chromium-2.3.0.zip"
+              download="pop-chromium-2.3.0.zip"
               style={{
                 ...raised,
                 background: "#166534",
@@ -135,12 +141,12 @@ export function GetPopApp({
               }}
             >
               <span>🌐</span>
-              <span>Download Chrome / Brave (v2.1.3)</span>
+              <span>Download Chrome / Brave (v2.3.0)</span>
             </a>
 
             <a
-              href="/pop-firefox-2.1.3.zip"
-              download="pop-firefox-2.1.3.zip"
+              href="/pop-firefox-2.3.0.zip"
+              download="pop-firefox-2.3.0.zip"
               style={{
                 ...raised,
                 background: "#c2410c",
@@ -156,7 +162,7 @@ export function GetPopApp({
               }}
             >
               <span>🦊</span>
-              <span>Download Firefox / Zen (v2.1.3)</span>
+              <span>Download Firefox / Zen (v2.3.0)</span>
             </a>
 
             {onOpenSimulator && (
@@ -241,7 +247,7 @@ export function GetPopApp({
             🛑 Anti-Impulsive Posting Check
           </div>
           <div style={{ fontSize: "12px", color: "#57534e", lineHeight: "1.4" }}>
-            Pop senses rapid keystrokes during heated interactions and suggests a quick 10-second breath, preventing emotional leaks or regretful social posts.
+            Use Check my draft to review a supported editable field for watched information. Pop suggests changes; you decide whether to remove matches.
           </div>
         </div>
 
@@ -260,7 +266,7 @@ export function GetPopApp({
             🌿 Cyber-Catnip & Companion
           </div>
           <div style={{ fontSize: "12px", color: "#57534e", lineHeight: "1.4" }}>
-            A comforting digital friend. Pop stays near you in the bottom right corner, purrs when petted, and enthusiastically chases Cyber-Catnip when fed.
+            Pop stays near you, reacts to head pats, and accepts Cyber-Catnip on this website. Sound stays off by default.
           </div>
         </div>
       </div>
@@ -316,7 +322,7 @@ export function GetPopApp({
 
         {activeBrowserTab === "chrome" ? (
           <ol style={{ fontSize: "13px", color: "#44403c", lineHeight: "1.6", margin: "0", paddingLeft: "20px" }}>
-            <li>Download <strong>pop-chromium-2.1.3.zip</strong> and unzip the folder to your disk.</li>
+            <li>Download <strong>pop-chromium-2.3.0.zip</strong> and unzip the folder to your disk.</li>
             <li>In Chrome or Brave, navigate to <code>chrome://extensions</code> in your address bar.</li>
             <li>Toggle <strong>Developer mode</strong> ON in the top right corner.</li>
             <li>Click <strong>Load unpacked</strong> and select the unzipped Pop extension folder.</li>
@@ -324,7 +330,7 @@ export function GetPopApp({
           </ol>
         ) : (
           <ol style={{ fontSize: "13px", color: "#44403c", lineHeight: "1.6", margin: "0", paddingLeft: "20px" }}>
-            <li>Download <strong>pop-firefox-2.1.3.zip</strong> and unzip the folder.</li>
+            <li>Download <strong>pop-firefox-2.3.0.zip</strong> and unzip the folder.</li>
             <li>In Firefox or Zen, navigate to <code>about:debugging#/runtime/this-firefox</code>.</li>
             <li>Click <strong>Load Temporary Add-on...</strong></li>
             <li>Select <code>manifest.json</code> from the unzipped folder.</li>

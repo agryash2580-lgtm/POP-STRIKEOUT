@@ -13,6 +13,13 @@ const conflict = () =>
 export const usesCloud = () =>
   !!process.env.VERCEL || process.env.STORAGE_BACKEND === "blob";
 export const hash = (s) => createHash("sha256").update(s).digest("hex");
+// Atomic first creation: concurrent chat windows must not overwrite an empty thread.
+export async function createIfMissing(key,value){
+  if(!/^[a-z0-9/_-]+$/i.test(key))throw Error('Invalid storage key');
+  if(usesCloud()&&process.env.BLOB_READ_WRITE_TOKEN){const {put}=await import('@vercel/blob');try{await put('strikeout/'+key+'.json',JSON.stringify(value),{access:'private',allowOverwrite:false,addRandomSuffix:false,contentType:'application/json'});return true;}catch(error){if(await read(key))return false;throw error;}}
+  if(process.env.VERCEL)throw Error('Persistent storage is not configured');
+  await mkdir(dir,{recursive:true});try{await writeFile(path.join(dir,key.replaceAll('/','_')+'.json'),JSON.stringify(value),{flag:'wx'});return true;}catch(error){if(error.code==='EEXIST')return false;throw error;}
+}
 export async function read(key) {
   if (!/^[a-z0-9/_-]+$/i.test(key)) throw Error("Invalid storage key");
   // Compressed JSON receives a weak W/ ETag, which cannot be used for If-Match.

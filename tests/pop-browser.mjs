@@ -101,6 +101,30 @@ async function installFirefoxAddon(port, addonPath) {
   return {url: addon.manifestURL.replace('/manifest.json', ''), evaluate, close: () => socket.end()};
 }
 
+async function checkLinkGuard(context,extensionURL,debugging){
+ const page=await context.newPage();let loads=0;
+ await page.route('https://instaagram.com/**',route=>{loads++;return route.fulfill({contentType:'text/html',body:'<h1>Fictional route fixture, no real site visited.</h1>'})});
+ await page.waitForTimeout(700);
+ await page.goto('https://instaagram.com/fictional-link-test',{timeout:5000}).catch(()=>{});
+ if(debugging){
+  // Playwright deliberately excludes Firefox extension pages. Inspect the actual
+  // tab/view using Mozilla's debugger, as for the other Firefox extension UI.
+  let warned=false;
+  for(let i=0;i<30;i++){
+   warned=await debugging.evaluate("return (await browser.tabs.query({})).some(t=>t.url?.includes('/link-warning.html')); ");
+   if(warned)break;await new Promise(resolve=>setTimeout(resolve,100));
+  }
+  assert.ok(warned,'Firefox must show its actual extension warning tab');assert.equal(loads,0);
+  await debugging.evaluate("const view=browser.extension.getViews().find(v=>v.location.pathname.endsWith('/link-warning.html'));if(!view)throw Error('Warning view missing');view.document.getElementById('continue').click();");
+ }else{
+  await page.waitForURL(url=>url.href.startsWith(extensionURL+'/link-warning.html'),{timeout:15000});
+  assert.equal(loads,0,'Lookalike navigation must be blocked before destination loads');
+  await page.getByRole('button',{name:'I understand. Continue once.',exact:true}).click();
+ }
+ await page.getByRole('heading',{name:'Fictional route fixture, no real site visited.'}).waitFor();assert.equal(loads,1);
+ await page.close();console.log('Link guard blocked the lookalike before load and respected explicit one-time continuation.');
+}
+
 async function testBrowser(name) {
   const extension = path.join(temporary, name + '-extension');
   await cp(path.join(root, 'extension'), extension, {recursive: true});
@@ -122,6 +146,7 @@ async function testBrowser(name) {
       const worker = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
       const workerURL = new URL(worker.url());
       extensionURL = workerURL.protocol + '//' + workerURL.host;
+      await checkLinkGuard(context,extensionURL);
     } else {
       const portServer = net.createServer();
       await new Promise(resolve => portServer.listen(0, '127.0.0.1', resolve));
@@ -143,6 +168,7 @@ async function testBrowser(name) {
       });
       firefoxDebugger = await installFirefoxAddon(debugPort, extension);
       extensionURL = firefoxDebugger.url;
+      await checkLinkGuard(context,extensionURL,firefoxDebugger);
       await testFirefox(context, firefoxDebugger);
       return;
     }

@@ -1,4 +1,5 @@
 import { publicWebEngines, publicWebReferences } from "./public-web.mjs";
+import { prioritizeFindings } from "./prioritize.mjs";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import {
   webSearch,
@@ -58,7 +59,7 @@ export function cardReview(number) {
     sum += n;
   }
   return {
-    masked: "•••• " + digits.slice(-4),
+    masked: "â€¢â€¢â€¢â€¢ " + digits.slice(-4),
     length: digits.length,
     luhnValid: sum % 10 === 0,
     externalLookup: false,
@@ -265,6 +266,9 @@ export async function runCheck(body, options = {}) {
       report.checks.push({
         provider: "github_public",
         status: e.code || "provider_error",
+        message: e.message,
+        retryAfter: e.retryAfter,
+        coverage: "Public GitHub issue and pull-request search only.",
       });
     }
     report.limitations.push(
@@ -321,7 +325,7 @@ export async function runCheck(body, options = {}) {
       "Select an approved provider: github_public works without a key; serpapi_google, serpapi_bing and serpapi_duckduckgo use SerpApi; brave and hibp require their keys.",
     );
   const merged = new Map();
-  for (const finding of report.findings) {
+  for (const finding of prioritizeFindings(report.findings, { service })) {
     let key = finding.url || finding.name;
     if (finding.url) {
       const url = new URL(finding.url);
@@ -339,13 +343,17 @@ export async function runCheck(body, options = {}) {
   report.coverage = report.checks.map((x) => ({
     provider: x.provider,
     status: x.status,
+    message: x.message,
+    retryAfter: x.retryAfter,
     scope:
       x.coverage ||
       (x.provider === "hibp"
         ? "HIBP breach records"
-        : x.provider === "local"
-          ? "Local metadata only"
-          : "Brave public web index"),
+        : x.provider === "github_public"
+          ? "Public GitHub issue and pull-request search only."
+          : x.provider === "local"
+            ? "Local metadata only"
+            : "Brave public web index"),
   }));
   if (report.checks.some((x) => x.status !== "completed"))
     report.status = "incomplete";

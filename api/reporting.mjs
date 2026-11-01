@@ -1,3 +1,5 @@
+import { createMailer } from "./report-mail.mjs";
+import { emailReviewedComplaint } from "./complaint-email.mjs";
 import express from "express";
 import { randomUUID } from "node:crypto";
 import { write } from "./store.mjs";
@@ -22,7 +24,7 @@ import {
   publicCase,
 } from "./reporting-core.mjs";
 
-export function reportingRouter({ user, guarded, limited }) {
+export function reportingRouter({ user, guarded, limited, mail = createMailer() }) {
   const router = express.Router();
   router.get("/channels", (req, res) =>
     res.json({
@@ -314,6 +316,14 @@ export function reportingRouter({ user, guarded, limited }) {
       );
     }),
   );
+
+  router.post("/cases/:id/draft/email-cyberdost", guarded(async (req, res) => {
+    const { owner, incident } = await find(req);
+    requireVersion(req, owner);
+    limited({ ip: owner.id, headers: {} }, "cyberdost-email", 3);
+    await emailReviewedComplaint(incident, owner.id, req.body, mail);
+    await save(res, owner, incident, "Email service accepted the reviewed draft addressed to CyberDost. Government acknowledgement not checked.");
+  }));
 
   router.get(
     "/cases/:id/export",

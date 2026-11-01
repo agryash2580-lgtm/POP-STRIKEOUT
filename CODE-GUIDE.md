@@ -1,5 +1,7 @@
 # STRIKEOUT: understand the code and present it honestly
 
+Production address: https://strikeout-mu20.vercel.app. The extension's current version is 2.3.0.
+
 Read sections 1–4 first. They explain the product and the main flow. Use the file map when someone asks where a feature is implemented.
 
 ## 1. What we built
@@ -7,6 +9,8 @@ Read sections 1–4 first. They explain the product and the main flow. Use the f
 STRIKEOUT helps someone organise the aftermath of an online incident. The website stores their case and evidence, prepares a reviewable complaint draft, generates an optional AI-assisted recovery report and PDF, and keeps a checklist of next steps. Check Exposure is a separate desktop app for consented public-reference searches, supplied-document checks and password-prefix breach checks. Pop is a real Chromium/Firefox extension with local identifier matching, sharing warnings, evidence capture and optional chat.
 
 The Windows 98 desktop is the interface. It is still a normal website running inside a browser. The terminal and monitor cannot inspect the computer's operating system. The extension simulator demonstrates fictional data; it is separate from the installed extension.
+
+Storage is a private JSON record store, not PostgreSQL, MongoDB or Firebase. Locally those records are files in the ignored `.data/` folder. Production uses private Vercel Blob objects under `strikeout/`: user records contain password hashes, cases and evidence; session records contain hashed session identifiers; report jobs contain reviewed snapshots, generated content and PDFs. Browser IndexedDB stores extension screenshots separately. The website's settings/wallpaper use browser localStorage. Clearing localStorage does not delete backend cases; account deletion uses authenticated backend deletion endpoints. Provider credentials stay in server environment variables, not these public assets.
 
 The supplied desktop and tutorial designs came from the frontend ZIP. Integration, account storage, reporting, AI, the installed extension and the OSINT connection are separate contributions. Preserve the supplied frontend's provenance notice. Do not claim every line or visual was originally authored by the team.
 
@@ -107,7 +111,7 @@ Before clicking Follow, the code checks the logged-in sender and the target prof
 
 Withdrawing permission stops future service actions. It does not magically remove an Instagram follow that already happened. The account owner can remove the service account inside Instagram. Account deletion removes that user's local queue records.
 
-The bot is local-only and unavailable in Vercel's serverless runtime. A follow request does not implement private-post extraction, private-image scanning or a complete social-account audit. Those capabilities must not be claimed in the presentation.
+Account owners can queue and withdraw requests on the live website. The operator's browser remains local-only and unavailable in Vercel's serverless runtime; processing hosted records locally requires private access to the same configured storage. A queued request is not a sent follow. A follow request does not implement private-post extraction, private-image scanning or a complete social-account audit. Those capabilities must not be claimed in the presentation.
 
 ## 8. Pop extension: how the real code works
 
@@ -132,6 +136,8 @@ The extension shares plain JavaScript across browsers, with separate manifests/b
 Clicking the cat pets it. Right-clicking opens tools. The cat's position belongs to its host, so hiding a menu does not move it to a different corner. The pet's shadow DOM keeps page styles from changing its interface. Site permissions determine where it can appear after navigation. It cannot run on browser-internal pages, extension stores or every inaccessible frame.
 
 Page scanning compares the local watchlist against rendered text. It does not inspect images or claim that a logged-in page is public. Sharing Guard warns after supported edits or pastes; a website may already have received the text. Remove changes text only after the user asks. No feature can guarantee prevention of all accidental sharing.
+
+The extension's More menu and right-click tools include “Review visible text on STRIKEOUT.” The user approves copying selected or rendered page text (bounded to 12,000 characters). It opens the website with a temporary URL fragment, which is not sent in the HTTP request. The app removes the fragment immediately and prefills Document Review. The user reviews text, chooses identifiers and explicitly submits before the server checks it. This works on an Instagram profile the user can view, including their own signed-in private profile; it does not establish public exposure. Nothing is automatically attached to Gemini. On the STRIKEOUT desktop the extension's cat is hidden, so only the website pet appears; toolbar tools remain usable.
 
 Screenshot capture checks the active tab, hides Pop's visual controls, captures the visible area and opens a review. Redaction boxes are painted onto the saved image. The original screenshot is not included in a saved redacted record. This is permanent image redaction, not a removable CSS rectangle. Original pending captures use session storage; saved records use IndexedDB.
 
@@ -177,7 +183,7 @@ Component paths above are relative to `frontend/src/app/` unless a longer path i
 | `reports.mjs` | Saved report versions/stages, email verification, PDF downloads, summary, guidance and progress. |
 | `report-ai.mjs` | Gemini research/writing/help prompts, schemas, official references and output validation. |
 | `report-pdf.mjs` | PDF layout, line wrapping, page breaks and saved-report rendering. |
-| `report-mail.mjs` | Optional Resend delivery adapter and acceptance handling. |
+| `report-mail.mjs`, `report-smtp.mjs` | Resend or Gmail app-password delivery, durable SMTP-attempt receipts and honest acceptance status. |
 | `pop.mjs` | Website chat, scoped extension pairing, chat token revocation and AI request limits. |
 | `osint.mjs` | Authenticated OSINT endpoints and provider capabilities. |
 | `osint/osint.mjs` | Supported check types, consent, validated inputs and combined coverage. |
@@ -226,7 +232,7 @@ For Google sign-in, create a Web application OAuth client and register the exact
 
 ## 12. Installing and demonstrating the extension
 
-Run `npm run package:pop` after changing extension source. Current development packages are v2.1.3. Windows packaging uses PowerShell's archive command. Downloads on the website must contain those newly built packages, not an older ZIP.
+Run `npm run package:pop` after changing extension source. Current development packages are v2.3.0. Windows packaging uses PowerShell's archive command. Downloads on the website must contain those newly built packages, not an older ZIP.
 
 Chromium: unzip the Chromium package, open `chrome://extensions`, enable Developer mode, click Load unpacked and select the folder containing `manifest.json`. Edge/Brave use their corresponding extension pages. After replacing files, reload the extension and refresh affected tabs.
 
@@ -247,3 +253,40 @@ The current storage and rate limiting suit a hackathon prototype. Limits are pro
 ## 14. A short explanation you can say aloud
 
 “Our React frontend gives users a Windows 98 workspace. An Express backend owns the private accounts, cases and evidence. Report generation saves a snapshot, researches generic official guidance, asks Gemini to write structured content, validates it and turns it into a downloadable PDF. Work is saved between stages so it can resume. Exposure checks tell the user exactly which providers and content were examined. Pop's core browser tools run locally, and AI is optional. The Instagram feature is a consent-based local follow workflow, not private-account scraping. We used AI to help implement the code, and we can trace each feature from its interface through its request handler to storage or its external provider.”
+
+
+## Desktop and Google sign-in fixes
+
+The desktop has one Pop app. `GetPopApp.tsx` contains the installation links and buttons to launch the supplied `GuidedTour.tsx` tutorial or the interactive `PopCompanion.tsx`. The separate extension demo is available inside Pop. The tutorial is the supplied frontend implementation, with its instructions corrected to match actual storage and exposure coverage.
+
+`Taskbar` stops click propagation because the desktop click handler dismisses Start. Without that boundary, clicking Start opened and immediately dismissed it in the same event. `tests/desktop-navigation.mjs` checks opening/dismissing Start and launching/advancing the original tutorial.
+
+Google OAuth is configured server-side on the live site. The callback is `https://strikeout-mu20.vercel.app/api/auth/google/callback`. While the Google project is in testing mode, add allowed accounts in Google Auth Platform > Audience > Test users. The Google account password never belongs in our code. A valid verified Google email becomes the default report/evidence recipient when no separate recipient has already been chosen. An existing separately chosen address is preserved. Tests cover state/nonce/PKCE, verified callback account creation, recipient preservation and unverified-identity rejection. Reaching Google's real sign-in screen is verified; a completed human-account login is not claimed by these tests.
+
+The live exposure walkthrough checks supplied-document findings, masked export, the hosted Instagram permission queue and withdrawal, and an actual downloadable report PDF. Instagram public-reference search uses the explicitly approved providers shown on screen. A completed GitHub search does not mean Instagram posts or private accounts were inspected. Provider failures stay incomplete and never become invented findings.
+
+The chat launcher is anchored at the lower left so it cannot cover the default lower-right pet. The navigation regression also checks that left click produces a pet response, right click opens tools, and Minimise keeps the pet visible.
+
+
+## Pop 2.3: shared chat, link protection and evidence handoff
+
+Read `extension/README.md` for the installation and demonstration sequence. Chromium and Firefox packages are `pop-chromium-2.3.0.zip` and `pop-firefox-2.3.0.zip`. These remain development installations, not signed store releases.
+
+`api/pop-conversation.mjs` owns the single saved thread under `pop_conversations/<account>`. Website session cookies and paired extension bearer tokens resolve to the same account. A conditional-write lease prevents two windows overwriting simultaneous answers. The server supplies canonical history, not arbitrary client-provided history. Approved case context stays attached until changed/cleared; the UI identifies it. No page text, watchlist or screenshot is attached automatically. Signing out switches the website UI away from that account. Clearing the shared thread clears both interfaces, not provider-retained data.
+
+`extension/link-guard.js` computes a bounded list of likely .com misspellings locally. Chromium declarative rules block the main-frame request and navigation events show `link-warning.html`; Firefox uses blocking request interception after website permissions are granted. A one-time bypass affects only that tab. This is useful typo protection, not a universal suspicious-link detector. Tests visit a fictional intercepted route, so no real lookalike website is contacted.
+
+`api/pop-library.mjs` stores account-owned captures under `pop_evidence/<account>/<capture>` and an account index. It validates screenshot types/size, records hashes and server receive time, wraps HTML in a restrictive policy, and refuses overwriting an existing ID with different content. Downloads, deletion and attachment require the same owner. Attaching copies the screenshot and reviewed source notes into an owned case, increments its version and makes the evidence selectable for reports. Downloaded or case-attached copies remain if the library original is deleted.
+
+`PopEvidenceLibrary.tsx` supplies that gallery and Add to case controls in the website, Evidence tab and Report tab. `workspace.js` saves captures in IndexedDB first, then explicitly syncs through the scoped extension endpoint. Quick Save evidence asks for a name and confirms the upload/email request. Advanced capture keeps an explicit review step. Redactions are flattened into the image; HTML has its own editable review because image boxes do not remove HTML text. HTML excludes scripts, frames and form values and may omit oversized pages; it is not a complete offline archive of external resources.
+
+Email supports Gmail with an app password or Resend with a verified domain. The recipient belongs to the signed-in user, not a hardcoded developer. Missing delivery configuration leaves local save, website sync and downloads available. `report-smtp.mjs` saves an attempt receipt before submitting because SMTP has no equivalent to Resend's idempotency key; an uncertain attempt needs mailbox review rather than blindly sending duplicates. The account's normal Gmail password is never used.
+
+`tests/pop-shared.test.mjs` covers account isolation and shared chat/library attachment. `tests/pop-sync-browser.mjs` exercises an actual visible-tab capture and the live website. `tests/pop-browser.mjs chromium` and `firefox` install the actual extension into temporary profiles and check core tools, flattened redaction/export/deletion, link interception and explicit continuation. Firefox extension screens are inspected through Mozilla's debugger because Playwright excludes them.
+
+Pop defaults to contextual generative chat, shared across website and extension. `POP_REVIEWED_REPLIES_ONLY=true` is an optional fixed-response mode retained from the concurrent grounding update; it is false for this presentation. The report grounding controls are separate. Generative chat is useful guidance, not a guarantee of factual correctness.
+
+
+## MFA and SSO
+
+Google OpenID Connect provides SSO. `api/mfa.mjs` adds an optional independent TOTP factor after either password or Google sign-in. Setup requires a recent signed-in session, confirms possession with a current code and shows eight recovery codes once. Authenticator secrets are encrypted with AES-256-GCM using the private stable MFA_ENCRYPTION_KEY; recovery codes are stored as hashes. Login first creates a five-minute HTTP-only challenge cookie, not a full session. Successful verification consumes a new TOTP time step or one recovery code before issuing the normal session. Incorrect codes are limited and reused codes are rejected. Account security versions invalidate older sessions, extension tokens and pairing codes when MFA changes. The Account security screen explains how to re-pair Pop afterwards. See TEAM-HANDOFF.md for the demo and team workflow. This is authenticator MFA plus Google SSO, not enterprise SAML or phishing-resistant passkeys.

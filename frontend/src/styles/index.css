@@ -2,6 +2,9 @@
 @import './tailwind.css';
 @import './theme.css';
 
+/* STRIKEOUT already owns the on-screen pet. Keep older installed extensions quiet here. */
+html[data-strikeout-app] #strikeout-pop-pet { display: none !important; }
+
 /* Custom Pixel Petting Hand Cursor for Pop */
 .pop-pet-cursor, .pop-pet-cursor * {
   cursor: url('/pet-hand-cursor.png') 16 16, pointer !important;
