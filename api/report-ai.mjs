@@ -55,6 +55,7 @@ const officialHosts = [
   "cert-in.org.in",
   "instagram.com",
   "help.instagram.com",
+  "meta.com",
   "facebook.com",
   "www.facebook.com",
   "support.google.com",
@@ -92,7 +93,19 @@ export function researchTopic(incident) {
     other: "cyber incident reporting",
   };
   // The category and allowlisted platform are the ONLY case fields in search.
-  return `Find current official guidance for ${topics[incident.category] || topics.other}, platform ${platform}, in India. Prefer official platform support and Indian government sources. Give practical steps with citations. Do not search for any individual.`;
+  const platformHosts = {
+    Instagram: "help.instagram.com instagram.com meta.com",
+    Facebook: "facebook.com meta.com",
+    Google: "support.google.com",
+    WhatsApp: "faq.whatsapp.com",
+    Telegram: "telegram.org",
+    X: "help.x.com",
+    Microsoft: "support.microsoft.com",
+    Other: "cybercrime.gov.in i4c.mha.gov.in cert-in.org.in",
+  };
+  const scope = [...new Set((platformHosts[platform] + " cybercrime.gov.in i4c.mha.gov.in cert-in.org.in").split(" "))]
+    .map(host => "site:" + host).join(" OR ");
+  return `Use Google Search with this exact site-restricted query: (${scope}) ${platform} ${topics[incident.category] || topics.other}. Keep the site: restrictions in search queries. Find guidance for an individual victim in India. Give at most five concise steps with citations, prioritising the platform's recovery flow. Cite only the specified official domains. Exclude third-party blogs and paid recovery agents. Do not apply obligations for companies or organisations to an individual victim. Do not search for any individual.`;
 }
 export function caseSnapshot(incident, options) {
   if (options.aiApproved !== true)
@@ -287,6 +300,11 @@ export function createGemini({ fetcher = fetch, env = process.env } = {}) {
             generationConfig: {
               temperature: 0.2,
               maxOutputTokens: schema === reportSchema ? 7000 : 2500,
+              // Reserve the output budget for cited guidance on the 2.5
+              // research model rather than consuming it in hidden reasoning.
+              ...(search && model === "gemini-2.5-flash"
+                ? { thinkingConfig: { thinkingBudget: 0 } }
+                : {}),
               ...(schema
                 ? {
                     responseMimeType: "application/json",
@@ -406,8 +424,12 @@ export function createGemini({ fetcher = fetch, env = process.env } = {}) {
           });
         return {
           mode: "bundled_official_references",
+          unavailabilityReason: error.code === "AI_QUOTA_EXCEEDED" ? "quota_exhausted" : "provider_unavailable",
           limitation:
-            "Live Google Search is unavailable. These are bundled official reference addresses, not newly retrieved research.",
+            (error.code === "AI_QUOTA_EXCEEDED"
+              ? "The configured research model's API quota was exhausted. "
+              : "The live research provider could not be reached. ") +
+            "This report uses bundled official reference addresses, not newly retrieved research.",
           sources: refs.map((s, i) => ({
             id: "S" + (i + 1),
             title: s.title,

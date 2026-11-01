@@ -133,12 +133,16 @@ export function facts(input) {
   const currency = text(input.currency || "INR", "Currency", 3).toUpperCase();
   if (!/^[A-Z]{3}$/.test(currency))
     fail(400, "Use a three-letter currency code.");
+  const occurredOn = dateOnly(input.occurredOn, "Incident date");
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  if (occurredOn && occurredOn > today)
+    fail(400, "Incident date cannot be in the future. Leave it blank if unknown.");
   return {
     title: text(input.title, "Title", 120, true),
     category: input.category,
     platform: text(input.platform, "Platform", 100),
     description: text(input.description, "What happened", 8000, true),
-    occurredOn: dateOnly(input.occurredOn, "Incident date"),
+    occurredOn,
     profile: webAddress(input.profile),
     realProfile: webAddress(input.realProfile),
     contactName: text(input.contactName, "Name", 120),

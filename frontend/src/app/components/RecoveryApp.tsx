@@ -253,6 +253,7 @@ export function RecoveryApp() {
         <input
           name={key}
           type={key === "occurredOn" ? "date" : "text"}
+          max={key === "occurredOn" ? new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }) : undefined}
           value={form[key] || ""}
           required={key === "title"}
           maxLength={key === "title" ? 120 : 2000}
