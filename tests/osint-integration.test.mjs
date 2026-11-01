@@ -18,7 +18,7 @@ test('document review is mounted behind existing authentication and self-ownersh
  try{
   assert.equal((await request('/api/osint/capabilities')).status,401);
   owner=(await request('/api/demo/start','POST',{})).value.user;
-  const caps=await request('/api/osint/capabilities');assert.equal(caps.value.version,'0.2.0');assert.equal(caps.value.providers.github_public,true);assert.equal(caps.value.providers.local_documents,true);
+  const caps=await request('/api/osint/capabilities');assert.equal(caps.value.version,'0.3.0');assert.ok(caps.value.dorkTemplates.some(x=>x.id==='pdf'));assert.equal(caps.value.imageLookup.publicImageUrlOnly,true);assert.equal(caps.value.providers.github_public,true);assert.equal(caps.value.providers.local_documents,true);
   const body={identifiers:{emails:['demo@example.org'],names:['Demo Person']},documents:[{text:'Employee badge: Demo Person. Contact demo@example.org. password=FictionalSecret123. Card 4111111111111111.'}],consent:{selfOwned:true,version:'1',providers:[]}};
   assert.equal((await request('/api/osint/review-documents','POST',{...body,consent:{selfOwned:false,version:'1'}})).status,400);
   const reviewed=await request('/api/osint/review-documents','POST',body);assert.equal(reviewed.status,200);assert.equal(reviewed.value.kind,'supplied_content_review');assert.ok(reviewed.value.findings.some(f=>f.category==='email_occurrence'));assert.ok(reviewed.value.findings.some(f=>f.category==='credential_like_assignment'));assert.ok(!JSON.stringify(reviewed.value).includes('FictionalSecret123'));
