@@ -4,9 +4,15 @@ async function request(path: string, body?: any) {
     method: body ? "POST" : "GET",
     headers: body ? { "Content-Type": "application/json" } : {},
     body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(20000),
   });
-  const x = await r.json();
-  if (!r.ok) throw Error(x.error || "Security request failed.");
+  const x = await r.json().catch(() => {
+    throw Error("Account security is unavailable. Please retry.");
+  });
+  if (!r.ok)
+    throw Object.assign(Error(x.error || "Security request failed."), {
+      status: r.status,
+    });
   return x;
 }
 export function MFAChallenge({ onComplete, onCancel }: any) {
@@ -46,7 +52,54 @@ export function MFAChallenge({ onComplete, onCancel }: any) {
             maxLength={24}
           />
         </label>
-        {error && <p className="error">{error}</p>}
+        {error && (
+          <div className="error" role="alert">
+            {error}
+          </div>
+        )}
+        {!state && !error && <p role="status">Loading account security…</p>}
+        {state && !state.configured && (
+          <div className="error" role="alert">
+            Authenticator setup is unavailable until the site operator
+            configures encryption.
+          </div>
+        )}
+        {state?.permanentAccountRequired && (
+          <div className="mini-note">
+            Create a permanent STRIKEOUT account before setting up your
+            authenticator.
+          </div>
+        )}
+        {!state?.enabled && state?.reauthenticationRequired && (
+          <div className="mini-note" role="status">
+            <p>
+              For your security, sign in again before adding an authenticator.
+              Your saved cases stay available.
+            </p>
+            {state.sso ? (
+              <a href="/api/auth/google/start">Sign in again with Google</a>
+            ) : (
+              <>
+                <p>
+                  Open Cases &amp; Reports, sign out, then sign in again with
+                  your STRIKEOUT username and password.
+                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.dispatchEvent(
+                      new CustomEvent("strikeout-open", {
+                        detail: { section: "cases" },
+                      }),
+                    )
+                  }
+                >
+                  Open Cases &amp; Reports
+                </button>
+              </>
+            )}
+          </div>
+        )}
         <button disabled={busy} type="submit">
           Verify and sign in
         </button>
@@ -68,7 +121,9 @@ export function MFAChallenge({ onComplete, onCancel }: any) {
     </div>
   );
 }
-export function AccountSecurity({ onSetupComplete }: { onSetupComplete?: () => void } = {}) {
+export function AccountSecurity({
+  onSetupComplete,
+}: { onSetupComplete?: () => void } = {}) {
   const [state, setState] = useState<any>(null),
     [setup, setSetup] = useState<any>(null),
     [codes, setCodes] = useState<string[]>([]),
@@ -87,7 +142,13 @@ export function AccountSecurity({ onSetupComplete }: { onSetupComplete?: () => v
     try {
       await fn();
     } catch (e: any) {
-      setError(e.message);
+      setError(
+        e.name === "TimeoutError"
+          ? "Account security timed out. Please retry."
+          : e.message,
+      );
+      if (e.status === 403 && /sign out and sign in/i.test(e.message))
+        setState((old: any) => ({ ...old, reauthenticationRequired: true }));
     } finally {
       setBusy(false);
     }
@@ -106,10 +167,62 @@ export function AccountSecurity({ onSetupComplete }: { onSetupComplete?: () => v
           {state.recoveryRemaining} recovery codes left.
         </p>
       )}
-      {error && <p className="error">{error}</p>}
+      {error && (
+        <div className="error" role="alert">
+          {error}
+        </div>
+      )}
+      {!state && !error && <p role="status">Loading account security…</p>}
+      {state && !state.configured && (
+        <div className="error" role="alert">
+          Authenticator setup is unavailable until the site operator configures
+          encryption.
+        </div>
+      )}
+      {state?.permanentAccountRequired && (
+        <div className="mini-note">
+          Create a permanent STRIKEOUT account before setting up your
+          authenticator.
+        </div>
+      )}
+      {!state?.enabled && state?.reauthenticationRequired && (
+        <div className="mini-note" role="status">
+          <p>
+            For your security, sign in again before adding an authenticator.
+            Your saved cases stay available.
+          </p>
+          {state.sso ? (
+            <a href="/api/auth/google/start">Sign in again with Google</a>
+          ) : (
+            <>
+              <p>
+                Open Cases &amp; Reports, sign out, then sign in again with your
+                STRIKEOUT username and password.
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent("strikeout-open", {
+                      detail: { section: "cases" },
+                    }),
+                  )
+                }
+              >
+                Open Cases &amp; Reports
+              </button>
+            </>
+          )}
+        </div>
+      )}
       {!state?.enabled && !setup && (
         <button
-          disabled={busy || !state?.configured}
+          disabled={
+            busy ||
+            !state?.configured ||
+            state?.reauthenticationRequired ||
+            state?.permanentAccountRequired
+          }
           onClick={() => run(async () => setSetup(await request("setup", {})))}
         >
           Set up authenticator MFA
@@ -189,7 +302,14 @@ export function AccountSecurity({ onSetupComplete }: { onSetupComplete?: () => v
           >
             Download recovery codes
           </button>
-          <button onClick={() => { setCodes([]); onSetupComplete?.(); }}>I saved them</button>
+          <button
+            onClick={() => {
+              setCodes([]);
+              onSetupComplete?.();
+            }}
+          >
+            I saved them
+          </button>
         </div>
       )}
       {state?.enabled && (

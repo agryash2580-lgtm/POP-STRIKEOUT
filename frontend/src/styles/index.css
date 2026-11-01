@@ -49,9 +49,5 @@ body.holding-catnip .pop-pet-cursor * {
 
 
 
-/* Quiet interface: validation still runs; suppress message banners and status copy. */
-.error, .success, .working, [role="alert"],
-.recovery .mini-note:not(.exposure-auth-gate):not(:has(button, input, select, textarea, a)), .recovery .nav-bottom, .recovery .desk-footer,
-.recovery .job-status > span, .quiet-status-copy { display: none !important; }
-
-.recovery .mini-note:has(button) > p { display: none !important; }
+/* Only explicitly decorative copy is hidden. Errors, security alerts and setup guidance must remain visible. */
+.quiet-status-copy, .recovery .nav-bottom, .recovery .desk-footer { display: none !important; }
