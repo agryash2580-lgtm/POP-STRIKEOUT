@@ -1,11 +1,11 @@
 # Check exposure and MFA audit — 1 November 2026
 
-Baseline: main 28cb7a8 (free authenticator exposure gate and Pop 2.3.1). No SMS/Twilio bypass was introduced. The audit uses fictional accounts, a temporary local encryption key, real TOTP enrolment and local persistence.
+Baseline: main 28cb7a8; latest Pop changes merged through 8fa5432 (free authenticator exposure gate and Pop 2.3.1). No SMS/Twilio bypass was introduced. The audit uses fictional accounts, a temporary local encryption key, real TOTP enrolment and local persistence.
 
 ## Results
 
 - 50 focused automated cases passed, listed below.
-- 25 browser checks passed, listed below. The separate MFA browser suite also passed real enrolment, recovery-code login, private-data gating and disable flow.
+- 27 browser checks passed, listed below. The separate MFA browser suite also passed real enrolment, recovery-code login, private-data gating and disable flow.
 - Full backend suite: 117/117 passed. Production build and whitespace checks passed.
 - No test message, complaint, recovery secret or verification code was sent to a third party. Search handoffs were validated without opening external search results. Provider behavior in automated cases is simulated where keys are unavailable.
 
@@ -98,7 +98,9 @@ Baseline: main 28cb7a8 (free authenticator exposure gate and Pop 2.3.1). No SMS/
 22. Lens handoff safe hostname
 23. private link has no open action
 24. mobile has no page overflow
-25. no runtime errors
+25. missing configuration keeps gate visible
+26. missing configuration does not unlock tools
+27. no runtime errors
 
 ## Scope and remaining environment checks
 
