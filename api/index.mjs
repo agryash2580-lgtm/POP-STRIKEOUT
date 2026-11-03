@@ -7,6 +7,7 @@ import {
   clearMfaChallenge,
 } from "./mfa.mjs";
 import express from "express";
+import { createRateLimiter } from "./rate-limit.mjs";
 import { evidenceLibraryRouter, deletePopLibrary } from "./pop-library.mjs";
 import {
   randomBytes,
@@ -85,18 +86,7 @@ const guarded = (fn) => async (req, res, next) => {
 const fail = (status, message) => {
   throw Object.assign(Error(message), { status });
 };
-const limits = new Map();
-function limited(req, scope, max = 30) {
-  const key = scope + ":" + (req.headers["x-forwarded-for"] || req.ip);
-  const now = Date.now(),
-    v = limits.get(key);
-  if (v && v.until > now) {
-    if (++v.count > max)
-      fail(429, "Too many requests. Please wait a minute and try again.");
-  } else limits.set(key, { count: 1, until: now + 60000 });
-  if (limits.size > 3000)
-    for (const [k, v] of limits) if (v.until < now) limits.delete(k);
-}
+const limited = createRateLimiter();
 app.use("/api/pop", popRouter({ guarded, limited }));
 app.use((req, res, next) => {
   res.set({
@@ -199,6 +189,7 @@ app.get("/api/health", (req, res) =>
   res.json({
     ok: true,
     version: "2.3.0",
+    revision: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) || null,
     storage:
       usesCloud() && process.env.BLOB_READ_WRITE_TOKEN
         ? "private-durable-blob"

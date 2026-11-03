@@ -1,13 +1,13 @@
 # DevFest readiness QA — November 3, 2026
 
-Current branch: `devfest/readiness-2026`, draft PR #11. The table distinguishes
-local, CI and public-site observations. The preview deployment requires Vercel
-login, and the readiness branch is not on the public production site. Use
+PR #11 was merged on November 3, 2026. Follow-up work is on
+`devfest/release-hardening`. The table distinguishes local, CI and public-site
+observations. Use
 [DEVFEST_READINESS.md](../DEVFEST_READINESS.md) for release gates.
 
 | Check | Observed result | Status |
 |---|---|---|
-| Root automated suite | 137 tests passed, 0 failed | Verified with loopback access; restricted sandbox cannot start test servers |
+| Root automated suite | 142 tests passed, 0 failed after release follow-up | Verified with loopback access; restricted sandbox cannot start test servers |
 | JavaScript syntax check | Active server/shared/extension/scripts parse | Verified |
 | TypeScript check | `tsc --noEmit` passed; legacy JS is not fully typed | Verified |
 | Production build | Vite built 59 modules | Verified |
@@ -15,7 +15,7 @@ login, and the readiness branch is not on the public production site. Use
 | Initial bundle | 858.16 kB / 256.98 kB gzip before; 424.76 kB / 126.48 kB gzip after lazy PDF loading | Verified build measurements; no real-user performance claim |
 | Offline demo isolated server | Assets served, CSP `connect-src 'none'`, API routes inaccessible | Verified |
 | Copied portable folder | All five runtime files matched SHA-256 manifest; copied server returned HTTP 200 | Verified |
-| QR matrix | QR generated and decoded back to exact intended URL | Verified locally; public destination currently HTTP 404 |
+| QR matrix | QR generated and decoded back to exact intended URL; destination opens publicly | Verified in browser; separate physical phone scan pending |
 | Demo visitor journey | Consent requirement, fictional sources and findings, recommendation review, summary JSON preview and reset in real local browser | Verified |
 | Demo edge cases | Unavailable source and empty completed sample presented distinct, honest states | Verified |
 | Mobile layout | 390 px browser viewport, content width 375 = document client width 375; no horizontal overflow | Verified for demo screen tested |
@@ -29,17 +29,20 @@ login, and the readiness branch is not on the public production site. Use
 | SerpApi Google / Bing | One reserved-example request per engine completed | Verified local configuration only |
 | SerpApi DuckDuckGo | Returned provider HTTP 502 | Verified failure; retry/production health pending |
 | Brave, HIBP, Gemini, Google OAuth, email, private Blob | Not configured in this local setup | Verified local configuration status; production state Not Yet Tested |
-| Public `/devfest.html` | HTTP 404 on currently deployed production site; draft preview redirects to Vercel login | Verified; QR must not be printed yet |
+| Public `/devfest.html` | Public page loaded; consent, fictional results, JSON preview and reset worked in browser | Verified after PR #11 merge |
+| Public deployment check | `/api/health` reports private durable Blob; all four demo assets return expected types and the fictional marker | Verified by `npm run check:deployment`; release revision was not exposed by the earlier deployment |
+| Production protected exposure | Signed-in account reached an Open sign-in prompt for fresh authentication | Verified gate; no production TOTP or provider request executed |
+| Follow-up rate limiter | Forwarded-header spoof is ignored; active local identities are bounded | Verified in unit tests; process-local only |
 | Source scans | Limited tracked-text high-confidence secret pattern scan found no matches | Verified limited scan; history and broad entropy not covered |
 | Dependency audit | Current `npm audit --audit-level=moderate` reports 0 known advisories across 314 dependencies | Verified against current advisory registry; not a security guarantee |
 
 Screenshots are fictional and safe to share:
 [desktop landing](assets/devfest-landing-desktop.jpg),
 [mobile results](assets/devfest-results-mobile.jpg).
-The decoded but **not yet deployable** QR asset is
-[here](assets/devfest-demo-qr.png); check the live destination before distribution.
+The decoded QR asset is [here](assets/devfest-demo-qr.png). Its destination
+works publicly, but scan the printed version with a separate phone before use.
 
-Remaining acceptance work: production deployment and version check; phone-sized
+Remaining acceptance work: verify the next production revision; phone-sized
 full app journey; keyboard and screen-reader review across all core controls;
 provider failure/timeout under hosting limits; independent live OAuth, Blob and
 MFA configuration checks with authorized operator accounts; distributed quota and

@@ -39,6 +39,8 @@ access; an environment denying `listen` can fail API suites before they test a f
 - `npm run test:demo`: focused deterministic fixtures and isolated-server checks.
 - `npm run package:demo`: allowlisted portable demo folder under ignored `output/`.
 - `npm run qr:demo`: QR asset; verify the real destination before printing.
+- `npm run check:deployment`: public health, durable storage, demo page and assets.
+  Set `DEPLOY_URL` for a preview; a protected preview fails visitor-access checks.
 - `npm audit`: current registry advisory check; needs network and is not a penetration test.
 
 Existing `tests/*browser*.mjs` and desktop scripts cover various historical flows.
