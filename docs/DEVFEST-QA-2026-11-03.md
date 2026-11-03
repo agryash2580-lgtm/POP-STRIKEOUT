@@ -7,7 +7,7 @@ observations. Use
 
 | Check | Observed result | Status |
 |---|---|---|
-| Root automated suite | 143 tests passed, 0 failed after ownership follow-up | Verified with loopback access; restricted sandbox cannot start test servers |
+| Root automated suite | 147 tests passed, 0 failed after retention/visitor QA follow-up | Verified with loopback access; restricted sandbox cannot start test servers |
 | JavaScript syntax check | Active server/shared/extension/scripts parse | Verified |
 | TypeScript check | `tsc --noEmit` passed; legacy JS is not fully typed | Verified |
 | Production build | Vite built 59 modules | Verified |
@@ -37,6 +37,11 @@ observations. Use
 | Follow-up rate limiter | Forwarded-header spoof is ignored; active local identities are bounded | Verified in unit tests; process-local only |
 | Source scans | Limited tracked-text high-confidence secret pattern scan found no matches | Verified limited scan; history and broad entropy not covered |
 | Dependency audit | Current `npm audit --audit-level=moderate` reports 0 known advisories across 314 dependencies | Verified against current advisory registry; not a security guarantee |
+| Expired-auth cleanup | Dry run scanned 248 local auth records; 34 eligible after grace, 0 deleted. Focused cleanup tests pass, including deletion of a synthetic fixture | Verified locally; production Blob sweep not executed |
+| Current local visitor check | Local page showed MFA gate; fictional contact scenario rendered 2 findings and 3 simulated sources; JSON summary opened and reset cleared results/consent | Verified in in-app browser; not full desktop/mobile accessibility QA |
+| Desktop Playwright runner | Official browser binary installed; `npm run test:browser` passed signup, case, evidence, reviewed complaint, report consent, exposure gate and Pop settings after stale selector correction | Verified locally; browser output is not a production account test |
+| Protected exposure browser | 25 checks passed: MFA enrollment/step-up, unverified email blocked, supplied-document findings masked, export redacted, domain/image locked, private link blocked, 390px layout without horizontal overflow, missing-MFA configuration gated | Verified locally with synthetic account; physical authenticator and screen reader not tested |
+| Public deployment | Release checker returned revision `71e66413f65e`, private durable Blob, four public demo assets, visitor access | Verified for already-deployed `main`; this follow-up branch is not deployed |
 
 Screenshots are fictional and safe to share:
 [desktop landing](assets/devfest-landing-desktop.jpg),
@@ -49,5 +54,6 @@ full app journey; keyboard and screen-reader review across all core controls;
 provider failure/timeout under hosting limits; independent live OAuth, Blob and
 MFA configuration checks with authorized operator accounts; distributed quota and
 retention decisions; actual booth laptop rehearsal and disconnected-network trial.
-An old desktop browser script was updated to current MFA gate/extension selectors
-but was **not run** in this batch. Do not count it as passing.
+The current desktop and protected-exposure browser scripts were run locally. A
+complete keyboard and screen-reader pass, production account/provider exercise,
+and physical booth-device rehearsal remain open.

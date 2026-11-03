@@ -21,6 +21,8 @@ destination must be verified after deployment. See the [booth playbook](docs/DEV
 [troubleshooting guide](docs/DEVFEST-TROUBLESHOOTING.md),
 [architecture and privacy inventory](docs/DEVFEST-ARCHITECTURE.md) and
 [contributor setup](CONTRIBUTING.md). Local completion does not mean deployment.
+`npm run cleanup:expired` previews expired authentication records without deleting
+them; the [playbook](docs/DEVFEST-PLAYBOOK.md) explains the deliberate apply step.
 
 ## Run
 
@@ -40,17 +42,17 @@ Open [localhost:3002](http://localhost:3002). The root server serves both fronte
 
 - Private username/password accounts, cases, evidence and reviewed complaint exports.
 - Local report/PDF fallback clearly labelled as non-AI.
-- GitHub public-reference checks, supplied-text/PDF review and prefix-only password breach checks, subject to provider/network availability.
+- Supplied-text/PDF review and prefix-only password breach checks after account MFA, subject to provider/network availability. Public email-reference search additionally requires verification of that exact account email address.
 - Real extension page matching, supported sharing warnings, petting, screenshot review, flattened redaction, local incident export and deletion.
 
 Gemini enables report writing, summaries and chat. Fresh research grounding has separate provider quota; the UI/PDF disclose when bundled official references are used. Resend email, Brave/HIBP and Google sign-in require their own configuration. Missing keys are not simulated successes.
 
-Instagram public-reference checks are available. Consented follow requests use the teammate's local browser workflow, a configured STRIKEOUT operator and a signed-in `popyourproblemsaway` service account. This is not private-post scanning and does not run on Vercel.
+Instagram, phone, LinkedIn, identity-card, domain and reverse-image live searches are currently locked until target-ownership verification exists. Consented Instagram follow requests use a separate local operator workflow and a signed-in `popyourproblemsaway` service account; they do not import private posts and do not run on Vercel.
 
 ## Extension development packages
 
-- [Chromium v2.3.0](frontend/public/pop-chromium-2.3.0.zip)
-- [Firefox/Zen v2.3.0](frontend/public/pop-firefox-2.3.0.zip)
+- [Chromium v2.3.4](frontend/public/pop-chromium-2.3.4.zip)
+- [Firefox/Zen v2.3.4](frontend/public/pop-firefox-2.3.4.zip)
 
 Unzip, then load the Chromium folder at `chrome://extensions` with Developer mode, or load the Firefox `manifest.json` through `about:debugging#/runtime/this-firefox`. Firefox installation is temporary and requires version 142+. Website Delivery & Pop manages the installed extension's preferences after approval. Left-click Pop to pet; right-click for tools.
 
@@ -58,8 +60,8 @@ Unzip, then load the Chromium folder at `chrome://extensions` with Developer mod
 
 ```powershell
 npm test
-node tests/final-desktop.mjs
-node tests/exposure-browser.mjs
+npm run test:browser
+npm run test:exposure:browser
 node tests/website-pop.mjs
 npm run test:pop:browser
 npm run build
@@ -67,6 +69,9 @@ npm run package:pop
 ```
 
 Live checks using fictional inputs: `node scripts/check-osint-live.mjs` and `npm run check:reports:live`. They call real providers; the report check does not send email.
+The browser journeys need Playwright Chromium (`npx playwright install chromium`),
+a running local server and a configured local MFA encryption key for the protected
+exposure journey. They create and remove synthetic test accounts.
 
 ## Source map
 

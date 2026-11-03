@@ -21,3 +21,12 @@
 .recovery .job-status{background:#c0c0c0;border:2px groove #fff}.recovery .desk-footer{background:#c0c0c0}
 .exposure-window{min-height:0}.exposure-window .desk-main{width:100%}.exposure-window .desk-bar span{font-size:11px}
 @media(max-width:650px){.desk-nav{width:108px}.desk-main{padding:12px}.recovery h1{font-size:21px}}
+
+/* Keep the exposure assessment readable on a phone without changing the desktop theme. */
+@media(max-width:650px){
+  .exposure-window{font-size:14px;line-height:1.55}
+  .exposure-window .mini-note,.exposure-window .step-card p,.exposure-window label{font-size:14px}
+  .exposure-window small,.exposure-window .desk-bar span{font-size:12px}
+  .exposure-window input,.exposure-window textarea,.exposure-window select{font-size:16px}
+  .exposure-window button{font-size:14px;min-height:36px}
+}
