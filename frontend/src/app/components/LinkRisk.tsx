@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { requestJSON } from "../../../../shared/http-client.js";
 const colors: any = {
   blocked: "#8b0000",
   high: "#8b0000",
@@ -93,6 +94,28 @@ export function RiskSummary({ summary }: any) {
     </aside>
   );
 }
+export function FindingGuidance({ finding }: any) {
+  return <section aria-label="Finding confidence and next steps">
+    {finding.confidence && <p><strong>Evidence confidence:</strong> {String(finding.confidence).replaceAll('_', ' ')}. This does not verify identity.</p>}
+    {finding.priorityReason && <p><strong>Why this priority:</strong> {finding.priorityReason}</p>}
+    {!!finding.recommendations?.length && <><h3>What you can do</h3><ul>{finding.recommendations.map((text: string, index: number) => <li key={index}>{text}</li>)}</ul></>}
+  </section>;
+}
+export function SourceCoverage({ result }: any) {
+  const checks = result.coverage instanceof Array ? result.coverage : result.checks;
+  return <section aria-label="Assessment source coverage">
+    <h3>What was checked</h3>
+    {typeof result.coverage === 'string' && <p>{result.coverage}</p>}
+    {checks?.length > 0 && <ul>{checks.map((check: any, index: number) => <li key={index}>
+      <strong>{check.provider}:</strong> {check.status === 'completed' ? 'completed within this limited check' : 'not completed — ' + String(check.status).replaceAll('_', ' ')}
+      {(check.scope || check.coverage) && <p>{check.scope || check.coverage}</p>}
+      {check.message && <p>{check.message}</p>}
+    </li>)}</ul>}
+    {result.status === 'incomplete' && <p role="status">Some checks did not complete. Missing results are not evidence that your information is absent.</p>}
+    {result.status === 'completed' && !result.findings?.length && <p>No matches returned within this check. This does not establish absence of exposure.</p>}
+    {!!result.limitations?.length && <details><summary>Coverage and limitations</summary><ul>{result.limitations.map((text: string, index: number) => <li key={index}>{text}</li>)}</ul></details>}
+  </section>;
+}
 export function LinkChecker({ enabled }: { enabled: boolean }) {
   const [url, setURL] = useState(""),
     [label, setLabel] = useState(""),
@@ -123,17 +146,13 @@ export function LinkChecker({ enabled }: { enabled: boolean }) {
     setError("");
     setResult(null);
     try {
-      const r = await fetch("/api/osint/links/assess", {
+      const x = await requestJSON("/api/osint/links/assess", {
         method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           links: [{ url, label }],
           consent: { selfOwned: true, version: "1" },
-        }),
+        },
       });
-      const x = await r.json();
-      if (!r.ok) throw Error(x.error || "Link review unavailable.");
       if (current === epoch.current) setResult(x.results[0].assessment);
     } catch (e: any) {
       if (current === epoch.current) setError(e.message);

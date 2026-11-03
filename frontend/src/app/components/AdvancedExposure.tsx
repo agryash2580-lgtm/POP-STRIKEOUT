@@ -1,5 +1,6 @@
-import { ResultLink, RiskSummary } from "./LinkRisk";
+import { ResultLink, RiskSummary, FindingGuidance, SourceCoverage } from "./LinkRisk";
 import React, { useEffect, useRef, useState } from 'react';
+import { requestJSON } from '../../../../shared/http-client.js';
 
 export function AdvancedExposure({ capabilities }: { capabilities: any }) {
   const [tool, setTool] = useState('dorks');
@@ -27,14 +28,13 @@ export function AdvancedExposure({ capabilities }: { capabilities: any }) {
     event.preventDefault(); if (busy || !approved || !capabilities) return;
     const current = epoch.current; setBusy(true); setError(''); setResult(null);
     try {
-      const response = await fetch('/api/osint/' + (tool === 'dorks' ? 'dorks' : 'images/reverse'), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
-        body: JSON.stringify({
+      const data = await requestJSON('/api/osint/' + (tool === 'dorks' ? 'dorks' : 'images/reverse'), {
+        method: 'POST', timeoutMs: 100000,
+        body: {
           ...(tool === 'dorks' ? { domain, identifier, templates: [template] } : { imageUrl }),
           mode, consent: { selfOwned: true, version: '1', providers: automatic ? ['serpapi', provider] : [provider] },
-        }),
+        },
       });
-      const data = await response.json(); if (!response.ok) throw Error(data.error || 'Search could not be prepared.');
       if (current === epoch.current) setResult(data);
     } catch (e: any) { if (current === epoch.current) setError(e.message); }
     finally { if (current === epoch.current) setBusy(false); }
@@ -72,12 +72,13 @@ export function AdvancedExposure({ capabilities }: { capabilities: any }) {
       <h3>{result.status === 'requires_user_search' ? 'Ready to open on Google — search not yet completed' : result.status === 'incomplete' ? 'Some automatic checks failed' : 'Automatic check completed'}</h3>
       <p>{result.coverage}</p>
       <RiskSummary summary={result.riskSummary} />
+      <SourceCoverage result={result} />
       {(result.handoffs || (result.handoff ? [result.handoff] : [])).map((x: any, i: number) => <article className="mini-note" key={i}>
         {x.query && <p><code>{x.query}</code></p>}
         <a href={x.url} target="_blank" rel="noopener noreferrer">{result.service === 'reverse_image' ? 'Open Google Lens results ↗' : 'Open this Google search ↗'}</a>
         <p>{x.disclosure || 'Google receives this query when you open the link. Results are not automatically imported.'}</p>
       </article>)}
-      {(result.findings || []).map((x: any, i: number) => <article className="step-card" key={i}><strong>{x.title}</strong><p>{x.snippet}</p><ResultLink url={x.url} assessment={x.linkAssessment} exposure={x.exposureAssessment} /></article>)}
+      {(result.findings || []).map((x: any, i: number) => <article className="step-card" key={i}><strong>{x.title}</strong><p>{x.snippet}</p><ResultLink url={x.url} assessment={x.linkAssessment} exposure={x.exposureAssessment} /><FindingGuidance finding={x} /></article>)}
       {result.status === 'completed' && !result.findings?.length && <p>No matches returned within this provider response. This does not establish absence of exposure.</p>}
 
       <button onClick={() => {

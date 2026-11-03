@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Try StrikeOut's fictional digital-exposure demonstration. No accounts, personal data or external searches.">
+  <title>StrikeOut — exposure demonstration</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/devfest.css">
+  <script type="module" src="/devfest-demo.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to demonstration</a>
+  <header><a class="brand" href="/devfest.html">STRIKEOUT</a><span class="badge">SYNTHETIC DEMO · NO LIVE SEARCH</span></header>
+  <main id="main">
+    <section class="intro" aria-labelledby="title">
+      <p class="eyebrow">YOUR PUBLIC INFORMATION. CLEARER NEXT STEPS.</p>
+      <h1 id="title">Understand your digital exposure.</h1>
+      <p>See how scattered public details can create privacy risks—and what you can do about them.</p>
+      <p class="notice">This demonstration uses only fictional, bundled examples. It makes no external requests, needs no sign-in and collects no personal information.</p>
+    </section>
+    <section class="panel" aria-labelledby="start-title">
+      <h2 id="start-title">1. Choose an example</h2>
+      <form id="assessment">
+        <fieldset id="inputs">
+          <legend>Fictional assessment</legend>
+          <label for="scenario">What would you like to explore?</label>
+          <select id="scenario" name="scenario" required></select>
+          <p id="scenario-description"></p>
+          <label class="check"><input id="consent" type="checkbox" required> I understand this is a fictional demonstration, not a search for a real person.</label>
+          <button id="assess" type="submit">Explore fictional exposure</button>
+        </fieldset>
+      </form>
+      <p id="progress" role="status" aria-live="polite"></p>
+      <p id="error" role="alert" hidden></p>
+    </section>
+    <section id="results" aria-labelledby="results-title" hidden>
+      <div class="results-head"><h2 id="results-title" tabindex="-1">2. Review the demonstration</h2><span class="badge">FICTIONAL FINDINGS</span></div>
+      <p id="coverage"></p>
+      <div id="metrics" class="metrics" aria-label="Assessment summary"></div>
+      <p id="outcome" class="notice"></p>
+      <h3>Sources included in this demonstration</h3>
+      <p>These are bundled example excerpts, not links to live documents. Unavailable sources are not counted as checked.</p>
+      <div id="sources" class="sources"></div>
+      <h3>Findings and practical next steps</h3>
+      <p>Priority reflects potential impact. Confidence describes the evidence. Neither is proof of harm.</p>
+      <div id="findings"></div>
+      <h3>Keep these limits in mind</h3>
+      <ul id="limitations"></ul>
+      <div class="actions"><button id="export" type="button">Prepare fictional summary</button><button id="reset" type="button" class="secondary">Reset for next visitor</button></div>
+      <section id="summary-preview" aria-labelledby="summary-title" hidden>
+        <h3 id="summary-title">Your fictional summary</h3>
+        <p>Download the JSON file or copy the text below. Preparing this summary does not send or save anything to a server.</p>
+        <a id="summary-download" download="strikeout-fictional-demo-summary.json">Download fictional summary as JSON</a>
+        <label for="summary-text">Fictional summary JSON</label>
+        <textarea id="summary-text" readonly rows="12" spellcheck="false"></textarea>
+      </section>
+      <p class="fine">Recommendation checkmarks mean “reviewed,” not “fixed.” Your choices stay in this tab only and are cleared when you reset or reload. The download contains fictional examples only.</p>
+    </section>
+    <section class="panel" aria-labelledby="live-title">
+      <h2 id="live-title">What happens in live mode?</h2>
+      <p>Supported checks use supplied document text or bounded public-search services, with consent, authentication and source-status reporting. Search coverage is incomplete; a match needs review. StrikeOut does not access private accounts or identify a person's location from images.</p>
+      <p>Only assess information or assets you own or are explicitly authorized to check. An authenticator code protects your StrikeOut account; it does not verify ownership of another profile.</p>
+      <a href="https://strikeout-mu20.vercel.app/" id="live-link" target="_blank" rel="noopener noreferrer">Open the live workspace (internet required)</a>
+      <p><a href="https://github.com/agryash2580-lgtm/POP-STRIKEOUT/issues" target="_blank" rel="noopener noreferrer">Share product feedback on GitHub (internet and GitHub account required)</a>. Please use fictional examples and do not include personal identifiers, passwords or incident evidence.</p>
+    </section>
+  </main>
+  <footer>StrikeOut · DevFest preparation · Fictional demonstration · No analytics or personal-data collection</footer>
+  <noscript>This demonstration needs JavaScript. Enable it locally; no external service is required.</noscript>
+</body>
+</html>

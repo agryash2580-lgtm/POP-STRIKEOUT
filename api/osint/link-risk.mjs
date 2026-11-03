@@ -1,6 +1,7 @@
 import { isIP } from "node:net";
 import { domainToUnicode } from "node:url";
 import { publicAddress } from "./image-url.mjs";
+import { recommendationsFor } from "./recommendations.mjs";
 const shorteners = new Set([
   "bit.ly",
   "tinyurl.com",
@@ -245,6 +246,7 @@ export function flagReport(report) {
   const findings = report.findings.map((f) => ({
     ...f,
     exposureAssessment: exposureRisk(f),
+    recommendations: recommendationsFor(f),
     ...(f.url || f.source
       ? { linkAssessment: assessLink(f.url || f.source, f.title || "") }
       : {}),

@@ -1,5 +1,6 @@
 import { publicWebEngines, publicWebReferences } from "./public-web.mjs";
 import { prioritizeFindings } from "./prioritize.mjs";
+import { providerBudget } from "./request-budget.mjs";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import {
   webSearch,
@@ -59,7 +60,7 @@ export function cardReview(number) {
     sum += n;
   }
   return {
-    masked: "â€¢â€¢â€¢â€¢ " + digits.slice(-4),
+    masked: "•••• " + digits.slice(-4),
     length: digits.length,
     luhnValid: sum % 10 === 0,
     externalLookup: false,
@@ -68,6 +69,7 @@ export function cardReview(number) {
   };
 }
 export async function runCheck(body, options = {}) {
+  options = providerBudget(options);
   ownedConsent(body);
   const { service, input = {} } = body;
   if (

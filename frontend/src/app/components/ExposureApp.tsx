@@ -1,9 +1,9 @@
 import { ExposureAuthenticatorGate } from "./ExposureAuthenticatorGate";
-import { ResultLink, RiskSummary, LinkChecker } from "./LinkRisk";
+import { ResultLink, RiskSummary, LinkChecker, FindingGuidance, SourceCoverage } from "./LinkRisk";
 import { AdvancedExposure } from "./AdvancedExposure";
 import React, { useEffect, useRef, useState } from "react";
 import { InstagramPanel } from "./InstagramPanel";
-import { documentText as extractDocumentText } from "../document-text";
+import { requestJSON } from "../../../../shared/http-client.js";
 export function IconExposure({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32">
@@ -23,9 +23,15 @@ export function IconExposure({ size = 32 }: { size?: number }) {
 }
 export function ExposureApp() {
   return (
-    <ExposureAuthenticatorGate>
-      <ExposureTools />
-    </ExposureAuthenticatorGate>
+    <>
+      <section className="mini-note" aria-label="Exposure demonstration">
+        <p>New to StrikeOut? Explore fictional exposure findings and practical privacy steps without entering personal information.</p>
+        <a href="/devfest.html">Try the fictional exposure demo — no sign-in required</a>
+      </section>
+      <ExposureAuthenticatorGate>
+        <ExposureTools />
+      </ExposureAuthenticatorGate>
+    </>
   );
 }
 function ExposureTools() {
@@ -80,21 +86,16 @@ function ExposureTools() {
       setConsent(false);
       setCaps(null);
       setError("");
-      fetch("/api/osint/capabilities")
-        .then(async (r) => {
-          const x = await r.json();
-          if (r.ok) setCaps(x);
-        })
-        .catch(() => {});
+      loadCapabilities();
     }
     window.addEventListener("strikeout-auth-changed", clearAccount);
-    fetch("/api/osint/capabilities")
-      .then(async (r) => {
-        const x = await r.json();
-        if (!r.ok) throw Error(x.error);
-        setCaps(x);
-      })
-      .catch((e) => setError(e.message));
+    function loadCapabilities() {
+      const version = generation.current;
+      requestJSON("/api/osint/capabilities")
+        .then((x) => { if (version === generation.current) setCaps(x); })
+        .catch((e) => { if (version === generation.current) setError(e.message); });
+    }
+    loadCapabilities();
     return () => {
       generation.current++;
       window.removeEventListener("strikeout-auth-changed", clearAccount);
@@ -102,14 +103,11 @@ function ExposureTools() {
   }, []);
   async function post(path: string, body: any) {
     const version = generation.current;
-    const r = await fetch("/api/osint" + path, {
+    const data = await requestJSON("/api/osint" + path, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body, timeoutMs: 100000,
     });
-    const data = await r.json();
     if (version !== generation.current) throw new DOMException("Superseded check", "AbortError");
-    if (!r.ok) throw Error(data.error || "Lookup failed.");
     return data;
   }
   async function scan(e: any) {
@@ -202,7 +200,7 @@ function ExposureTools() {
     <>
       <span className="eyebrow">REVERSE OSINT / YOUR OWN INFORMATION</span>
       <h1>See what is exposed.</h1>
-      <p className="quiet-status-copy">
+      <p>
         Real checks from the integrated OSINT backend. Review possible matches
         before drawing conclusions.
       </p>
@@ -216,9 +214,9 @@ function ExposureTools() {
         </p>
         {caps && (
           <small>
-            GitHub public search: enabled Â· Document review: enabled Â· Brave
+            GitHub public search: enabled · Document review: enabled · Brave
             web search:{" "}
-            {caps.providers?.brave ? "configured" : "not configured"} Â· HIBP
+            {caps.providers?.brave ? "configured" : "not configured"} · HIBP
             email breaches:{" "}
             {caps.providers?.hibp ? "configured" : "not configured"}
           </small>
@@ -251,6 +249,7 @@ function ExposureTools() {
         </div>
       )}
       <form id="tour-exposure-search-well" onSubmit={scan}>
+        <fieldset disabled={busy} style={{border: 0, padding: 0, margin: 0}}>
         {caps?.providers?.serpapi &&
           !["documents", "password"].includes(service) && (
             <label className="check">
@@ -369,6 +368,7 @@ function ExposureTools() {
                   try {
                     setError("");
                     const version = generation.current;
+                    const { documentText: extractDocumentText } = await import("../document-text");
                     const extracted = await extractDocumentText(f);
                     if (version === generation.current) setDocumentText(extracted);
                   } catch (error: any) {
@@ -425,6 +425,7 @@ function ExposureTools() {
         <button disabled={!consent || busy}>
           {busy ? "Checking…" : "Check my exposure"}
         </button>
+        </fieldset>
       </form>
       {error && (
         <div className="error" role="alert">
@@ -484,6 +485,8 @@ function ExposureTools() {
           </button>
           <h2>Exposure results</h2>
           <RiskSummary summary={result.riskSummary} />
+          <SourceCoverage result={result} />
+          <p>Downloaded results can contain identifying links or text. Keep the file private and remove it from shared devices after use.</p>
           {result.status === "incomplete" && (
             <button
               disabled={busy}
@@ -525,7 +528,7 @@ function ExposureTools() {
                   Document {f.document}, line {f.line}.{" "}
                 </small>
               )}
-
+              <FindingGuidance finding={f} />
             </article>
           ))}
         </>

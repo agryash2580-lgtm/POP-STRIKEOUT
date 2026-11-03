@@ -13,7 +13,6 @@ export async function documentText(file: File): Promise<string> {
   }
   const task = getDocument({
     data: await file.arrayBuffer(),
-    isEvalSupported: false,
   });
   const pdf = await task.promise;
   try {
