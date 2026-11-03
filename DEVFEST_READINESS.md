@@ -3,7 +3,7 @@
 Audit started **November 2, 2026**; updated **November 3, 2026**. Exhibition target: **November 28, 2026**.
 Baseline: upstream `main` at `dd0806bc628ce40a2f86c347e1ced52562dcd57f`.
 PR #11 was merged into `main` at `ff15c0c`; the fictional demo is public.
-Current follow-up branch: `devfest/release-hardening`.
+PRs #12 and #13 are merged into `main`; local follow-up work is in progress.
 
 **Release decision: not yet exhibition-ready.** Local readiness checks pass, but
 that does not establish a complete, offline, accessible exhibition experience or
@@ -197,6 +197,7 @@ screenshots are in [the November 3 QA record](docs/DEVFEST-QA-2026-11-03.md).
 | Booth kit | `scripts/package-demo.mjs`, `scripts/devfest-qr.mjs`, `docs/DEVFEST-*`, `CONTRIBUTING.md`, README | Copied package checksum/server verified; QR matrix decoded; public destination opens in browser; scripts, architecture, privacy, troubleshooting and screenshots ready | Scan QR with a separate physical phone and test actual booth laptop offline |
 | Release follow-up | `scripts/check-deployment.mjs`, `api/index.mjs`, `api/rate-limit.mjs`, `.github/ISSUE_TEMPLATE/devfest-feedback.yml`, related tests | PR #12 merged; public revision `6770565e9572`, private durable storage and four demo assets verified; GitHub feedback form opens; 142 tests passed before the ownership follow-up | Distributed quota, production live-account MFA/provider QA, phone accessibility and real booth rehearsal pending |
 | Ownership follow-up | `api/osint/authenticator-auth.mjs`, `api/index.mjs`, exposure components and related tests | Only the account's exact verified email can be searched. Instagram, phone, LinkedIn, identity-card, domain, image and legacy GitHub-profile searches are locked until matching target-proof flows exist. Local document review and password-prefix checks remain available after MFA. 143 tests pass locally | Domain/profile/image verification flows and production email-verification availability need implementation and validation |
+| Retention and visitor QA follow-up | `scripts/cleanup-expired.mjs`, `tests/cleanup-expired.test.mjs`, package script, mobile CSS, browser scripts and docs | Dry-run cleanup inventories only expired auth artifacts, with a 24-hour grace period and conditional cloud deletion; local preview counted 248 scanned, 34 eligible, 0 deleted. Public deployment checker confirmed revision `71e66413f65e`. Full check passed 147 tests, syntax, typecheck and build. Desktop browser journey passed after a stale selector was fixed. MFA, ownership gate, masked results, export and 390px mobile layout passed 25 browser checks; small-screen exposure text was enlarged | Production cleanup not scheduled or run; complete keyboard/screen-reader QA and physical-device rehearsal still pending |
 
 The live provider smoke check completed for GitHub, Pwned Passwords prefix,
 SerpApi Google and Bing. SerpApi DuckDuckGo returned HTTP 502. Other optional
@@ -207,7 +208,7 @@ implied by these local checks.
 domain and image searches; test a fresh production MFA sign-in, verified-email
 ownership and supported providers with
 an authorized operator account; run a full keyboard/screen-reader and phone-sized
-full-app pass; implement distributed rate limiting and retention maintenance;
+full-app pass; implement distributed rate limiting and schedule production retention cleanup;
 scan the QR with a separate phone; rehearse on the real booth laptop without
 external internet. The public fictional page works, but the whole product has
 not earned a production-ready claim.

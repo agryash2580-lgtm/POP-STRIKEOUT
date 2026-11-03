@@ -75,7 +75,8 @@ derive ownership from authenticated identities, not a user ID supplied by the cl
 Production must configure private Blob. Local `.data/` is not a production database
 backup or a safe shared folder. Vercel filesystem writes are not used as a durable
 fallback when Blob is unconfigured. The current data model has no generalized
-migration or expiry sweep; those remain operational limitations.
+migration. A targeted expired-auth cleanup command exists, but production
+scheduling and broader account-data retention remain operational limitations.
 
 ## Privacy and retention inventory
 
@@ -87,7 +88,7 @@ migration or expiry sweep; those remain operational limitations.
 | Supplied documents | Browser extracts text; approved text goes to local backend review; not automatically added to a case |
 | Password-prefix request | Five SHA-1 characters sent to range provider; suffix match stays in browser |
 | Account/cases/evidence | Private records; explicit account/evidence/report deletion endpoints exist; do not promise automatic age-based deletion |
-| Sessions and MFA challenges | Expiry enforced on access; historical expired record cleanup is not a comprehensive implemented retention policy |
+| Sessions and MFA challenges | Expiry enforced on access; `npm run cleanup:expired` previews a sweep of these and other short-lived auth records 24 hours after expiry. Applying it is an operator step, not a scheduled production job or a comprehensive retention policy |
 | MFA secret | AES-256-GCM encrypted under stable server environment key; recovery codes stored as hashes |
 | Provider queries | Sent only to selected disclosed providers; their independent retention policies apply |
 | Logs | Guarded server failures log request ID/type/route/code rather than raw incident content; infrastructure logging still needs deployment review |
@@ -110,7 +111,7 @@ optional and clearly labeled as public; users should not post incident evidence.
 - Existing process-local rate limiting is not shared across serverless instances.
   Ordinary client-supplied forwarding headers no longer select a fresh quota
   bucket; Vercel's client-IP header is used on Vercel. Deployment abuse protection,
-  a distributed quota and retention maintenance still need review.
+  a distributed quota and production cleanup schedule still need review.
 - Optional Google sign-in, Gemini, email, search keys and Blob need independent
   operational checks; missing configuration must never become fabricated output.
 

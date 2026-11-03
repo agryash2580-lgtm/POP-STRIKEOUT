@@ -109,6 +109,19 @@ in the browser’s downloads folder; they are fictional, but tidy them during se
 Keep production accounts signed out on visitor-facing machines. Do not invite
 visitors to type passwords, card numbers or identity documents into a public demo.
 
+## Expired authentication-record cleanup
+
+`npm run cleanup:expired` previews how many expired session, MFA, OAuth, Pop
+pairing/session and exposure-step-up records are eligible for removal. It prints
+counts only and does not delete anything. Records become eligible **24 hours
+after** their expiry. On a controlled local installation, run
+`npm run cleanup:expired -- --apply` after reviewing the preview. For production,
+run the same command in an operator environment with `STORAGE_BACKEND=blob` and
+the existing private `BLOB_READ_WRITE_TOKEN`; do not put that token in Git, shell
+history, a booth laptop, or the browser. The production sweep has not yet been
+scheduled or executed. It is not a general account-data retention policy: cases,
+evidence, verified report addresses and mail receipts need separate decisions.
+
 ## QR and feedback
 
 `npm run qr:demo` generates `output/devfest/strikeout-demo-qr.png` for the public
