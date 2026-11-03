@@ -6,6 +6,22 @@ A Windows 98 style recovery workspace with private incident cases, evidence, rev
 
 **Start with [CODE-GUIDE.md](CODE-GUIDE.md).** It explains the actual code, file locations, data flow, setup, demo and limitations for a beginner presenting this project.
 
+## DevFest preparation
+
+Read [DEVFEST_READINESS.md](DEVFEST_READINESS.md) for verified progress and remaining
+release blockers. Run `npm run demo` and open [the fictional offline demo](http://localhost:3031/devfest.html).
+It needs no account, provider key or internet connection. Its findings are explicitly
+synthetic and are never substituted for live API responses. Check Exposure links to
+the same page at `/devfest.html` when the full application is running.
+
+Use `npm run check` for syntax, frontend type checking, regression tests and the
+production build. `npm run package:demo` prepares a dependency-free runtime folder
+(Node 22+ still required), and `npm run qr:demo` generates a QR asset whose public
+destination must be verified after deployment. See the [booth playbook](docs/DEVFEST-PLAYBOOK.md),
+[troubleshooting guide](docs/DEVFEST-TROUBLESHOOTING.md),
+[architecture and privacy inventory](docs/DEVFEST-ARCHITECTURE.md) and
+[contributor setup](CONTRIBUTING.md). Local completion does not mean deployment.
+
 ## Run
 
 Node.js 22+:

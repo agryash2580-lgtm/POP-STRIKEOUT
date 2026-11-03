@@ -51,7 +51,7 @@ export function createReportsClient({
     progress: (id, stepId, done, note = "") =>
       request(jobPath(id) + "/progress", "POST", { stepId, done, note }),
     deleteReports: (id) => request(casePath(id), "DELETE", { confirm: true }),
-    async finish(id, onUpdate = () => {}, signal) {
+    async finish(id, onUpdate = (_job) => {}, signal) {
       let job = await request(jobPath(id));
       onUpdate(job);
       while (job.stage !== "ready") {
