@@ -111,14 +111,14 @@ visitors to type passwords, card numbers or identity documents into a public dem
 
 `npm run qr:demo` generates `output/devfest/strikeout-demo-qr.png` for the public
 `/devfest.html` URL and verifies its matrix using an independent decoder.
-**Do not print until that exact deployed page opens on a separate phone.** Local
-generation and local tests are not deployment. The live page and GitHub feedback
-links need internet when opened. Feedback currently uses GitHub Issues; it requires
-a GitHub account and is public. Do not submit personal incident details there.
+The public destination now opens in a browser. **Scan the printed QR on a separate
+phone before booth use.** The live page and GitHub feedback
+links need internet when opened. Feedback uses a public GitHub Issue form; it
+requires a GitHub account. Do not submit personal incident details there.
 
 Current fictional screenshots: [desktop landing](assets/devfest-landing-desktop.jpg)
 and [mobile results](assets/devfest-results-mobile.jpg). The QR asset is
-[here](assets/devfest-demo-qr.png), pending public-route verification.
+[here](assets/devfest-demo-qr.png), pending physical-phone verification.
 
 A dedicated visitor email/interest database is intentionally absent until contact
 ownership, consent, retention and a delivery process have been agreed. No contact

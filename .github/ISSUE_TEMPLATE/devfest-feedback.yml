@@ -1,0 +1,47 @@
+name: DevFest product feedback
+description: Tell the StrikeOut team what was clear, confusing, or useful in the fictional demonstration.
+title: "[DevFest feedback] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue is **public** and requires a GitHub account. Share only product feedback or fictional examples. Do not include names, contact details, screenshots of personal accounts, passwords, recovery codes, identity documents, or incident evidence.
+  - type: dropdown
+    id: journey
+    attributes:
+      label: Which part did you try?
+      options:
+        - Fictional exposure demo
+        - Live Check Exposure with my own information
+        - Cases and reports
+        - Pop browser companion
+        - I only watched the demonstration
+    validations:
+      required: true
+  - type: dropdown
+    id: feedback_type
+    attributes:
+      label: What kind of feedback is this?
+      options:
+        - Something was confusing
+        - Something did not work
+        - A privacy or security concern
+        - An idea or improvement
+        - Something worked well
+    validations:
+      required: true
+  - type: textarea
+    id: observation
+    attributes:
+      label: What happened or what would you change?
+      description: Describe the screen and steps using fictional or non-personal examples only.
+      placeholder: "Example: I chose the old contact details sample and could not find the reset button."
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Public issue privacy check
+      options:
+        - label: I have removed personal details, credentials, private screenshots, and incident evidence from this public report.
+          required: true

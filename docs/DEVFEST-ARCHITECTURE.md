@@ -1,7 +1,8 @@
 # Technical architecture and data handling
 
 See [CODE-GUIDE.md](../CODE-GUIDE.md) for the broader code walkthrough.
-This document describes the readiness branch; deployment is a separate step.
+The fictional demo from readiness PR #11 is deployed publicly. Release checks
+and limits in this document still need the stated production verification.
 
 ## Entry points
 
@@ -13,6 +14,7 @@ This document describes the readiness branch; deployment is a separate step.
 | MFA gate | `ExposureAuthenticatorGate.tsx`, `AccountSecurity.tsx` | Setup and step-up; does not establish target ownership |
 | HTTP helper | `shared/http-client.js` | Same-origin exposure JSON requests, deadlines and safe failures |
 | Full server | `server.mjs`, `api/index.mjs` | Local Vite or production assets; shared Express API |
+| Request limiter | `api/rate-limit.mjs` | Per-instance, one-minute quotas keyed by validated Vercel client IP or local request IP; not a shared abuse quota |
 | Assessment router | `api/osint.mjs` | Authenticated capabilities and MFA-gated POST endpoints |
 | Search | `api/osint/osint.mjs`, `providers.mjs`, `public-web.mjs`, `search-provider.mjs` | Bounded provider requests and exact-match filtering |
 | Local review | `documents.mjs`, `link-risk.mjs`, `redact.mjs` | Supplied text and URL rules, pattern masking; no page crawl |
@@ -104,7 +106,9 @@ optional and clearly labeled as public; users should not post incident evidence.
 - Reverse-image input rejects local/private/signed URLs before provider disclosure;
   visual matches do not identify people or establish location.
 - Existing process-local rate limiting is not shared across serverless instances.
-  Deployment abuse protection, quota budgets and retention maintenance need review.
+  Ordinary client-supplied forwarding headers no longer select a fresh quota
+  bucket; Vercel's client-IP header is used on Vercel. Deployment abuse protection,
+  a distributed quota and retention maintenance still need review.
 - Optional Google sign-in, Gemini, email, search keys and Blob need independent
   operational checks; missing configuration must never become fabricated output.
 
