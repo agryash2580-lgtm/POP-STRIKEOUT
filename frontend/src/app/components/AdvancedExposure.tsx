@@ -43,7 +43,8 @@ export function AdvancedExposure({ capabilities }: { capabilities: any }) {
     <h2>Search Google / reverse-image lookup</h2>
     <p>Search your own public information on a chosen domain, or look for copies and visually similar images. Data retrieval is a separate feature.</p>
     {!capabilities && <p className="mini-note">Sign in through Cases &amp; Reports before using these tools.</p>}
-    <form onSubmit={run}><fieldset disabled={busy} style={{ border: 0, padding: 0, margin: 0 }}>
+    {capabilities?.authentication?.domainAndImageOwnershipRequired && <p className="mini-note">Domain and image searches are paused until StrikeOut can verify ownership of the target. An authenticator code and consent checkbox alone are not enough. You can still <a href="https://lens.google.com/" target="_blank" rel="noopener noreferrer">open Google Lens yourself</a> to check a file you control.</p>}
+    {!capabilities?.authentication?.domainAndImageOwnershipRequired && <form onSubmit={run}><fieldset disabled={busy} style={{ border: 0, padding: 0, margin: 0 }}>
       <label>Search tool<select aria-label="Search tool" value={tool} onChange={e => { epoch.current++; setTool(e.target.value); setApproved(false); setResult(null); setError(''); setBusy(false); }}>
         <option value="dorks">Domain-scoped Google searches</option><option value="images">Reverse-image lookup</option>
       </select></label>
@@ -66,7 +67,7 @@ export function AdvancedExposure({ capabilities }: { capabilities: any }) {
       <p>{automatic ? 'The selected identifier/query or image URL is sent to SerpApi for Google search. If unavailable, use the disclosed Google handoff.' : 'Strikeout prepares a link. Only when you open it will the query or image URL be shared with Google; results stay on Google.'}</p>
       <label className="check"><input type="checkbox" checked={approved} onChange={e => setApproved(e.target.checked)} />This is my information or authorized content, and I approve the described provider disclosure.</label>
       <button disabled={!approved || busy || !capabilities}>{busy ? 'Preparing search…' : automatic ? 'Run selected search' : 'Prepare Google search'}</button>
-    </fieldset></form>
+    </fieldset></form>}
     {error && <p role="alert" className="error">{error}</p>}
     {result && <div aria-live="polite">
       <h3>{result.status === 'requires_user_search' ? 'Ready to open on Google — search not yet completed' : result.status === 'incomplete' ? 'Some automatic checks failed' : 'Automatic check completed'}</h3>

@@ -593,54 +593,7 @@ app.post(
     const name = String(req.body.username || "").trim();
     if (!/^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i.test(name))
       fail(400, "Enter a GitHub username, not a URL.");
-    let response;
-    try {
-      response = await fetch(
-        "https://api.github.com/users/" + encodeURIComponent(name),
-        {
-          headers: {
-            Accept: "application/vnd.github+json",
-            "User-Agent": "Strikeout-Defensive-Self-Check",
-          },
-          signal: AbortSignal.timeout(8000),
-        },
-      );
-    } catch {
-      fail(503, "GitHub could not be reached. No result has been invented.");
-    }
-    if (response.status === 404)
-      return res.json({
-        findings: [],
-        checkedAt: new Date().toISOString(),
-        provider: "GitHub public profile",
-        status: "complete",
-      });
-    if (!response.ok)
-      fail(503, "GitHub is unavailable or rate-limited. Please retry later.");
-    const x = await response.json();
-    res.json({
-      provider: "GitHub public profile",
-      checkedAt: new Date().toISOString(),
-      status: "complete",
-      findings: [
-        {
-          id: "github:" + x.login,
-          url: x.html_url,
-          source: "GitHub public profile",
-          excerpt:
-            [x.name, x.bio, x.email, x.blog].filter(Boolean).join(" · ") ||
-            "A public profile exists under this exact username.",
-          identifier: name,
-          confidence: "Exact username; ownership unverified",
-          severity: x.email ? "medium" : "low",
-          reason: x.email
-            ? "A contact email is publicly returned by GitHub. It may be intentionally public."
-            : "A public profile alone is not evidence of harm.",
-          action:
-            "Confirm whether this is yours and whether you want the returned details public.",
-        },
-      ],
-    });
+    fail(403, "Public profile lookup is paused until ownership of the target account can be verified.");
   }),
 );
 app.post(

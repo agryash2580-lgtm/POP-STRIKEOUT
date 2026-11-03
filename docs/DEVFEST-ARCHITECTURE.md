@@ -97,9 +97,11 @@ optional and clearly labeled as public; users should not post incident evidence.
 
 ## Security boundaries and unresolved work
 
-- Authenticated consent does not prove ownership of every identifier. Phone and
-  Instagram target searches remain locked. A supported authorization/verification
-  policy for broader personal searches remains a release decision, not solved by TOTP.
+- Authenticated consent does not prove ownership of every identifier. Live email
+  search requires the account's exact verified address (Google sign-in or the
+  report-email code flow). Phone, Instagram, LinkedIn, identity-card, domain
+  dorks and reverse-image search are locked until corresponding target-proof
+  flows exist. TOTP protects the StrikeOut session, not arbitrary search targets.
 - Local URL flags inspect URL structure only. No threat-feed reputation guarantee.
 - Snippets and supplied evidence are untrusted. React uses text rendering; the
   demonstration constructs DOM with textContent rather than HTML injection.

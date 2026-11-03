@@ -42,13 +42,15 @@ function fixture() {
     disable: () => (enabled = false),
     changeVersion: () => version++,
     unconfigure: () => (configured = false),
+    verifiedEmail: (email) => records.set("analysis_email/owner", { email, verifiedAt: "2026-11-03T00:00:00.000Z" }),
   };
 }
 test("authenticator grants are scoped to account/session, expire, and contain no codes", async () => {
   const f = fixture();
   await assert.rejects(f.auth.requireVerified(f.req), { status: 403 });
   assert.equal((await f.auth.verify(f.req)).verified, true);
-  await f.auth.requireVerified({ ...f.req, body: { service: "email" } });
+  f.verifiedEmail("owner@example.org");
+  await f.auth.requireVerified({ ...f.req, body: { service: "email", input: { email: "OWNER@example.org" } } });
   assert.equal(
     (await f.auth.state({ ...f.req, osintUser: { id: "another" } })).verified,
     false,
@@ -89,11 +91,22 @@ test("free authenticator is not treated as proof of phone or Instagram ownership
   const f = fixture();
   await f.auth.verify(f.req);
   for (const path of ["/check", "/check/", "/CHECK/"])
-    for (const service of ["phone", "instagram"])
+    for (const service of ["phone", "instagram", "linkedin", "identity_cards"])
       await assert.rejects(
         f.auth.requireVerified({ ...f.req, path, body: { service } }),
         { status: 403 },
       );
+});
+test("personal searches require an exact verified email or remain locked", async () => {
+  const f = fixture();
+  await f.auth.verify(f.req);
+  const search = (email) => f.auth.requireVerified({ ...f.req, path: "/check", body: { service: "email", input: { email } } });
+  await assert.rejects(search("owner@example.org"), { status: 403 });
+  f.verifiedEmail("owner@example.org");
+  await search("OWNER@example.org");
+  await assert.rejects(search("other@example.org"), { status: 403 });
+  for (const path of ["/dorks", "/images/reverse"])
+    await assert.rejects(f.auth.requireVerified({ ...f.req, path }), { status: 403 });
 });
 test("every mounted exposure endpoint enforces authenticator before provider work", async () => {
   const { osintRouter } = await import("../api/osint.mjs");
@@ -146,6 +159,7 @@ test("every mounted exposure endpoint enforces authenticator before provider wor
 test("real encrypted TOTP setup unlocks exposure, rejects replay, and disabling MFA revokes access", async () => {
   const { default: app } = await import("../api/index.mjs");
   const { randomBytes } = await import("node:crypto");
+  const { write } = await import("../api/store.mjs");
   const OTPAuth = await import("otpauth");
   const previous = process.env.MFA_ENCRYPTION_KEY;
   process.env.MFA_ENCRYPTION_KEY = randomBytes(32).toString("base64");
@@ -217,6 +231,19 @@ test("real encrypted TOTP setup unlocks exposure, rejects replay, and disabling 
       (await call("/api/osint/check", { service: "instagram" })).status,
       403,
     );
+    const emailCheck = (email) => call("/api/osint/check", {
+      service: "email", input: { email },
+      consent: { selfOwned: true, version: "1", providers: [] },
+    });
+    assert.equal((await emailCheck("owner@example.org")).status, 403);
+    await write("analysis_email/" + owner.id, { email: "owner@example.org", verifiedAt: new Date().toISOString() });
+    assert.equal((await emailCheck("other@example.org")).status, 403);
+    const owned = await emailCheck("OWNER@example.org");
+    assert.equal(owned.status, 400);
+    assert.match(owned.data.error, /Select an approved provider/);
+    assert.equal((await call("/api/osint/dorks", {})).status, 403);
+    assert.equal((await call("/api/osint/images/reverse", {})).status, 403);
+    assert.equal((await call("/api/search/github", { username: "someoneelse", approved: true })).status, 403);
     assert.equal(
       (
         await call("/api/auth/mfa/disable", {

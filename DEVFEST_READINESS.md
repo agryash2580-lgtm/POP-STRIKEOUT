@@ -192,18 +192,20 @@ screenshots are in [the November 3 QA record](docs/DEVFEST-QA-2026-11-03.md).
 |---|---|---|---|
 | Audit | `DEVFEST_READINESS.md` | Architecture, feature inventory, verified/inferred/untested findings and P0/P1/P2 backlog | Deeper production and security validation pending |
 | Synthetic demo | `frontend/public/devfest*`, `scripts/serve-demo.mjs`, `tests/devfest-demo.test.mjs`, `ExposureApp.tsx` | Four fictional cases, source coverage, masked findings, recommendations, consent, copyable/downloadable JSON and reset. Local and public browser journeys verified after PR #11 merged | Actual booth-device offline rehearsal pending |
-| Reliability / results | `shared/http-client.js`, `api/osint/request-budget.mjs`, `api/osint/recommendations.mjs`, three exposure components, related tests | 20/100-second client deadlines, shared 80-second provider budget, failure messages, source status and next steps. Local protected assessment returned masked results | Distributed rate limits and target ownership policy unresolved |
+| Reliability / results | `shared/http-client.js`, `api/osint/request-budget.mjs`, `api/osint/recommendations.mjs`, three exposure components, related tests | 20/100-second client deadlines, shared 80-second provider budget, failure messages, source status and next steps. Local protected assessment returned masked results | Distributed rate limits remain |
 | Performance / checks | `document-text.ts` lazy load, `tsconfig.json`, package metadata/lock, `scripts/check-syntax.mjs`, `.github/workflows/readiness.yml`, updated desktop script | Initial JS bundle 858.16→424.76 kB. 137 tests, syntax, `tsc`, build pass locally; current dependency advisory scan found zero known advisories. PR #11 checks passed on Node 22 and 24 | Updated desktop browser script not yet run |
 | Booth kit | `scripts/package-demo.mjs`, `scripts/devfest-qr.mjs`, `docs/DEVFEST-*`, `CONTRIBUTING.md`, README | Copied package checksum/server verified; QR matrix decoded; public destination opens in browser; scripts, architecture, privacy, troubleshooting and screenshots ready | Scan QR with a separate physical phone and test actual booth laptop offline |
-| Release follow-up | `scripts/check-deployment.mjs`, `api/index.mjs`, `api/rate-limit.mjs`, `.github/ISSUE_TEMPLATE/devfest-feedback.yml`, related tests | Public health/storage and four demo assets verified; public consent/results/export/reset verified; forwarded-header spoof cannot reset local quota; 142 tests pass locally | Distributed quota, target ownership, production live-account MFA/provider QA, phone accessibility and real booth rehearsal pending |
+| Release follow-up | `scripts/check-deployment.mjs`, `api/index.mjs`, `api/rate-limit.mjs`, `.github/ISSUE_TEMPLATE/devfest-feedback.yml`, related tests | PR #12 merged; public revision `6770565e9572`, private durable storage and four demo assets verified; GitHub feedback form opens; 142 tests passed before the ownership follow-up | Distributed quota, production live-account MFA/provider QA, phone accessibility and real booth rehearsal pending |
+| Ownership follow-up | `api/osint/authenticator-auth.mjs`, `api/index.mjs`, exposure components and related tests | Only the account's exact verified email can be searched. Instagram, phone, LinkedIn, identity-card, domain, image and legacy GitHub-profile searches are locked until matching target-proof flows exist. Local document review and password-prefix checks remain available after MFA. 143 tests pass locally | Domain/profile/image verification flows and production email-verification availability need implementation and validation |
 
 The live provider smoke check completed for GitHub, Pwned Passwords prefix,
 SerpApi Google and Bing. SerpApi DuckDuckGo returned HTTP 502. Other optional
 providers were not configured locally. No production integration result is
 implied by these local checks.
 
-**Current release blockers:** resolve scope/target-ownership policy for personal
-live searches; test a fresh production MFA sign-in and supported providers with
+**Current release blockers:** build target-proof flows before unlocking profile,
+domain and image searches; test a fresh production MFA sign-in, verified-email
+ownership and supported providers with
 an authorized operator account; run a full keyboard/screen-reader and phone-sized
 full-app pass; implement distributed rate limiting and retention maintenance;
 scan the QR with a separate phone; rehearse on the real booth laptop without
