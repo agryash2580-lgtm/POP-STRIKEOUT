@@ -1,7 +1,8 @@
 # DevFest readiness QA — November 3, 2026
 
-Current branch: `devfest/readiness-2026`. These are **local** observations; the
-readiness branch has not been deployed at the time of this report. Use
+Current branch: `devfest/readiness-2026`, draft PR #11. The table distinguishes
+local, CI and public-site observations. The preview deployment requires Vercel
+login, and the readiness branch is not on the public production site. Use
 [DEVFEST_READINESS.md](../DEVFEST_READINESS.md) for release gates.
 
 | Check | Observed result | Status |
@@ -10,6 +11,7 @@ readiness branch has not been deployed at the time of this report. Use
 | JavaScript syntax check | Active server/shared/extension/scripts parse | Verified |
 | TypeScript check | `tsc --noEmit` passed; legacy JS is not fully typed | Verified |
 | Production build | Vite built 59 modules | Verified |
+| Draft PR CI | GitHub Readiness checks passed on Node 22 and 24; Vercel deployment check passed | Verified for PR #11; protected preview was not visitor-tested |
 | Initial bundle | 858.16 kB / 256.98 kB gzip before; 424.76 kB / 126.48 kB gzip after lazy PDF loading | Verified build measurements; no real-user performance claim |
 | Offline demo isolated server | Assets served, CSP `connect-src 'none'`, API routes inaccessible | Verified |
 | Copied portable folder | All five runtime files matched SHA-256 manifest; copied server returned HTTP 200 | Verified |
@@ -27,7 +29,7 @@ readiness branch has not been deployed at the time of this report. Use
 | SerpApi Google / Bing | One reserved-example request per engine completed | Verified local configuration only |
 | SerpApi DuckDuckGo | Returned provider HTTP 502 | Verified failure; retry/production health pending |
 | Brave, HIBP, Gemini, Google OAuth, email, private Blob | Not configured in this local setup | Verified local configuration status; production state Not Yet Tested |
-| Public `/devfest.html` | HTTP 404 on currently deployed site | Verified; QR must not be printed yet |
+| Public `/devfest.html` | HTTP 404 on currently deployed production site; draft preview redirects to Vercel login | Verified; QR must not be printed yet |
 | Source scans | Limited tracked-text high-confidence secret pattern scan found no matches | Verified limited scan; history and broad entropy not covered |
 | Dependency audit | Current `npm audit --audit-level=moderate` reports 0 known advisories across 314 dependencies | Verified against current advisory registry; not a security guarantee |
 

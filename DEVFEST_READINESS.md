@@ -2,7 +2,9 @@
 
 Audit started **November 2, 2026**; updated **November 3, 2026**. Exhibition target: **November 28, 2026**.
 Baseline: upstream `main` at `dd0806bc628ce40a2f86c347e1ced52562dcd57f`.
-Working branch: `devfest/readiness-2026`. No readiness changes deployed yet.
+Working branch: `devfest/readiness-2026`, draft PR #11. The branch has a
+Vercel preview, but it requires Vercel login; no readiness changes are on the
+public production site yet.
 
 **Release decision: not yet exhibition-ready.** Local readiness checks pass, but
 that does not establish a complete, offline, accessible exhibition experience or
@@ -192,7 +194,7 @@ screenshots are in [the November 3 QA record](docs/DEVFEST-QA-2026-11-03.md).
 | Audit | `DEVFEST_READINESS.md` | Architecture, feature inventory, verified/inferred/untested findings and P0/P1/P2 backlog | Deeper production and security validation pending |
 | Synthetic demo | `frontend/public/devfest*`, `scripts/serve-demo.mjs`, `tests/devfest-demo.test.mjs`, `ExposureApp.tsx` | Four fictional cases, source coverage, masked findings, recommendations, consent, copyable/downloadable JSON and reset. Browser flow and isolated server verified | Public page currently HTTP 404; release through reviewed deployment |
 | Reliability / results | `shared/http-client.js`, `api/osint/request-budget.mjs`, `api/osint/recommendations.mjs`, three exposure components, related tests | 20/100-second client deadlines, shared 80-second provider budget, failure messages, source status and next steps. Local protected assessment returned masked results | Distributed rate limits and target ownership policy unresolved |
-| Performance / checks | `document-text.ts` lazy load, `tsconfig.json`, package metadata/lock, `scripts/check-syntax.mjs`, `.github/workflows/readiness.yml`, updated desktop script | Initial JS bundle 858.16→424.76 kB. 137 tests, syntax, `tsc`, build pass locally; current dependency advisory scan found zero known advisories | CI workflow and updated browser script not yet executed remotely |
+| Performance / checks | `document-text.ts` lazy load, `tsconfig.json`, package metadata/lock, `scripts/check-syntax.mjs`, `.github/workflows/readiness.yml`, updated desktop script | Initial JS bundle 858.16→424.76 kB. 137 tests, syntax, `tsc`, build pass locally; current dependency advisory scan found zero known advisories. PR #11 checks passed on Node 22 and 24 | Updated desktop browser script not yet run |
 | Booth kit | `scripts/package-demo.mjs`, `scripts/devfest-qr.mjs`, `docs/DEVFEST-*`, `CONTRIBUTING.md`, README | Copied package checksum/server verified; QR matrix decoded; scripts, architecture, privacy, troubleshooting and screenshots ready | Verify deployed QR destination and test actual booth laptop offline |
 
 The live provider smoke check completed for GitHub, Pwned Passwords prefix,
@@ -200,7 +202,8 @@ SerpApi Google and Bing. SerpApi DuckDuckGo returned HTTP 502. Other optional
 providers were not configured locally. No production integration result is
 implied by these local checks.
 
-**Current release blockers:** deploy and verify the new public demo page; resolve
+**Current release blockers:** deploy and verify the new public demo page (the PR
+preview is protected by Vercel login and cannot serve visitors); resolve
 scope/target-ownership policy for personal live searches; test with actual
 production MFA/Blob/provider configuration; run a full keyboard/screen-reader and
 phone-sized full app pass; decide durable rate limiting and retention; rehearse on
