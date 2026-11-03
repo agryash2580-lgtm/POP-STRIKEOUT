@@ -283,13 +283,13 @@ function ExposureTools() {
             <option value="instagram" disabled>
               Instagram references (ownership verification required)
             </option>
-            <option value="email">Email public references</option>
+            <option value="email">Verified-email public references</option>
             <option value="phone" disabled>
               Phone references (ownership verification required)
             </option>
-            <option value="linkedin">LinkedIn public references</option>
-            <option value="identity_cards">
-              Own-name identity-document references
+            <option value="linkedin" disabled>LinkedIn references (ownership verification required)</option>
+            <option value="identity_cards" disabled>
+              Identity-document references (ownership verification required)
             </option>
             <option value="documents">Review my document text</option>
             <option value="password">
@@ -297,6 +297,7 @@ function ExposureTools() {
             </option>
           </select>
         </label>
+        {service === "email" && <p className="mini-note">Searches require this exact email to be verified under Cases → Settings → Report email. Authenticator codes protect your StrikeOut account, not ownership of an arbitrary address.</p>}
         {service !== "identity_cards" && (
           <label>
             {service === "instagram"

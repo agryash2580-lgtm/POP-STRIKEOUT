@@ -7,7 +7,7 @@ observations. Use
 
 | Check | Observed result | Status |
 |---|---|---|
-| Root automated suite | 142 tests passed, 0 failed after release follow-up | Verified with loopback access; restricted sandbox cannot start test servers |
+| Root automated suite | 143 tests passed, 0 failed after ownership follow-up | Verified with loopback access; restricted sandbox cannot start test servers |
 | JavaScript syntax check | Active server/shared/extension/scripts parse | Verified |
 | TypeScript check | `tsc --noEmit` passed; legacy JS is not fully typed | Verified |
 | Production build | Vite built 59 modules | Verified |
@@ -30,7 +30,9 @@ observations. Use
 | SerpApi DuckDuckGo | Returned provider HTTP 502 | Verified failure; retry/production health pending |
 | Brave, HIBP, Gemini, Google OAuth, email, private Blob | Not configured in this local setup | Verified local configuration status; production state Not Yet Tested |
 | Public `/devfest.html` | Public page loaded; consent, fictional results, JSON preview and reset worked in browser | Verified after PR #11 merge |
-| Public deployment check | `/api/health` reports private durable Blob; all four demo assets return expected types and the fictional marker | Verified by `npm run check:deployment`; release revision was not exposed by the earlier deployment |
+| Public deployment check | `/api/health` reports revision `6770565e9572` and private durable Blob; all four demo assets return expected types and the fictional marker | Verified by `EXPECTED_SHA=6770565e... npm run check:deployment` after PR #12 merged |
+| GitHub feedback form | Direct link renders the DevFest template and required privacy checkbox | Verified after PR #12 merge; no issue was submitted |
+| Personal target proof | Unverified or mismatched email rejected; exact verified email passes ownership gate; other personal/domain/image searches rejected before provider use | Verified in focused local unit and integration tests; production operator verification pending |
 | Production protected exposure | Signed-in account reached an Open sign-in prompt for fresh authentication | Verified gate; no production TOTP or provider request executed |
 | Follow-up rate limiter | Forwarded-header spoof is ignored; active local identities are bounded | Verified in unit tests; process-local only |
 | Source scans | Limited tracked-text high-confidence secret pattern scan found no matches | Verified limited scan; history and broad entropy not covered |
@@ -42,7 +44,7 @@ Screenshots are fictional and safe to share:
 The decoded QR asset is [here](assets/devfest-demo-qr.png). Its destination
 works publicly, but scan the printed version with a separate phone before use.
 
-Remaining acceptance work: verify the next production revision; phone-sized
+Remaining acceptance work: verify the ownership follow-up deployment; phone-sized
 full app journey; keyboard and screen-reader review across all core controls;
 provider failure/timeout under hosting limits; independent live OAuth, Blob and
 MFA configuration checks with authorized operator accounts; distributed quota and

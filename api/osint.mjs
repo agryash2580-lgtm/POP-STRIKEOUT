@@ -38,6 +38,8 @@ export function osintRouter({
         phoneOtpRequired: false,
         authenticatorRequired: true,
         instagramOwnershipRequired: true,
+        emailOwnershipRequired: true,
+        domainAndImageOwnershipRequired: true,
       },
       providers: {
         github_public: true,

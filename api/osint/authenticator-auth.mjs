@@ -77,15 +77,18 @@ export function authenticatorAuthService({
       .split("?")[0]
       .toLowerCase()
       .replace(/\/+$/, "");
-    if (path === "/check" && ["instagram", "phone"].includes(req.body?.service))
-      fail(
-        403,
-        "This search is locked until ownership of the target " +
-          (req.body.service === "phone"
-            ? "phone number"
-            : "Instagram account") +
-          " can be verified. An authenticator code does not prove target ownership.",
-      );
+    if (path === "/check" && req.body?.service === "email") {
+      const target = req.body?.input?.email;
+      const address = await store.read("analysis_email/" + req.osintUser.id);
+      if (typeof target !== "string" || !address?.verifiedAt ||
+          typeof address.email !== "string" ||
+          target.trim().toLowerCase() !== address.email.trim().toLowerCase())
+        fail(403, "Verify this exact email address in Cases > Settings > Report email before searching. Your authenticator alone does not prove email ownership.");
+    }
+    if (path === "/check" && ["instagram", "phone", "linkedin", "identity_cards"].includes(req.body?.service))
+      fail(403, "This personal search is locked until ownership of the target can be verified. Your authenticator alone does not prove target ownership.");
+    if (["/dorks", "/images/reverse"].includes(path))
+      fail(403, "This search is locked until ownership of the domain or image can be verified. Your authenticator alone does not prove target ownership.");
   }
   return { state, verify, requireVerified };
 }

@@ -96,7 +96,9 @@ on demand. Explain the current process-local rate-limit and retention limitation
 
 **2:30–3:00 — honest boundary:** the booth example is fully fictional and works
 without providers. MFA protects a StrikeOut account but does not prove ownership
-of every target. Phone/Instagram searches stay locked pending target verification.
+of every target. Live email search needs the account's exact verified address;
+phone, Instagram, LinkedIn, identity-card, domain and image searches remain
+locked pending target verification.
 Do not promise private-account scanning, whole-web coverage or automatic removals.
 
 ## Reset and privacy between visitors
