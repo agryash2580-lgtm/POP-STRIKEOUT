@@ -340,6 +340,12 @@ export async function runCheck(body, options = {}) {
       }
     }
   }
+  if (!report.checks.some((x) => x.provider !== "local") &&
+      service === "email" && report.handoffs?.length) {
+    report.status = "requires_user_search";
+    report.coverage = [];
+    return report;
+  }
   if (!report.checks.some((x) => x.provider !== "local"))
     throw invalid(
       "Select an approved provider: github_public works without a key; serpapi_google, serpapi_bing and serpapi_duckduckgo use SerpApi; brave and hibp require their keys.",

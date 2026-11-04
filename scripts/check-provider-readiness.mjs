@@ -20,6 +20,12 @@ await check('pwned_passwords', true, () => passwordRange('5BAA6'));
 for (const engine of ['google', 'bing', 'duckduckgo']) {
   await check('serpapi_' + engine, !!process.env.SERPAPI_API_KEY, () => serpSearch({ engine, q: 'site:example.org "strikeout-demo"' }));
 }
+await check('serpapi_google_lens', !!process.env.SERPAPI_API_KEY, async () => {
+  const data = await serpSearch({ engine: 'google_lens', type: 'all',
+    url: 'https://strikeout-mu20.vercel.app/pop.png' });
+  if (![data.exact_matches, data.visual_matches, data.organic_results].some(Array.isArray))
+    throw Error('No supported Lens result sections');
+});
 await check('brave', !!process.env.BRAVE_SEARCH_API_KEY, () => webSearch('site:example.org "strikeout-demo"'));
 await check('hibp', !!process.env.HIBP_API_KEY, () => emailBreaches('strikeout-demo@example.org'));
 for (const [provider, configured] of [

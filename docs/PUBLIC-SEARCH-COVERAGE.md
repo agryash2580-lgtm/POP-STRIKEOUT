@@ -4,13 +4,15 @@ The public-reference form can search Google, Bing and DuckDuckGo through the ser
 
 SerpApi can return a successful DuckDuckGo response with `organic_results_state: "Fully empty"` and a no-results message. The adapter counts that exact response as a completed check with zero candidates; other provider errors remain incomplete. Zero candidates never establishes that the identifier is absent from the web.
 
-For an email verified to the signed-in account, the no-key route also prepares exact-match links to Google, Bing and DuckDuckGo. It does not call those engines or import results. Opening a link shares the email query with that engine; the report labels the links `requires_user_action` and does not count them as completed checks. This works alongside GitHub checks even when the SerpApi key is absent.
+For an email verified to the signed-in account, the no-key route also prepares exact-match links to Google, Bing and DuckDuckGo. It does not call those engines or import results. Opening a link shares the email query with that engine; the report labels the links `requires_user_action` and does not count them as completed checks. It works with or without GitHub checks even when the SerpApi key is absent; a handoff-only report is labeled `requires_user_search`.
 
 Check Exposure reads the existing report-email verification status after the authenticator step. It shows the verified address, can fill it into the check, opens Cases → Delivery & Pop for verification when needed, and refreshes the status on return. The backend still checks the exact verified address independently before any personal search.
 
 On the hosted site, exposure authenticator attempts, checks and domain-proof requests also use a shared one-minute account quota in private Blob storage. Atomic creation and conditional updates prevent separate server instances from each granting a fresh quota. The storage path hashes the account ID; expired quota records are included in the existing 24-hour-grace cleanup tool. The in-process guard remains as an additional limit. Other product routes still use only their existing in-process limits.
 
 Domain-scoped Google templates and reverse-image search retain their separate consent and free manual handoff options. Link flags explain local URL concerns without claiming a reputation check or a safety verdict. No secret is committed; configure server environment variables separately from GitHub Actions secrets.
+
+Google Lens `all` responses can contain exact flags on visual matches and separate organic web results. Reverse-image reports now preserve up to 20 deduplicated exact/visual links and 10 web links, with distinct confidence labels. A successful provider response with none of these result sections is incomplete, not proof of zero matches. A local live check using StrikeOut's own public image completed with 20 visual and 7 web links; this does not establish production provider availability.
 
 ## Framework inventory
 
