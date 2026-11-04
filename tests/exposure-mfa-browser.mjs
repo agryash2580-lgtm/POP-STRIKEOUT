@@ -14,6 +14,18 @@ try{
  await gate.getByLabel('Six-digit authenticator code',{exact:true}).fill(otp.generate({timestamp:Date.now()+30000}));await gate.getByRole('button',{name:'Verify and continue',exact:true}).click();await panel.getByLabel('Check type',{exact:false}).waitFor();check('verified tools appear',await panel.getByLabel('Check type',{exact:false}).isVisible());
  check('Instagram locked',await panel.locator('option[value=instagram]').evaluate(el=>el.disabled));check('phone locked',await panel.locator('option[value=phone]').evaluate(el=>el.disabled));
  await panel.getByLabel('Your email address',{exact:true}).fill('demo@example.org');await panel.locator('#tour-exposure-search-well').getByRole('checkbox',{name:'This is my information and I approve the described check.'}).check();await panel.getByRole('button',{name:'Check my exposure',exact:true}).click();await panel.getByRole('alert').getByText('Verify this exact email address',{exact:false}).waitFor();check('unverified email search blocked',await panel.getByRole('alert').getByText('Verify this exact email address',{exact:false}).isVisible());
+ let handoffRequest;
+ const handoffRoute=route=>{
+  handoffRequest=route.request().postDataJSON();
+  return route.fulfill({json:{schemaVersion:'1',service:'email',status:'completed',findings:[],checks:[],coverage:[],limitations:[],handoffStatus:'requires_user_action',handoffs:['google','bing','duckduckgo'].map(provider=>({provider,query:'"demo@example.org"',url:'https://'+({google:'www.google.com/search',bing:'www.bing.com/search',duckduckgo:'duckduckgo.com/'}[provider])+'?q=%22demo%40example.org%22',requiresUserAction:true}))}});
+ };
+ await page.route('**/api/osint/check',handoffRoute);
+ await panel.getByRole('button',{name:'Check my exposure',exact:true}).click();
+ const handoffs=panel.getByRole('region',{name:'Free web search links',exact:true});await handoffs.waitFor();
+ check('manual search explicitly consented',handoffRequest.consent.providers.includes('manual_web_handoff'));
+ check('three free search links shown',await handoffs.getByRole('link').count()===3);
+ check('searches labelled not run',await handoffs.getByText('These searches have not run.',{exact:false}).isVisible());
+ await page.unroute('**/api/osint/check',handoffRoute);
  await panel.getByLabel('Check type',{exact:false}).selectOption('documents');
  await panel.getByLabel('Document text',{exact:true}).fill('Fictional demo@example.org password=FictionalSecret123 card 4111111111111111 Employee badge: Demo Person.');await panel.getByLabel('Your emails to find',{exact:false}).fill('demo@example.org');await panel.getByLabel('Your names to find',{exact:false}).fill('Demo Person');await panel.locator('#tour-exposure-search-well').getByRole('checkbox',{name:'This is my information and I approve the described check.'}).check();await panel.getByRole('button',{name:'Check my exposure',exact:true}).click();await panel.getByRole('heading',{name:'Exposure results',exact:true}).waitFor();
  const articles=panel.locator('article.step-card');const contents=await articles.allTextContents();check('four document findings',contents.length===4);check('critical first',contents[0].includes('Critical'));check('high next',contents[1].includes('High')&&contents[2].includes('High'));check('medium last',contents[3].includes('Medium'));check('secret masked',!contents.join('').includes('FictionalSecret123'));check('card masked',!contents.join('').includes('4111111111111111'));
