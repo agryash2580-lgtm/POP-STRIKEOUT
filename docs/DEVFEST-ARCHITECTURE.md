@@ -65,7 +65,7 @@ the password or full hash. Do not enter real passwords in a booth presentation.
 ## Storage model and ownership
 
 JSON key families include `users`, `workspaces`, hashed `sessions`,
-`account_security`, `mfa_enrollment`, `mfa_challenges`, `osint_authenticator`,
+`account_security`, `mfa_enrollment`, `mfa_challenges`, `osint_authenticator`, `osint_domains`,
 `analysis_jobs`, report indexes, mail receipts, Pop evidence/indexes and conversations.
 This is not a SQL schema. Keys and authorization checks live in the owning modules.
 Storage reads attach non-enumerable version tags; conditional writes reject stale
@@ -100,9 +100,12 @@ optional and clearly labeled as public; users should not post incident evidence.
 
 - Authenticated consent does not prove ownership of every identifier. Live email
   search requires the account's exact verified address (Google sign-in or the
-  report-email code flow). Phone, Instagram, LinkedIn, identity-card, domain
-  dorks and reverse-image search are locked until corresponding target-proof
-  flows exist. TOTP protects the StrikeOut session, not arbitrary search targets.
+  report-email code flow). Domain-scoped Google searches and reverse-image lookup
+  for public URLs require a DNS TXT proof bound to the account and its MFA
+  security version. This proves control of the exact domain or image host, not
+  ownership of every named person or image. Phone, Instagram, LinkedIn and
+  identity-card searches remain locked until corresponding target-proof flows
+  exist. TOTP protects the StrikeOut session, not arbitrary search targets.
 - Local URL flags inspect URL structure only. No threat-feed reputation guarantee.
 - Snippets and supplied evidence are untrusted. React uses text rendering; the
   demonstration constructs DOM with textContent rather than HTML injection.

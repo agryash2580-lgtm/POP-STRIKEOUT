@@ -97,8 +97,11 @@ on demand. Explain the current process-local rate-limit and retention limitation
 **2:30–3:00 — honest boundary:** the booth example is fully fictional and works
 without providers. MFA protects a StrikeOut account but does not prove ownership
 of every target. Live email search needs the account's exact verified address;
-phone, Instagram, LinkedIn, identity-card, domain and image searches remain
-locked pending target verification.
+phone, Instagram, LinkedIn and identity-card searches remain locked pending
+target verification. Domain-scoped searches and public-URL reverse-image lookup
+on a verified host require a separate DNS TXT challenge; neither has yet had an
+authorized production test. Host control does not establish ownership of the
+image or who is pictured.
 Do not promise private-account scanning, whole-web coverage or automatic removals.
 
 ## Reset and privacy between visitors

@@ -404,6 +404,7 @@ app.delete(
     await deleteAccountReportData(u);
     await deletePopLibrary(u.id);
     await deleteMFA(u.id);
+    await remove("osint_domains/" + u.id);
     await remove("workspaces/" + u.workspaceId);
     await remove("users/" + u.id);
     const t = cookie(req);

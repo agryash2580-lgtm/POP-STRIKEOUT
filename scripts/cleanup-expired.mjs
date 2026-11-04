@@ -7,7 +7,7 @@ import { read, remove, usesCloud } from '../api/store.mjs';
 // verified report email addresses, case data, evidence and mail receipts do not.
 export const EXPIRING_PREFIXES = Object.freeze([
   'sessions/', 'mfa_challenges/', 'mfa_enrollment/', 'oauth_states/',
-  'pop-pair/', 'pop-sessions/', 'osint_authenticator/',
+  'pop-pair/', 'pop-sessions/', 'osint_authenticator/', 'osint_domains/',
 ]);
 export const GRACE_MS = 24 * 60 * 60 * 1000;
 
