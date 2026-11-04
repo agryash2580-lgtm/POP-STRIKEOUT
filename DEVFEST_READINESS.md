@@ -77,7 +77,7 @@ and Pop; do not represent the whole application as an autonomous web crawler.
 | P0 | Several public providers can be tried sequentially. Individual timeouts do not guarantee total request fits the Vercel function budget | Inferred; load/timeout testing pending |
 | P0 | Existing desktop browser script expects pre-MFA headings and old extension package links; unit-test success does not verify current desktop journey | Verified by script inspection; browser run pending |
 | P0 | Provider keys present/configured flags are not health checks; full production service availability must be tested before booth use | Verified |
-| P1 | Rate limiting uses a process-local Map and forwarded headers. It is not a durable distributed limit across serverless instances | Verified |
+| P1 | Most non-OSINT routes still use a process-local Map. Exposure authentication, checks and domain proof have a private-Blob shared quota, but its production concurrency and cost have not been load-tested | Verified implementation; production untested |
 | P1 | Session/challenge expiry is checked, but no general expiry sweep or documented retention schedule was found; account deletion does not enumerate all historical sessions/receipts | Verified by inspected paths; full retention inventory pending |
 | P1 | Two backend copies, duplicated static bridge assets, multiple extension ZIP versions, long App/Recovery components increase maintenance and drift risk | Verified; do not delete until compatibility checked |
 | P1 | Dependency ranges include `latest`; lockfile makes current install reproducible but later updates need review | Verified |
@@ -202,6 +202,7 @@ screenshots are in [the November 3 QA record](docs/DEVFEST-QA-2026-11-03.md).
 | Verified-email free search follow-up (Nov 4, PR #16) | `api/osint/osint.mjs`, `ExposureApp.tsx`, related tests/docs | The exact verified email can produce user-opened Google, Bing and DuckDuckGo links without a provider key. No external search runs until the user opens a link; results are not imported. PR #16 merged; live capabilities reported version 0.5.1. Full check passed 152 tests and browser flow passed 33 checks | Automatic search remains disabled on production because SerpApi is not configured there; user explicitly deferred that setup |
 | SerpApi empty-result repair (Nov 4) | `api/osint/search-provider.mjs`, public-search tests/docs | A SerpApi DuckDuckGo response with HTTP 200, `Success` and `Fully empty` was previously misclassified as a provider failure. The adapter now counts only that exact response as a completed empty check; all other errors still fail. A local live smoke check completed for GitHub, Pwned Passwords, and SerpApi Google, Bing and DuckDuckGo; full code check passed 154 tests and build | Production SerpApi remains unconfigured by user choice; empty results do not establish absence of exposure |
 | Verified-email workflow repair (Nov 4) | `ExposureApp.tsx`, exposure browser test and search-coverage docs | Check Exposure now shows the account's verified report email, fills that exact address, opens verification settings when absent, and refreshes status on return. The local browser journey passed 37 checks; full suite passed 154 tests and build | This improves the verified-email route but does not unlock social/phone searches or configure production search providers |
+| Shared exposure quota (Nov 4) | `api/osint/distributed-limit.mjs`, exposure router and cleanup tests | Hosted exposure authentication, checks and domain proof use account-scoped private Blob counters with atomic creation and ETag updates; conflict exhaustion fails closed. Local concurrency tests cover separate instances, quota reset and contention | Production load/cost testing, scheduled cleanup and non-OSINT distributed limits remain |
 
 The November 4 local smoke check completed for GitHub, Pwned Passwords prefix,
 and SerpApi Google, Bing and DuckDuckGo after the empty-result repair. The
@@ -214,7 +215,7 @@ and arbitrary-image searches; verify the new exact-domain TXT path with a domain
 controls; test a fresh production MFA sign-in, verified-email
 ownership and supported providers with
 an authorized operator account; run a full keyboard/screen-reader and phone-sized
-full-app pass; implement distributed rate limiting and schedule production retention cleanup;
+full-app pass; load-test the new exposure quota, extend shared limits to other routes and schedule production retention cleanup;
 scan the QR with a separate phone; rehearse on the real booth laptop without
 external internet. The public fictional page works, but the whole product has
 not earned a production-ready claim.

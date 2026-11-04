@@ -8,6 +8,7 @@ import { read, remove, usesCloud } from '../api/store.mjs';
 export const EXPIRING_PREFIXES = Object.freeze([
   'sessions/', 'mfa_challenges/', 'mfa_enrollment/', 'oauth_states/',
   'pop-pair/', 'pop-sessions/', 'osint_authenticator/', 'osint_domains/',
+  'osint_quota/',
 ]);
 export const GRACE_MS = 24 * 60 * 60 * 1000;
 

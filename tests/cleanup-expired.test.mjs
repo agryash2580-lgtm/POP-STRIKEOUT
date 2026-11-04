@@ -15,18 +15,19 @@ test('cleanup only considers known, genuinely expired authentication records', a
     ['oauth_states/bad', { expires: 'yesterday', _etag: 'bad' }],
     ['osint_domains/old', { expires: 0, _etag: 'domain-old' }],
     ['osint_domains/active', { expires: now + 1, _etag: 'domain-active' }],
+    ['osint_quota/old', { expires: 0, _etag: 'quota-old' }],
     ['users/old', { expires: 0, _etag: 'user' }],
   ]);
   const deleted = [];
   const options = { keys: keys(records.keys()), readRecord: async key => records.get(key),
     deleteRecord: async key => { deleted.push(key); return true; }, now };
   const preview = await cleanupExpired(options);
-  assert.deepEqual(preview, { scanned: 6, eligible: 2, deleted: 0,
+  assert.deepEqual(preview, { scanned: 7, eligible: 3, deleted: 0,
     changed: 0, errors: 0, applied: false, graceHours: 24 });
   assert.deepEqual(deleted, []);
   const applied = await cleanupExpired({ ...options, keys: keys(records.keys()), apply: true });
-  assert.equal(applied.deleted, 2);
-  assert.deepEqual(deleted, ['sessions/old', 'osint_domains/old']);
+  assert.equal(applied.deleted, 3);
+  assert.deepEqual(deleted, ['sessions/old', 'osint_domains/old', 'osint_quota/old']);
   assert.equal(isExpiredRecord({ expires: now - GRACE_MS + 1 }, now), false);
 });
 
