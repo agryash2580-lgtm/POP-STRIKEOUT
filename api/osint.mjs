@@ -5,6 +5,8 @@ import { reviewDocuments } from "./osint/documents.mjs";
 import { reverseImage } from "./osint/images.mjs";
 import { runDorks, dorkTemplates } from "./osint/dorks.mjs";
 import { domainOwnershipService } from "./osint/domain-ownership.mjs";
+import { createDistributedLimiter } from "./osint/distributed-limit.mjs";
+import { usesCloud } from "./store.mjs";
 import { flagReport, assessLinks } from "./osint/link-risk.mjs";
 export function osintRouter({
   user,
@@ -14,8 +16,14 @@ export function osintRouter({
   searchOptions,
   domainOwnership = domainOwnershipService(),
   exposureAuth = authenticatorAuthService({ domains: domainOwnership }),
+  sharedLimit = usesCloud() ? createDistributedLimiter() : async () => {},
 }) {
   const router = express.Router();
+  const limitExposure = async (req, scope, max) => {
+    const identity = req.osintUser.id;
+    limited({ ip: identity, headers: {} }, scope, max);
+    await sharedLimit(identity, scope, max);
+  };
   router.use(
     guarded(async (req, res, next) => {
       req.osintUser = await user(req);
@@ -29,7 +37,7 @@ export function osintRouter({
   router.post(
     "/auth/verify",
     guarded(async (req, res) => {
-      limited({ ip: req.osintUser.id, headers: {} }, "exposure-auth", 10);
+      await limitExposure(req, "exposure-auth", 10);
       res.json(await exposureAuth.verify(req));
     }),
   );
@@ -80,7 +88,7 @@ export function osintRouter({
   const handle = (fn) =>
     guarded(async (req, res) => {
       await exposureAuth.requireVerified(req);
-      limited({ ip: req.osintUser.id, headers: {} }, "osint", 12);
+      await limitExposure(req, "osint", 12);
       try {
         res.json(flagReport(await fn(req.body)));
       } catch (e) {
@@ -97,7 +105,7 @@ export function osintRouter({
     });
   const domainRoute = (fn, limit = 8) => guarded(async (req, res) => {
     await exposureAuth.requireVerified(req);
-    limited({ ip: req.osintUser.id, headers: {} }, "osint-domain-proof", limit);
+    await limitExposure(req, "osint-domain-proof", limit);
     res.json(await fn(req));
   });
   router.get("/domains/status", domainRoute(req =>

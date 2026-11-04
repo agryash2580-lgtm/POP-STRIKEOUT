@@ -8,6 +8,8 @@ For an email verified to the signed-in account, the no-key route also prepares e
 
 Check Exposure reads the existing report-email verification status after the authenticator step. It shows the verified address, can fill it into the check, opens Cases → Delivery & Pop for verification when needed, and refreshes the status on return. The backend still checks the exact verified address independently before any personal search.
 
+On the hosted site, exposure authenticator attempts, checks and domain-proof requests also use a shared one-minute account quota in private Blob storage. Atomic creation and conditional updates prevent separate server instances from each granting a fresh quota. The storage path hashes the account ID; expired quota records are included in the existing 24-hour-grace cleanup tool. The in-process guard remains as an additional limit. Other product routes still use only their existing in-process limits.
+
 Domain-scoped Google templates and reverse-image search retain their separate consent and free manual handoff options. Link flags explain local URL concerns without claiming a reputation check or a safety verdict. No secret is committed; configure server environment variables separately from GitHub Actions secrets.
 
 ## Framework inventory
