@@ -4,11 +4,13 @@ The active website adds these tools inside Check Exposure. Existing GitHub refer
 
 ## What works without keys
 
-Google searches are prepared from a public domain, an exact user-owned identifier and one of six fixed templates. The backend validates the scope and returns a Google search link. The user opens the link to run the search. Results remain on Google. A prepared link is returned as `requires_user_search`, never `completed` with invented findings.
+Google searches are prepared from a public domain the signed-in user has verified with a DNS TXT record, an exact identifier and one of six fixed templates. A fresh authenticator grant is required before creating the challenge or searching. The backend checks the DNS record, then stores proof for seven days tied to the account's MFA security version. A different domain, another account, an expired proof or a changed MFA security version cannot reuse it. The user can revoke proof in Check Exposure. This proves control of the domain, not ownership of every person named on its pages.
+
+Without a SerpApi key, the backend validates scope and returns a Google search link. The user opens the link to run the search. Results remain on Google. A prepared link is returned as `requires_user_search`, never `completed` with invented findings.
 
 Templates: exact references; PDF references; DOCX references; contact-page URLs; resume/CV page titles; possible ID-card/employee-badge references. Every query includes `site:domain` and a quoted identifier. No raw dork query, global credential search, camera discovery or access-control bypass is accepted. `site:` includes subdomains and is not complete coverage of the site's content.
 
-Reverse-image handoff accepts an authorized **public HTTPS image URL** and returns a Google Lens link. It does not upload local files. The UI also links to Lens for a user-selected manual local-file upload. Opening the external link shares the URL/image with Google, subject to its policies. Results are not automatically imported from the free handoff.
+Reverse-image handoff accepts an authorized **public HTTPS image URL on an exactly verified host** and returns a Google Lens link. Host proof does not establish image copyright, who appears in it, or location. It does not upload local files. The UI also links to Lens for a user-selected manual local-file upload. Opening the external link shares the URL/image with Google, subject to its policies. Results are not automatically imported from the free handoff.
 
 ## Automatic results
 
@@ -21,6 +23,15 @@ Automatic Google dork results are restricted to the selected domain/subdomains a
 ## API
 
 All routes use the existing website session and OSINT rate limiter. Capabilities expose template IDs, whether SerpApi is configured and the public-image-URL restriction. They never return a key.
+
+Domain proof routes require a signed-in account and a fresh authenticator grant:
+
+1. `POST /api/osint/domains/challenge` with `{ "domain": "your-domain.example" }` returns a short-lived TXT record name and value.
+2. Publish that exact record in your DNS settings. `POST /api/osint/domains/verify` with the same domain checks public DNS. An absent or mismatched record returns an explicit error, not a successful proof.
+3. `GET /api/osint/domains/status?domain=your-domain.example` refreshes the state. `POST /api/osint/domains/revoke` removes it.
+4. Only while proof is valid can `POST /api/osint/dorks` run for that exact domain, or `POST /api/osint/images/reverse` use a public HTTPS image URL on that exact hostname. Both checks still require disclosed provider consent.
+
+Challenges expire after 30 minutes. Proofs expire after seven days. At most five active domains are retained per account. The expired-record cleanup script can remove empty/expired proof records after its 24-hour grace period; it is not yet a scheduled production job.
 
 `POST /api/osint/dorks`:
 
@@ -58,7 +69,7 @@ Source files: `api/osint/dorks.mjs`, `images.mjs`, `image-url.mjs`, `search-prov
 
 ## Verification and limits
 
-`node tests/image-dork.test.mjs` covers consent, internal/signed URL rejection, mixed DNS results, provider parsing/redaction, deduplication, failures, bounded responses, dork operator injection/scope, and authenticated Express router dispatch. Provider results in automated tests are fixtures, not a claim that a production SerpApi account is configured or has quota.
+`node tests/image-dork.test.mjs` covers consent, internal/signed URL rejection, mixed DNS results, provider parsing/redaction, deduplication, failures, bounded responses, dork operator injection/scope, and authenticated Express router dispatch. `node tests/domain-ownership.test.mjs` covers DNS challenge matching, account/domain scoping, expiry, revocation and both route gates. Provider results in automated tests are fixtures, not a claim that a production SerpApi account is configured or has quota. A real domain DNS record and production Google/SerpApi request still need an authorized live test.
 
 The free Google Lens URL handoff was exercised against the public production Pop artwork and returned actual visual-search results. The new website controls must be deployed before production users can see them. Browser rendering/bundle compilation is separate from a successful deployment.
 

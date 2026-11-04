@@ -3,10 +3,15 @@ import {consent,fail} from './image-url.mjs';
 import {serpSearch} from './search-provider.mjs';
 import {redactEvidence} from './redact.mjs';
 const templates={references:{label:'Exact public reference',suffix:''},pdf:{label:'PDF references',suffix:' filetype:pdf'},documents:{label:'Word document references',suffix:' filetype:docx'},contact:{label:'Contact-page references',suffix:' inurl:contact'},resume:{label:'Résumé references',suffix:' (intitle:resume OR intitle:cv)'},identity:{label:'Possible ID/badge references',suffix:' ("ID card" OR "employee badge")'}};
+export function publicDomain(value){
+ const domain=typeof value==='string'?value.trim().toLowerCase():'';
+ // Leave room for the _strikeout-verify TXT label used to prove control.
+ if(domain.length>235||!domain.includes('.')||isIP(domain)||!domain.split('.').every(x=>/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(x))||/(?:^|\.)(localhost|local|internal|lan|test|invalid|onion)$/.test(domain)||/^\d+$/.test(domain.split('.').at(-1)))fail(400,'Enter a public domain only, without a path, port or search operators.');
+ return domain;
+}
 export function dorkPlan(body){
  consent(body);if(Object.keys(body).some(x=>!['domain','identifier','templates','mode','consent'].includes(x)))fail(400,'Unsupported search fields. Raw dork queries are not accepted.');
- const domain=String(body.domain||'').trim().toLowerCase();
- if(domain.length>253||!domain.includes('.')||isIP(domain)||!domain.split('.').every(x=>/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(x))||/(?:^|\.)(localhost|local|internal|lan|test|invalid|onion)$/.test(domain)||/^\d+$/.test(domain.split('.').at(-1)))fail(400,'Enter a public domain only, without a path, port or search operators.');
+ const domain=publicDomain(body.domain);
  const identifier=typeof body.identifier==='string'?body.identifier.trim():'';
  if(identifier.length<3||identifier.length>254||/[\r\n"<>:\\]|\b(?:site|filetype|inurl|intitle)\s*:/i.test(identifier))fail(400,'Enter your own name, email, username or phone without search operators.');
  const selected=body.templates||['references','pdf'];if(!Array.isArray(selected)||selected.length<1||selected.length>3||selected.some(x=>!Object.hasOwn(templates,x)))fail(400,'Choose one to three supported search templates.');

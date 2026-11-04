@@ -1,5 +1,7 @@
 import { securityState, verifyMfaCode, mfaConfigured } from "../mfa.mjs";
 import * as storage from "../store.mjs";
+import { domainOwnershipService } from "./domain-ownership.mjs";
+import { publicURL } from "./image-url.mjs";
 const fail = (status, message) => {
   throw Object.assign(Error(message), { status });
 };
@@ -10,6 +12,7 @@ export function authenticatorAuthService({
   security = securityState,
   consume = verifyMfaCode,
   configured = mfaConfigured,
+  domains = domainOwnershipService(),
 } = {}) {
   function binding(req) {
     const token = (req.headers.cookie || "")
@@ -87,8 +90,12 @@ export function authenticatorAuthService({
     }
     if (path === "/check" && ["instagram", "phone", "linkedin", "identity_cards"].includes(req.body?.service))
       fail(403, "This personal search is locked until ownership of the target can be verified. Your authenticator alone does not prove target ownership.");
-    if (["/dorks", "/images/reverse"].includes(path))
-      fail(403, "This search is locked until ownership of the domain or image can be verified. Your authenticator alone does not prove target ownership.");
+    if (path === "/dorks")
+      await domains.requireOwned(req, req.body?.domain);
+    if (path === "/images/reverse") {
+      const image = publicURL(req.body?.imageUrl);
+      await domains.requireOwned(req, image.hostname);
+    }
   }
   return { state, verify, requireVerified };
 }

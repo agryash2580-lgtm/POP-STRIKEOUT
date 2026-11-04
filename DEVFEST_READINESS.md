@@ -198,14 +198,16 @@ screenshots are in [the November 3 QA record](docs/DEVFEST-QA-2026-11-03.md).
 | Release follow-up | `scripts/check-deployment.mjs`, `api/index.mjs`, `api/rate-limit.mjs`, `.github/ISSUE_TEMPLATE/devfest-feedback.yml`, related tests | PR #12 merged; public revision `6770565e9572`, private durable storage and four demo assets verified; GitHub feedback form opens; 142 tests passed before the ownership follow-up | Distributed quota, production live-account MFA/provider QA, phone accessibility and real booth rehearsal pending |
 | Ownership follow-up | `api/osint/authenticator-auth.mjs`, `api/index.mjs`, exposure components and related tests | Only the account's exact verified email can be searched. Instagram, phone, LinkedIn, identity-card, domain, image and legacy GitHub-profile searches are locked until matching target-proof flows exist. Local document review and password-prefix checks remain available after MFA. 143 tests pass locally | Domain/profile/image verification flows and production email-verification availability need implementation and validation |
 | Retention and visitor QA follow-up | `scripts/cleanup-expired.mjs`, `tests/cleanup-expired.test.mjs`, package script, mobile CSS, browser scripts and docs | Dry-run cleanup inventories only expired auth artifacts, with a 24-hour grace period and conditional cloud deletion; local preview counted 248 scanned, 34 eligible, 0 deleted. Public deployment checker confirmed revision `71e66413f65e`. Full check passed 147 tests, syntax, typecheck and build. Desktop browser journey passed after a stale selector was fixed. MFA, ownership gate, masked results, export and 390px mobile layout passed 25 browser checks; small-screen exposure text was enlarged | Production cleanup not scheduled or run; complete keyboard/screen-reader QA and physical-device rehearsal still pending |
+| Domain and image-host proof follow-up (Nov 4 branch) | `api/osint/domain-ownership.mjs`, `dorks.mjs`, `authenticator-auth.mjs`, router, Check Exposure, related tests/docs | DNS TXT challenge and seven-day account/MFA-version proof gate exact-domain Google templates and public-URL image lookup on the verified host. Account deletion and expired-record cleanup include the proof record. Full local check passes 151 tests, syntax, typecheck and build; browser MFA flow passes 30 checks including the gate and phone-width layout | Real-domain DNS propagation, production provider request and deployment are not yet verified; arbitrary-image and social-profile proof flows remain absent |
 
 The live provider smoke check completed for GitHub, Pwned Passwords prefix,
 SerpApi Google and Bing. SerpApi DuckDuckGo returned HTTP 502. Other optional
 providers were not configured locally. No production integration result is
 implied by these local checks.
 
-**Current release blockers:** build target-proof flows before unlocking profile,
-domain and image searches; test a fresh production MFA sign-in, verified-email
+**Current release blockers:** build target-proof flows before unlocking profile
+and arbitrary-image searches; verify the new exact-domain TXT path with a domain the team
+controls; test a fresh production MFA sign-in, verified-email
 ownership and supported providers with
 an authorized operator account; run a full keyboard/screen-reader and phone-sized
 full-app pass; implement distributed rate limiting and schedule production retention cleanup;

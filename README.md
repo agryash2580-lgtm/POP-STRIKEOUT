@@ -47,7 +47,7 @@ Open [localhost:3002](http://localhost:3002). The root server serves both fronte
 
 Gemini enables report writing, summaries and chat. Fresh research grounding has separate provider quota; the UI/PDF disclose when bundled official references are used. Resend email, Brave/HIBP and Google sign-in require their own configuration. Missing keys are not simulated successes.
 
-Instagram, phone, LinkedIn, identity-card, domain and reverse-image live searches are currently locked until target-ownership verification exists. Consented Instagram follow requests use a separate local operator workflow and a signed-in `popyourproblemsaway` service account; they do not import private posts and do not run on Vercel.
+Instagram, phone, LinkedIn and identity-card live searches remain locked until target-ownership verification exists. Domain-scoped Google and public-URL reverse-image searches now require a signed-in user, fresh authenticator grant and matching DNS TXT challenge for the exact domain or image host; production DNS/provider flows have not yet been live-tested. Host control does not prove who is pictured or image copyright. Consented Instagram follow requests use a separate local operator workflow and a signed-in `popyourproblemsaway` service account; they do not import private posts and do not run on Vercel.
 
 ## Extension development packages
 

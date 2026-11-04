@@ -13,19 +13,43 @@ export function AdvancedExposure({ capabilities }: { capabilities: any }) {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [proof, setProof] = useState<any>(null);
+  const [proofBusy, setProofBusy] = useState(false);
+  const [proofError, setProofError] = useState('');
   const epoch = useRef(0);
+  const proofEpoch = useRef(0);
   useEffect(() => {
     const reset = () => {
-      epoch.current++; setApproved(false); setResult(null); setError('');
+      epoch.current++; proofEpoch.current++; setApproved(false); setResult(null); setError('');
       setDomain(''); setIdentifier(''); setImageUrl(''); setBusy(false);
+      setProof(null); setProofBusy(false); setProofError('');
     };
     window.addEventListener('strikeout-auth-changed', reset);
-    return () => { epoch.current++; window.removeEventListener('strikeout-auth-changed', reset); };
+    return () => { epoch.current++; proofEpoch.current++; window.removeEventListener('strikeout-auth-changed', reset); };
   }, []);
   const automatic = mode !== 'handoff' && capabilities?.providers?.serpapi;
   const provider = tool === 'dorks' ? 'google_search' : 'google_lens';
+  let proofDomain = domain.trim().toLowerCase();
+  if (tool === 'images') {
+    try { const url = new URL(imageUrl); proofDomain = url.protocol === 'https:' ? url.hostname.toLowerCase() : ''; }
+    catch { proofDomain = ''; }
+  }
+  const targetVerified = proof?.verified && proof.domain === proofDomain && proof.verifiedUntil > Date.now();
+  async function domainAction(action: 'status' | 'challenge' | 'verify' | 'revoke') {
+    if (proofBusy || !proofDomain) return;
+    const current = ++proofEpoch.current;
+    setProofBusy(true); setProofError(''); setError('');
+    try {
+      const data = await requestJSON('/api/osint/domains/' + action + (action === 'status' ? '?domain=' + encodeURIComponent(proofDomain) : ''), {
+        ...(action === 'status' ? {} : { method: 'POST', body: { domain: proofDomain } }), timeoutMs: 12000,
+      });
+      if (current === proofEpoch.current) setProof(data);
+    } catch (e: any) { if (current === proofEpoch.current) setProofError(e.message); }
+    finally { if (current === proofEpoch.current) setProofBusy(false); }
+  }
   async function run(event: React.FormEvent) {
     event.preventDefault(); if (busy || !approved || !capabilities) return;
+    if (!targetVerified) { setError('Verify control of this exact domain or image host before searching.'); return; }
     const current = epoch.current; setBusy(true); setError(''); setResult(null);
     try {
       const data = await requestJSON('/api/osint/' + (tool === 'dorks' ? 'dorks' : 'images/reverse'), {
@@ -43,22 +67,32 @@ export function AdvancedExposure({ capabilities }: { capabilities: any }) {
     <h2>Search Google / reverse-image lookup</h2>
     <p>Search your own public information on a chosen domain, or look for copies and visually similar images. Data retrieval is a separate feature.</p>
     {!capabilities && <p className="mini-note">Sign in through Cases &amp; Reports before using these tools.</p>}
-    {capabilities?.authentication?.domainAndImageOwnershipRequired && <p className="mini-note">Domain and image searches are paused until StrikeOut can verify ownership of the target. An authenticator code and consent checkbox alone are not enough. You can still <a href="https://lens.google.com/" target="_blank" rel="noopener noreferrer">open Google Lens yourself</a> to check a file you control.</p>}
-    {!capabilities?.authentication?.domainAndImageOwnershipRequired && <form onSubmit={run}><fieldset disabled={busy} style={{ border: 0, padding: 0, margin: 0 }}>
-      <label>Search tool<select aria-label="Search tool" value={tool} onChange={e => { epoch.current++; setTool(e.target.value); setApproved(false); setResult(null); setError(''); setBusy(false); }}>
+    <p className="mini-note">For reverse-image lookup, verify control of the public image host first. This does not prove who is pictured, where they have been, or who owns the image. You can also <a href="https://lens.google.com/" target="_blank" rel="noopener noreferrer">open Google Lens yourself</a> with a file you control.</p>
+    {capabilities && <form onSubmit={run}><fieldset disabled={busy} style={{ border: 0, padding: 0, margin: 0 }}>
+      <label>Search tool<select aria-label="Search tool" value={tool} onChange={e => { epoch.current++; proofEpoch.current++; setTool(e.target.value); setApproved(false); setResult(null); setError(''); setBusy(false); setProof(null); setProofError(''); setProofBusy(false); }}>
         <option value="dorks">Domain-scoped Google searches</option><option value="images">Reverse-image lookup</option>
       </select></label>
       {tool === 'dorks' ? <>
-        <label>Domain to check<input value={domain} required maxLength={253} placeholder="example.org" onChange={e => { setDomain(e.target.value); setApproved(false); setResult(null); }} /></label>
+        <label>Domain to check<input value={domain} required maxLength={235} placeholder="example.org" onChange={e => { epoch.current++; proofEpoch.current++; setDomain(e.target.value); setApproved(false); setResult(null); setError(''); setBusy(false); setProof(null); setProofError(''); setProofBusy(false); }} /></label>
         <label>Your name, email, username or phone<input value={identifier} required minLength={3} maxLength={254} onChange={e => { setIdentifier(e.target.value); setApproved(false); setResult(null); }} /></label>
         <label>What to look for<select aria-label="What to look for" value={template} onChange={e => { setTemplate(e.target.value); setApproved(false); setResult(null); }}>
           {(capabilities?.dorkTemplates || [{ id: 'references', label: 'Exact public reference' }, { id: 'pdf', label: 'PDF references' }]).map((x: any) => <option key={x.id} value={x.id}>{x.label}</option>)}
         </select></label>
         <p className="mini-note">Uses site: to limit the domain, quotes for your exact identifier and optional filetype:/page filters. No passwords, webcams or credential dumps are searched.</p>
       </> : <>
-        <label>Public image URL<input type="url" required maxLength={2000} value={imageUrl} placeholder="https://example.org/my-image.jpg" onChange={e => { setImageUrl(e.target.value); setApproved(false); setResult(null); }} /></label>
-        <p className="mini-note">Use an image you own or are authorized to check. Public HTTPS URLs only; no private or signed links. Similarity is not identity or location verification. For a local file, you can <a href="https://lens.google.com/" target="_blank" rel="noopener noreferrer">open Google Lens</a> and choose the file there yourself; Strikeout does not upload it.</p>
+        <label>Public image URL<input type="url" required maxLength={2000} value={imageUrl} placeholder="https://example.org/my-image.jpg" onChange={e => { epoch.current++; proofEpoch.current++; setImageUrl(e.target.value); setApproved(false); setResult(null); setError(''); setBusy(false); setProof(null); setProofError(''); setProofBusy(false); }} /></label>
+        <p className="mini-note">Use a public image on a host you control and are authorized to check. Public HTTPS URLs only; no private or signed links. Similarity is not identity or location verification.</p>
       </>}
+      {capabilities.authentication?.domainVerificationAvailable && <div className="mini-note" aria-label="Domain ownership verification">
+        <strong>{targetVerified ? 'Host control verified' : 'First prove you control this domain or image host'}</strong>
+        <p>Add the TXT record below in your DNS settings, then check it here. Verification lasts seven days and is tied to your StrikeOut account.</p>
+        {proof?.pending && !targetVerified && <p style={{ overflowWrap: 'anywhere' }}>TXT record name: <code>{proof.pending.name}</code><br />TXT value: <code>{proof.pending.value}</code></p>}
+        {targetVerified && <p>Verified until {new Date(proof.verifiedUntil).toLocaleString()}.</p>}
+        <button type="button" disabled={!proofDomain || proofBusy || !!targetVerified} onClick={() => domainAction('challenge')}>Create DNS challenge</button>{' '}
+        <button type="button" disabled={!proofDomain || proofBusy} onClick={() => domainAction(proof?.pending ? 'verify' : 'status')}>{proof?.pending ? 'Check DNS record' : 'Refresh verification status'}</button>{' '}
+        {targetVerified && <button type="button" disabled={proofBusy} onClick={() => domainAction('revoke')}>Revoke verification</button>}
+        {proofError && <p role="alert" className="error">{proofError}</p>}
+      </div>}
       <label>Search method<select aria-label="Search method" value={mode} onChange={e => { setMode(e.target.value); setApproved(false); setResult(null); }}>
         <option value="auto">{capabilities?.providers?.serpapi ? 'Automatic results, with free Google fallback' : 'Free Google handoff (automatic provider not configured)'}</option>
         <option value="handoff">Free: open Google results yourself</option>
@@ -66,7 +100,7 @@ export function AdvancedExposure({ capabilities }: { capabilities: any }) {
       </select></label>
       <p>{automatic ? 'The selected identifier/query or image URL is sent to SerpApi for Google search. If unavailable, use the disclosed Google handoff.' : 'Strikeout prepares a link. Only when you open it will the query or image URL be shared with Google; results stay on Google.'}</p>
       <label className="check"><input type="checkbox" checked={approved} onChange={e => setApproved(e.target.checked)} />This is my information or authorized content, and I approve the described provider disclosure.</label>
-      <button disabled={!approved || busy || !capabilities}>{busy ? 'Preparing search…' : automatic ? 'Run selected search' : 'Prepare Google search'}</button>
+      <button disabled={!approved || busy || !capabilities || !targetVerified}>{busy ? 'Preparing search…' : automatic ? 'Run selected search' : 'Prepare Google search'}</button>
     </fieldset></form>}
     {error && <p role="alert" className="error">{error}</p>}
     {result && <div aria-live="polite">

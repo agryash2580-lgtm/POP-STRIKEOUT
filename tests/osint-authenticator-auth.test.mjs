@@ -105,8 +105,8 @@ test("personal searches require an exact verified email or remain locked", async
   f.verifiedEmail("owner@example.org");
   await search("OWNER@example.org");
   await assert.rejects(search("other@example.org"), { status: 403 });
-  for (const path of ["/dorks", "/images/reverse"])
-    await assert.rejects(f.auth.requireVerified({ ...f.req, path }), { status: 403 });
+  await assert.rejects(f.auth.requireVerified({ ...f.req, path: "/dorks", body: { domain: "example.org" } }), { status: 403 });
+  await assert.rejects(f.auth.requireVerified({ ...f.req, path: "/images/reverse", body: { imageUrl: "https://example.org/photo.png" } }), { status: 403 });
 });
 test("every mounted exposure endpoint enforces authenticator before provider work", async () => {
   const { osintRouter } = await import("../api/osint.mjs");
@@ -241,8 +241,8 @@ test("real encrypted TOTP setup unlocks exposure, rejects replay, and disabling 
     const owned = await emailCheck("OWNER@example.org");
     assert.equal(owned.status, 400);
     assert.match(owned.data.error, /Select an approved provider/);
-    assert.equal((await call("/api/osint/dorks", {})).status, 403);
-    assert.equal((await call("/api/osint/images/reverse", {})).status, 403);
+    assert.equal((await call("/api/osint/dorks", { domain: "example.org" })).status, 403);
+    assert.equal((await call("/api/osint/images/reverse", { imageUrl: "https://example.org/photo.png" })).status, 403);
     assert.equal((await call("/api/search/github", { username: "someoneelse", approved: true })).status, 403);
     assert.equal(
       (

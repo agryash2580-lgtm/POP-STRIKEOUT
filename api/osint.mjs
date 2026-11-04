@@ -4,6 +4,7 @@ import { runCheck, runPasswordRange } from "./osint/osint.mjs";
 import { reviewDocuments } from "./osint/documents.mjs";
 import { reverseImage } from "./osint/images.mjs";
 import { runDorks, dorkTemplates } from "./osint/dorks.mjs";
+import { domainOwnershipService } from "./osint/domain-ownership.mjs";
 import { flagReport, assessLinks } from "./osint/link-risk.mjs";
 export function osintRouter({
   user,
@@ -11,7 +12,8 @@ export function osintRouter({
   limited,
   imageOptions,
   searchOptions,
-  exposureAuth = authenticatorAuthService(),
+  domainOwnership = domainOwnershipService(),
+  exposureAuth = authenticatorAuthService({ domains: domainOwnership }),
 }) {
   const router = express.Router();
   router.use(
@@ -33,13 +35,17 @@ export function osintRouter({
   );
   router.get("/capabilities", (req, res) =>
     res.json({
-      version: "0.3.0",
+      version: "0.5.0",
       authentication: {
         phoneOtpRequired: false,
         authenticatorRequired: true,
         instagramOwnershipRequired: true,
         emailOwnershipRequired: true,
         domainAndImageOwnershipRequired: true,
+        domainOwnershipRequired: true,
+        domainVerificationAvailable: true,
+        imageHostProofRequired: true,
+        imageHostVerificationAvailable: true,
       },
       providers: {
         github_public: true,
@@ -88,6 +94,19 @@ export function osintRouter({
         );
       }
     });
+  const domainRoute = (fn, limit = 8) => guarded(async (req, res) => {
+    await exposureAuth.requireVerified(req);
+    limited({ ip: req.osintUser.id, headers: {} }, "osint-domain-proof", limit);
+    res.json(await fn(req));
+  });
+  router.get("/domains/status", domainRoute(req =>
+    domainOwnership.current(req, req.query.domain), 20));
+  router.post("/domains/challenge", domainRoute(req =>
+    domainOwnership.challenge(req, req.body?.domain)));
+  router.post("/domains/verify", domainRoute(req =>
+    domainOwnership.verify(req, req.body?.domain)));
+  router.post("/domains/revoke", domainRoute(req =>
+    domainOwnership.revoke(req, req.body?.domain)));
   router.post(
     "/check",
     handle((body) => runCheck(body)),
