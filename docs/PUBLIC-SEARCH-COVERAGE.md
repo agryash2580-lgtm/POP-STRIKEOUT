@@ -2,6 +2,8 @@
 
 The public-reference form can search Google, Bing and DuckDuckGo through the server-side `SERPAPI_API_KEY`, in addition to GitHub public issues/PRs and optional Brave/HIBP providers. Users approve disclosure before searches. The three engines run at most two queries each, examining up to ten candidates per query. Exact identifier occurrences in returned titles/snippets are retained; source pages are not fetched. Duplicates retain provider attribution. Failed providers are reported as incomplete, not as absence of exposure.
 
+SerpApi can return a successful DuckDuckGo response with `organic_results_state: "Fully empty"` and a no-results message. The adapter counts that exact response as a completed check with zero candidates; other provider errors remain incomplete. Zero candidates never establishes that the identifier is absent from the web.
+
 For an email verified to the signed-in account, the no-key route also prepares exact-match links to Google, Bing and DuckDuckGo. It does not call those engines or import results. Opening a link shares the email query with that engine; the report labels the links `requires_user_action` and does not count them as completed checks. This works alongside GitHub checks even when the SerpApi key is absent.
 
 Domain-scoped Google templates and reverse-image search retain their separate consent and free manual handoff options. Link flags explain local URL concerns without claiming a reputation check or a safety verdict. No secret is committed; configure server environment variables separately from GitHub Actions secrets.

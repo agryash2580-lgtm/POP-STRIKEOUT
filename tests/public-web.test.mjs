@@ -57,6 +57,31 @@ test("one engine failing preserves other findings and reports incomplete", async
     "provider_error",
   );
 });
+test("SerpApi's successful fully empty DuckDuckGo response is not a provider failure", async () => {
+  const result = await runCheck(
+    { ...body, consent: { ...body.consent, providers: ["serpapi_duckduckgo"] } },
+    { ...options, fetcher: async () => Response.json({
+      search_metadata: { status: "Success" },
+      search_information: { organic_results_state: "Fully empty" },
+      error: "DuckDuckGo hasn't returned any results for this query.",
+    }) },
+  );
+  assert.equal(result.status, "completed");
+  assert.equal(result.findings.length, 0);
+  assert.equal(result.checks[0].status, "completed");
+  assert.equal(result.checks[0].returnedCandidates, 0);
+});
+test("other SerpApi errors remain incomplete, even with a success status", async () => {
+  const result = await runCheck(
+    { ...body, consent: { ...body.consent, providers: ["serpapi_duckduckgo"] } },
+    { ...options, fetcher: async () => Response.json({
+      search_metadata: { status: "Success" },
+      error: "The search service could not process this query.",
+    }) },
+  );
+  assert.equal(result.status, "incomplete");
+  assert.equal(result.checks[0].status, "provider_error");
+});
 test("no unapproved engine receives the identifier", async () => {
   const result = await runCheck(
     { ...body, consent: { ...body.consent, providers: ["serpapi_google"] } },

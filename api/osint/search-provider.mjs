@@ -9,7 +9,17 @@ export async function serpSearch(parameters,{env=process.env,fetcher=fetch}={}){
   const reader=response.body?.getReader();if(!reader)fail(502,'Search provider returned no response body.');
   let size=0;const chunks=[];while(true){const {value,done}=await reader.read();if(done)break;size+=value.length;if(size>2000000){await reader.cancel();fail(502,'Search response exceeded its size limit.')}chunks.push(value)}
   const data=JSON.parse(Buffer.concat(chunks).toString('utf8'));
-  if(data.error||data.search_metadata?.status!=='Success')fail(502,'Search provider did not complete this check.');
-  return data;
+  // SerpApi sometimes sets `error` for a successful, fully empty DuckDuckGo
+  // search. That is a completed search with zero candidates, not an outage.
+  const emptyDuckDuckGo = parameters.engine === 'duckduckgo' &&
+    data.search_metadata?.status === 'Success' &&
+    data.search_information?.organic_results_state === 'Fully empty' &&
+    data.organic_results === undefined &&
+    data.error === "DuckDuckGo hasn't returned any results for this query.";
+  if((data.error&&!emptyDuckDuckGo)||data.search_metadata?.status!=='Success')fail(502,'Search provider did not complete this check.');
+  if(!emptyDuckDuckGo)return data;
+  const normalized={...data,organic_results:[]};
+  delete normalized.error;
+  return normalized;
  }catch(e){if(e.status)throw e;fail(502,'Search provider could not be reached or returned unreadable data. No result was invented.')}
 }
