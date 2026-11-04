@@ -176,6 +176,7 @@ function ExposureTools() {
                 ? { fullName: name, ...(employer ? { employer } : {}) }
                 : { profileUrl: value, ...(name ? { fullName: name } : {}) };
       const providers = ["github_public"];
+      if (service === "email") providers.push("manual_web_handoff");
       if (webEnabled)
         for (const engine of ["google", "bing", "duckduckgo"]) {
           if (caps?.providers?.["serpapi_" + engine])
@@ -208,9 +209,10 @@ function ExposureTools() {
         <strong>No-key checks are available.</strong>
         <p>
           Public-reference searches combine Google, Bing and DuckDuckGo when
-          configured, plus GitHub issues and pull requests. No search covers the
-          whole web. Document review inspects only text you supply. Password
-          checks use a five-character hash prefix.
+          configured, plus GitHub issues and pull requests. Verified-email
+          checks also prepare free search links that you open yourself. No
+          search covers the whole web. Document review inspects only text you
+          supply. Password checks use a five-character hash prefix.
         </p>
         {caps && (
           <small>
@@ -298,6 +300,7 @@ function ExposureTools() {
           </select>
         </label>
         {service === "email" && <p className="mini-note">Searches require this exact email to be verified under Cases → Settings → Report email. Authenticator codes protect your StrikeOut account, not ownership of an arbitrary address.</p>}
+        {service === "email" && <p className="mini-note">Free web search links will also be prepared. Google, Bing and DuckDuckGo receive your email only if you open a link; StrikeOut does not collect their results.</p>}
         {service !== "identity_cards" && (
           <label>
             {service === "instagram"
@@ -487,6 +490,13 @@ function ExposureTools() {
           <h2>Exposure results</h2>
           <RiskSummary summary={result.riskSummary} />
           <SourceCoverage result={result} />
+          {!!result.handoffs?.length && <section className="mini-note" aria-label="Free web search links">
+            <h3>Continue your search on the web</h3>
+            <p>These searches have not run. Opening a link shares your exact email query with that search engine; review results there.</p>
+            <ul>{result.handoffs.map((handoff: any) => <li key={handoff.provider}>
+              <a href={handoff.url} target="_blank" rel="noopener noreferrer">Open {handoff.provider === "duckduckgo" ? "DuckDuckGo" : handoff.provider === "bing" ? "Bing" : "Google"} search ↗</a>
+            </li>)}</ul>
+          </section>}
           <p>Downloaded results can contain identifying links or text. Keep the file private and remove it from shared devices after use.</p>
           {result.status === "incomplete" && (
             <button

@@ -35,7 +35,7 @@ export function osintRouter({
   );
   router.get("/capabilities", (req, res) =>
     res.json({
-      version: "0.5.0",
+      version: "0.5.1",
       authentication: {
         phoneOtpRequired: false,
         authenticatorRequired: true,
@@ -49,6 +49,7 @@ export function osintRouter({
       },
       providers: {
         github_public: true,
+        manual_email_handoff: true,
         local_documents: true,
         brave: !!process.env.BRAVE_SEARCH_API_KEY,
         hibp: !!process.env.HIBP_API_KEY,
@@ -73,7 +74,7 @@ export function osintRouter({
       privateContentScanning: false,
       instagramBotConfigured: false,
       keylessCoverage:
-        "Public GitHub issues and pull requests; supplied document text; password-hash prefixes.",
+        "Public GitHub issues and pull requests; user-opened web search links for a verified email; supplied document text; password-hash prefixes.",
     }),
   );
   const handle = (fn) =>

@@ -38,6 +38,17 @@ function permitted(body, provider) {
   )
     throw invalid("Approve disclosure to " + provider + " for this check.");
 }
+function publicSearchHandoffs(query) {
+  return [
+    ["google", "https://www.google.com/search"],
+    ["bing", "https://www.bing.com/search"],
+    ["duckduckgo", "https://duckduckgo.com/"],
+  ].map(([provider, base]) => {
+    const url = new URL(base);
+    url.searchParams.set("q", query);
+    return { provider, query, url: url.href, requiresUserAction: true };
+  });
+}
 export function cardReview(number) {
   if (typeof number !== "string" || !/^[0-9 -]{12,25}$/.test(number))
     throw invalid(
@@ -140,6 +151,13 @@ export async function runCheck(body, options = {}) {
     const email = input.email;
     queries = [exact(email, 254)];
     needles = [{ value: email, category: "public_email_reference" }];
+    if (body.consent.providers?.includes("manual_web_handoff")) {
+      report.handoffs = publicSearchHandoffs(queries[0]);
+      report.handoffStatus = "requires_user_action";
+      report.limitations.push(
+        "Prepared search links do not run a search. Opening one shares the exact email query with that search engine; results remain there and are not imported into StrikeOut.",
+      );
+    }
     if (body.consent.providers?.includes("hibp")) {
       try {
         const rows = await emailBreaches(email, options);
