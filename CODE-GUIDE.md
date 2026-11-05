@@ -1,6 +1,6 @@
 # STRIKEOUT: understand the code and present it honestly
 
-Production address: https://strikeout-mu20.vercel.app. The extension's current version is 2.3.0.
+Hosting target: a server and domain controlled by the team. See [self-hosting setup](deploy/README.md); the new public address has not been configured or verified.
 
 Read sections 1–4 first. They explain the product and the main flow. Use the file map when someone asks where a feature is implemented.
 
@@ -291,6 +291,41 @@ Pop defaults to contextual generative chat, shared across website and extension.
 
 Google OpenID Connect provides SSO. `api/mfa.mjs` adds an optional independent TOTP factor after either password or Google sign-in. Setup requires a recent signed-in session, confirms possession with a current code and shows eight recovery codes once. Authenticator secrets are encrypted with AES-256-GCM using the private stable MFA_ENCRYPTION_KEY; recovery codes are stored as hashes. Login first creates a five-minute HTTP-only challenge cookie, not a full session. Successful verification consumes a new TOTP time step or one recovery code before issuing the normal session. Incorrect codes are limited and reused codes are rejected. Account security versions invalidate older sessions, extension tokens and pairing codes when MFA changes. The Account security screen explains how to re-pair Pop afterwards. See TEAM-HANDOFF.md for the demo and team workflow. This is authenticator MFA plus Google SSO, not enterprise SAML or phishing-resistant passkeys.
 
-## Verified domain searches
+## Verified email and domain searches
+
+Email ownership is separate from account MFA. `ExposureEmailVerification.tsx`
+calls the existing report-email routes directly from Check Exposure. Sending a
+code requires its own approval; confirming it fills the search address and clears
+search consent, so verification never silently starts an assessment.
+
+```mermaid
+sequenceDiagram
+  participant U as Signed-in user
+  participant UI as Check Exposure
+  participant API as Reports API
+  participant M as Configured mail service
+  participant G as Exposure ownership gate
+  U->>UI: Approve sending a code to my email
+  UI->>API: POST /email/verification
+  API->>M: Send one expiring code
+  U->>UI: Enter the received code
+  UI->>API: POST /email/confirm
+  API-->>UI: Exact address verified for this account
+  U->>UI: Separately approve the exposure search
+  UI->>G: POST /api/osint/check
+  G->>G: Require MFA grant and matching verified email
+  G-->>UI: Run approved sources or reject the request
+```
+
+`api/reports.mjs` stores only a salted hash of the pending code. Ten-minute
+expiry, five failed attempts and per-account throttling limit verification attempts.
+`api/osint/authenticator-auth.mjs` checks the same account-bound record before
+searching. A code from another account or for another email does not authorize a
+search. The component shows delivery failures and missing configuration honestly;
+an existing verified address remains usable without sending another email.
+
+The integration tests use a captured test mailer, and the browser journey uses
+synthetic email-service responses. They verify our code's flow, not real inbox
+delivery on a future server.
 
 Check Exposure now offers an exact-domain DNS TXT challenge before domain-scoped Google templates or reverse-image lookup for a public URL on that host can run. `api/osint/domain-ownership.mjs` stores a thirty-minute challenge and a seven-day proof under the signed-in account. The proof is bound to the MFA security version; changing MFA invalidates it. The user can revoke it. The routes check the proof before preparing a handoff or contacting SerpApi. An administrator's control of a domain does not prove that every personal identifier on its pages belongs to them, or who owns or appears in an image. Google queries remain bounded to the domain and its subdomains; automatic results remain unverified search leads. The production DNS/provider journey still needs an authorized live test. Arbitrary image URLs and personal social-profile searches remain locked.

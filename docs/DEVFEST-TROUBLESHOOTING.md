@@ -13,6 +13,9 @@
 | Authenticator code fails | Check device time, wait for a fresh code; codes used for sign-in/setup cannot be reused. Respect lockout. Recovery codes are for account sign-in, not exposure step-up. |
 | MFA enrollment requires sign-in again | Enrollment requires recent authentication. Sign out/in through the normal flow; Google users must use their configured Google sign-in. |
 | Phone/Instagram searches are locked | Intentional until target ownership can be verified. TOTP does not prove ownership of those targets. |
+| Email search asks for ownership proof | Use **Verify your email for this check** in Check Exposure. Approve sending a code, enter it, then approve the search separately. Existing verified report/Google addresses can be reused. |
+| Email verification is unavailable | Configure SMTP or Resend on the chosen server. Existing verified addresses still work. Document/password checks and the fictional demo do not need email delivery. |
+| Email code fails | Use the latest code for the address shown, within ten minutes. Five wrong attempts exhaust it. Requesting a new code replaces the previous address verification; a one-minute resend delay applies. |
 | Search provider fails or is missing | Inspect the source-status result or capability configuration. Missing configuration, quota or network failure is not a negative finding. Use a supported manual handoff or demo. |
 | PDF contains no readable text | Image-only PDFs require OCR, which is not implemented. Paste authorized text instead. Enforce the file/page/text limits. |
 | Saving fails on Vercel | Check private Blob configuration. Do not use the function filesystem as durable account storage. Preserve the user's pending draft. |

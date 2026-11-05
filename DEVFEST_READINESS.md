@@ -221,3 +221,31 @@ full-app pass; load-test the new exposure quota, extend shared limits to other r
 scan the QR with a separate phone; rehearse on the real booth laptop without
 external internet. The public fictional page works, but the whole product has
 not earned a production-ready claim.
+
+## 9. Current GitHub-only work (November 5)
+
+The user has stopped Vercel work and chosen a future team-owned domain. Earlier
+production observations above are historical; they do not verify the new host.
+PR #28 merged a Docker/Caddy single-server setup with a persistent data volume,
+HTTPS-only production cookies and an explicit-origin deployment checker. Its
+167-test suite and local production health/asset checks passed. Building that
+image and verifying DNS, HTTPS, storage recovery and optional providers on the
+chosen server remain untested. See [self-hosting setup](deploy/README.md).
+
+The next batch brings the existing email-code ownership flow directly into Check
+Exposure. It separates sending a code from approving a search, shows unavailable
+email delivery clearly, supports already verified addresses, and puts the main
+assessment before secondary tools. Backend API tests use a captured test mailer
+to verify account/exact-address binding, expiry, attempt exhaustion and delivery
+failure. Browser mail responses are synthetic test fixtures, not proof of real
+email delivery. The full local check passed 169 tests; the protected browser
+journey passed 44 checks after the final assessment-order adjustment, including
+keyboard code submission and the 390px email-proof layout.
+
+Still required for a complete live system: choose and configure the server/domain,
+verify real email delivery and account MFA there, perform an authorized provider
+search on that host, build supported social/phone/identity ownership verification
+before unlocking those services, and complete accessibility, operational recovery,
+retention scheduling and physical booth-device rehearsal. Data retrieval belongs
+to Swarit and is outside this batch. Live provider setup remains deferred by user
+choice. No new-domain deployment or whole-web coverage is claimed.

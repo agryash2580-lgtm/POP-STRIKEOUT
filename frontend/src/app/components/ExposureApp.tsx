@@ -1,4 +1,5 @@
 import { ExposureAuthenticatorGate } from "./ExposureAuthenticatorGate";
+import { ExposureEmailVerification } from "./ExposureEmailVerification";
 import { ResultLink, RiskSummary, LinkChecker, FindingGuidance, SourceCoverage } from "./LinkRisk";
 import { AdvancedExposure } from "./AdvancedExposure";
 import React, { useEffect, useRef, useState } from "react";
@@ -36,7 +37,6 @@ export function ExposureApp() {
 }
 function ExposureTools() {
   const generation = useRef(0);
-  const emailProofEpoch = useRef(0);
   const [service, setService] = useState("email"),
     [value, setValue] = useState(""),
     [name, setName] = useState(""),
@@ -49,29 +49,6 @@ function ExposureTools() {
     [result, setResult] = useState<any>(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
-  const [emailProof, setEmailProof] = useState<{ email: string | null; verified: boolean } | null>(null);
-  const [emailProofBusy, setEmailProofBusy] = useState(false);
-  const [emailProofError, setEmailProofError] = useState("");
-  async function refreshEmailProof() {
-    const current = ++emailProofEpoch.current;
-    setEmailProofBusy(true);
-    setEmailProofError("");
-    try {
-      const value = await requestJSON("/api/reports/email");
-      if (current === emailProofEpoch.current)
-        setEmailProof({ email: typeof value.email === "string" ? value.email : null, verified: value.verified === true });
-    } catch {
-      if (current === emailProofEpoch.current) {
-        setEmailProof(null);
-        setEmailProofError("Email verification status could not be loaded. Retry or open Delivery & Pop.");
-      }
-    } finally {
-      if (current === emailProofEpoch.current) setEmailProofBusy(false);
-    }
-  }
-  function openEmailVerification() {
-    window.dispatchEvent(new CustomEvent("strikeout-open", { detail: { section: "settings" } }));
-  }
   useEffect(() => {
     if (location.hash.startsWith("#pop-review=")) {
       try {
@@ -110,15 +87,9 @@ function ExposureTools() {
       setConsent(false);
       setCaps(null);
       setError("");
-      setEmailProof(null);
-      refreshEmailProof();
       loadCapabilities();
     }
     window.addEventListener("strikeout-auth-changed", clearAccount);
-    const refreshOnReturn = (event: any) => {
-      if (event.detail?.section === "exposure") refreshEmailProof();
-    };
-    window.addEventListener("strikeout-workspace", refreshOnReturn);
     function loadCapabilities() {
       const version = generation.current;
       requestJSON("/api/osint/capabilities")
@@ -126,12 +97,9 @@ function ExposureTools() {
         .catch((e) => { if (version === generation.current) setError(e.message); });
     }
     loadCapabilities();
-    refreshEmailProof();
     return () => {
       generation.current++;
-      emailProofEpoch.current++;
       window.removeEventListener("strikeout-auth-changed", clearAccount);
-      window.removeEventListener("strikeout-workspace", refreshOnReturn);
     };
   }, []);
   async function post(path: string, body: any) {
@@ -257,9 +225,6 @@ function ExposureTools() {
           </small>
         )}
       </div>
-      <LinkChecker enabled={!!caps} />
-      <InstagramPanel />
-      <AdvancedExposure capabilities={caps} />
       {service === "instagram" && (
         <div className="mini-note">
           <strong>Want to review your actual Instagram profile?</strong>
@@ -283,6 +248,25 @@ function ExposureTools() {
           )}
         </div>
       )}
+      <label>
+        Check type
+        <select value={service} disabled={busy} onChange={e => {
+          generation.current++; setBusy(false); setService(e.target.value);
+          setValue(""); setName(""); setResult(null); setError(""); setConsent(false);
+        }}>
+          <option value="instagram" disabled>Instagram references (ownership verification required)</option>
+          <option value="email">Verified-email public references</option>
+          <option value="phone" disabled>Phone references (ownership verification required)</option>
+          <option value="linkedin" disabled>LinkedIn references (ownership verification required)</option>
+          <option value="identity_cards" disabled>Identity-document references (ownership verification required)</option>
+          <option value="documents">Review my document text</option>
+          <option value="password">Password breach check (prefix only)</option>
+        </select>
+      </label>
+      {service === "email" && <ExposureEmailVerification onUseEmail={email => {
+        generation.current++;
+        setBusy(false); setValue(email); setConsent(false); setResult(null); setError("");
+      }} />}
       <form id="tour-exposure-search-well" onSubmit={scan}>
         <fieldset disabled={busy} style={{border: 0, padding: 0, margin: 0}}>
         {caps?.providers?.serpapi &&
@@ -300,47 +284,6 @@ function ExposureTools() {
               searches). Results may overlap; private content is excluded.
             </label>
           )}
-        <label>
-          Check type
-          <select
-            value={service}
-            onChange={(e) => {
-              generation.current++;
-              setBusy(false);
-              setService(e.target.value);
-              setValue("");
-              setName("");
-              setResult(null);
-              setError("");
-              setConsent(false);
-            }}
-          >
-            <option value="instagram" disabled>
-              Instagram references (ownership verification required)
-            </option>
-            <option value="email">Verified-email public references</option>
-            <option value="phone" disabled>
-              Phone references (ownership verification required)
-            </option>
-            <option value="linkedin" disabled>LinkedIn references (ownership verification required)</option>
-            <option value="identity_cards" disabled>
-              Identity-document references (ownership verification required)
-            </option>
-            <option value="documents">Review my document text</option>
-            <option value="password">
-              Password breach check (prefix only)
-            </option>
-          </select>
-        </label>
-        {service === "email" && <div className="mini-note" aria-label="Verified email for exposure checks">
-          <p>Searches require this exact email to be verified under Cases → Delivery &amp; Pop → Report email. Authenticator codes protect your StrikeOut account, not ownership of an arbitrary address.</p>
-          {emailProof?.verified && emailProof.email ? <>
-            <p>Verified address: <strong>{emailProof.email}</strong></p>
-            <button type="button" onClick={() => { setValue(emailProof.email || ""); setConsent(false); setResult(null); setError(""); }}>Use verified email</button>{" "}
-          </> : <><p>{emailProofBusy ? "Checking email verification…" : "No verified email is available for this check."}</p><button type="button" onClick={openEmailVerification}>Open email verification</button>{" "}</>}
-          <button type="button" disabled={emailProofBusy} onClick={refreshEmailProof}>Refresh verification status</button>
-          {emailProofError && <p role="status">{emailProofError}</p>}
-        </div>}
         {service === "email" && <p className="mini-note">Free web search links will also be prepared. Google, Bing and DuckDuckGo receive your email only if you open a link; StrikeOut does not collect their results.</p>}
         {service !== "identity_cards" && (
           <label>
@@ -585,6 +528,9 @@ function ExposureTools() {
           ))}
         </>
       )}
+      <LinkChecker enabled={!!caps} />
+      <InstagramPanel />
+      <AdvancedExposure capabilities={caps} />
     </>
   );
 }

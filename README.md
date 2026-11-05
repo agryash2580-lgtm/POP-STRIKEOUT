@@ -50,6 +50,12 @@ Open [localhost:3002](http://localhost:3002). The root server serves both fronte
 
 Gemini enables report writing, summaries and chat. Fresh research grounding has separate provider quota; the UI/PDF disclose when bundled official references are used. Resend email, Brave/HIBP and Google sign-in require their own configuration. Missing keys are not simulated successes.
 
+Check Exposure includes email verification directly: approve a code email, enter the
+six-digit code, then review and approve the search separately. It uses the same
+verified address as report delivery in Cases. Email delivery requires configured
+SMTP or Resend; an existing verified address remains usable without sending another
+email. Codes expire after ten minutes and lock after five failed attempts.
+
 Instagram, phone, LinkedIn and identity-card live searches remain locked until target-ownership verification exists. Domain-scoped Google and public-URL reverse-image searches require a signed-in user, fresh authenticator grant and matching DNS TXT record or HTTPS challenge file on the exact domain or image host. A synthetic challenge was verified against StrikeOut's production HTTPS host from the local backend, then revoked; an authenticated production-account proof and production provider search remain untested. Host control does not prove who is pictured or image copyright. Consented Instagram follow requests use a separate local operator workflow and a signed-in `popyourproblemsaway` service account; they do not import private posts and do not run on Vercel.
 
 ## Extension development packages

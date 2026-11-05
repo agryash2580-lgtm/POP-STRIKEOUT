@@ -100,7 +100,7 @@ optional and clearly labeled as public; users should not post incident evidence.
 
 - Authenticated consent does not prove ownership of every identifier. Live email
   search requires the account's exact verified address (Google sign-in or the
-  report-email code flow). Domain-scoped Google searches and reverse-image lookup
+  email-code flow available in Check Exposure and report settings). Domain-scoped Google searches and reverse-image lookup
   for public URLs require a DNS TXT or HTTPS file proof bound to the account and its MFA
   security version. This proves control of the exact domain or image host, not
   ownership of every named person or image. Phone, Instagram, LinkedIn and

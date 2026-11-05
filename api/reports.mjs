@@ -200,7 +200,7 @@ export function reportsRouter({
         text:
           "Your code is " +
           code +
-          ". It expires in 10 minutes. This verifies report delivery to this address. Never share this code with a support person.",
+          ". It expires in 10 minutes. This verifies access to this address for STRIKEOUT report delivery and authorized exposure checks. Never share this code with a support person.",
         key: "verify/" + req.reportOwner.id + "/" + salt,
       });
       res.json({ sent: true, expiresInSeconds: 600 });
