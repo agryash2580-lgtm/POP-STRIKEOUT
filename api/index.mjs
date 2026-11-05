@@ -408,7 +408,10 @@ app.delete(
     await remove("workspaces/" + u.workspaceId);
     await remove("users/" + u.id);
     const t = cookie(req);
-    if (t) await remove("sessions/" + hash(t));
+    if (t) {
+      await remove("osint_authenticator/" + hash(u.id + ":" + t));
+      await remove("sessions/" + hash(t));
+    }
     res.clearCookie("strikeout_session", { path: "/" });
     res.json({ deleted: true });
   }),
