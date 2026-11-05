@@ -249,3 +249,22 @@ before unlocking those services, and complete accessibility, operational recover
 retention scheduling and physical booth-device rehearsal. Data retrieval belongs
 to Swarit and is outside this batch. Live provider setup remains deferred by user
 choice. No new-domain deployment or whole-web coverage is claimed.
+
+The self-host follow-up adds a real Docker/Caddy GitHub CI job rather than treating
+a Node-only local check as proof that the container setup works. The disposable
+fixture exercises TLS, cookie security, account/MFA enrollment, a masked document
+assessment, recovery sign-in and deletion. It replaces the app container and checks
+that the named-volume session, case and encrypted authenticator survive. It also
+checks startup rejection without an MFA key and availability of the retention
+preview tool in the runtime image. Only a successful `self-host` job proves this
+runtime verification; public-domain deployment, real providers and backup recovery
+remain separate unverified requirements. See [the workflow](.github/workflows/readiness.yml)
+and [deployment guide](deploy/README.md).
+
+**Verified:** [GitHub run 42015303196](https://github.com/agryash2580-lgtm/POP-STRIKEOUT/actions/runs/42015303196)
+passed both Node 22/24 checks and all 28 self-host runtime assertions. The Docker
+build, local certificate-verified HTTPS proxy, container replacement, persistent
+session/case/encrypted MFA, recovery-code login, masked assessment, deletion and
+retention preview all ran successfully on the isolated runner. This closes the
+base-image/Compose verification gap, while actual-server DNS, public HTTPS,
+email/search integrations, backup restoration and operational scheduling remain.
