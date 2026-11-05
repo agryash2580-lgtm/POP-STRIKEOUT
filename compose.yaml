@@ -1,0 +1,39 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        GIT_COMMIT_SHA: ${GIT_COMMIT_SHA:-}
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "3002"
+      TRUST_PROXY: "1"
+      GIT_COMMIT_SHA: ${GIT_COMMIT_SHA:-}
+    volumes:
+      - strikeout_data:/app/.data
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      STRIKEOUT_DOMAIN: ${STRIKEOUT_DOMAIN:?Set STRIKEOUT_DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  strikeout_data:
+  caddy_data:
+  caddy_config:

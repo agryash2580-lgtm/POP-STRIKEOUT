@@ -17,6 +17,7 @@ import {
 } from "node:crypto";
 import { read, write, remove, hash, createIfMissing } from "./store.mjs";
 import { inspectStorage } from "./storage-health.mjs";
+import { secureCookies } from "./secure-cookie.mjs";
 import {
   seed,
   portfolio,
@@ -42,6 +43,7 @@ import {
 export const config = { maxDuration: 120 };
 const app = express();
 app.disable("x-powered-by");
+if (process.env.TRUST_PROXY === "1") app.set("trust proxy", 1);
 app.use(express.json({ limit: "5mb" }));
 const problem = (res, status, message, details = {}) =>
   res.status(status).json({ error: message, ...details });
@@ -161,7 +163,7 @@ async function issueSession(res, id, authVersion = 0) {
   });
   res.cookie("strikeout_session", token, {
     httpOnly: true,
-    secure: !!process.env.VERCEL,
+    secure: secureCookies(),
     sameSite: "strict",
     maxAge: 7 * 86400000,
     path: "/",
@@ -198,7 +200,7 @@ app.get("/api/health", async (req, res) => {
   res.status(storage.ok ? 200 : 503).json({
     ...storage,
     version: "2.3.0",
-    revision: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) || null,
+    revision: (process.env.GIT_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA)?.slice(0, 12) || null,
     demonstrationSourcesAvailable: true,
   });
 });

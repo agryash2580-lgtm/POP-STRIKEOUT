@@ -1,0 +1,15 @@
+.git
+.github
+.env*
+**/.env*
+.data
+**/.data
+node_modules
+dist
+output
+incoming-frontend
+test-results
+playwright-report
+.cache
+*.log
+*.restore-key.txt
