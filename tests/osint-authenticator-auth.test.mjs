@@ -156,10 +156,10 @@ test("every mounted exposure endpoint enforces authenticator before provider wor
   assert.equal(f.calls, 0);
 });
 
-test("real encrypted TOTP setup unlocks exposure, rejects replay, and disabling MFA revokes access", async () => {
+test("real encrypted TOTP setup unlocks exposure, rejects replay, and security changes revoke grants", async () => {
   const { default: app } = await import("../api/index.mjs");
   const { randomBytes } = await import("node:crypto");
-  const { write } = await import("../api/store.mjs");
+  const { read, write, hash } = await import("../api/store.mjs");
   const OTPAuth = await import("otpauth");
   const previous = process.env.MFA_ENCRYPTION_KEY;
   process.env.MFA_ENCRYPTION_KEY = randomBytes(32).toString("base64");
@@ -254,6 +254,21 @@ test("real encrypted TOTP setup unlocks exposure, rejects replay, and disabling 
     );
     assert.equal((await call("/api/osint/auth/status")).data.verified, false);
     assert.equal((await call("/api/osint/review-documents", {})).status, 403);
+    const secondSetup = await call("/api/auth/mfa/setup", {});
+    assert.equal(secondSetup.status, 200);
+    const secondOtp = new OTPAuth.TOTP({
+      secret: OTPAuth.Secret.fromBase32(secondSetup.data.secret),
+      digits: 6, period: 30, algorithm: "SHA1",
+    });
+    assert.equal((await call("/api/auth/mfa/enable", { code: secondOtp.generate() })).status, 200);
+    assert.equal((await call("/api/osint/auth/verify", {
+      code: secondOtp.generate({ timestamp: Date.now() + 30000 }),
+    })).data.verified, true);
+    const grantKey = "osint_authenticator/" + hash(owner.id + ":" + jar.get("strikeout_session"));
+    assert.ok(await read(grantKey));
+    assert.equal((await call("/api/account", undefined, "DELETE")).status, 200);
+    assert.equal(await read(grantKey), null);
+    owner = null;
   } finally {
     if (owner) await call("/api/account", undefined, "DELETE");
     await new Promise((r) => server.close(r));
