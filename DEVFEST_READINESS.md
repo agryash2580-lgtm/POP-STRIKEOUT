@@ -268,3 +268,12 @@ session/case/encrypted MFA, recovery-code login, masked assessment, deletion and
 retention preview all ran successfully on the isolated runner. This closes the
 base-image/Compose verification gap, while actual-server DNS, public HTTPS,
 email/search integrations, backup restoration and operational scheduling remain.
+
+The next recovery batch adds an authenticated encrypted offline archive tool for
+the local-file backend. It excludes temporary credentials/grants and pending email
+codes, refuses nonempty restore targets and mismatched MFA keys, validates records
+before writing, and invalidates historical sessions/recovery codes on restore.
+The self-host job now includes loss of its isolated data volume followed by restore,
+fresh authenticator login, recovered case access and a newly authorized assessment.
+Only a passing job proves that recovery drill; operators still need off-server
+backup retention, deletion-request review and a drill on their selected host.

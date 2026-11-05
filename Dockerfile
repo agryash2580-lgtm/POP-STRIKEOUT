@@ -16,6 +16,7 @@ COPY --from=build --chown=node:node /app/api ./api
 COPY --from=build --chown=node:node /app/shared ./shared
 COPY --from=build --chown=node:node /app/server.mjs ./server.mjs
 COPY --from=build --chown=node:node /app/scripts/cleanup-expired.mjs ./scripts/cleanup-expired.mjs
+COPY --from=build --chown=node:node /app/scripts/storage-backup.mjs ./scripts/storage-backup.mjs
 COPY --from=build --chown=node:node /app/package.json ./package.json
 RUN mkdir -p /app/.data && chown node:node /app/.data
 USER node
