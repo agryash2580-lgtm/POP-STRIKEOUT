@@ -51,6 +51,17 @@ test('storage readiness checks a real read and fails closed without leaking erro
   assert.equal(reads, 1);
   const failed = await inspectStorage({ cloud: true, token: 'fictional',
     readRecord: async () => { throw Object.assign(new Error('secret must stay private'), { code: 'PRIVATE' }); } });
-  assert.deepEqual(failed, { ok: false, storage: 'unavailable', storageRead: false, storageErrorType: 'Error' });
+  assert.deepEqual(failed, { ok: false, storage: 'unavailable', storageRead: false,
+    storageErrorType: 'Error', storageFailure: 'other_storage_error' });
   assert.ok(!JSON.stringify(failed).includes('secret'));
+  for (const [message, category] of [
+    ['Invalid token: unable to extract store ID', 'invalid_token_format'],
+    ['Failed to fetch blob: 403 Forbidden', 'blob_http_403'],
+    ['Failed to fetch blob: 500 Server Error', 'blob_http_500'],
+  ]) {
+    const result = await inspectStorage({ cloud: true, token: 'fictional',
+      readRecord: async () => { throw Error(message + ' PRIVATE_TOKEN'); } });
+    assert.equal(result.storageFailure, category);
+    assert.ok(!JSON.stringify(result).includes('PRIVATE_TOKEN'));
+  }
 });
