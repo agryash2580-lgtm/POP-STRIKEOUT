@@ -46,3 +46,35 @@ if enabled, also needs a callback URL registered for that exact HTTPS domain.
 The consented Instagram operator browser requires an additional Chromium runtime
 and is not provisioned by this base image; keep that workflow disabled until an
 operator has tested it on the chosen host.
+
+## Automated stack verification
+
+The GitHub **Readiness checks → self-host** job builds this Dockerfile and starts
+this Compose stack on an isolated runner with a disposable `localhost` hostname,
+MFA key, account and data volume. It checks HTTPS, secure session/challenge cookies,
+MFA enrollment, the exposure gate, a masked supplied-document assessment, recovery
+sign-in and deletion. It replaces the application container and requires the same
+session, private case and encrypted authenticator to keep working afterwards.
+It also checks that the app runs without root, private environment files are not
+copied into the image, and startup refuses a missing MFA encryption key.
+
+Local HTTPS uses Caddy's disposable local CA. The test trusts only that CA for its
+own requests; it does not disable certificate checks or install a system-wide
+certificate. This follows [Caddy's local HTTPS Docker guidance](https://caddyserver.com/docs/running#local-https-with-docker).
+The scripts refuse to run outside the isolated CI fixture and refuse to overwrite
+existing environment files. The workflow removes its containers and volumes even
+after a failed check. No provider credentials, personal targets or email delivery
+are involved. A passing job verifies the stack on a clean runner; public DNS,
+public certificates, real integrations and backup recovery still need validation
+on your actual server.
+
+The image also includes the expired-authentication cleanup tool. Preview first:
+
+```sh
+docker compose exec -T app node scripts/cleanup-expired.mjs
+```
+
+Adding `--apply` removes only allowlisted authentication records expired more than
+24 hours ago. Cases, evidence, verified email addresses and delivery receipts are
+outside that sweep. Scheduling the sweep belongs to the chosen host's operations
+setup; the base image does not silently schedule deletions.
