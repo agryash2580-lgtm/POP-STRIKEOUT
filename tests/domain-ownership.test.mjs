@@ -1,12 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { domainOwnershipService } from '../api/osint/domain-ownership.mjs';
+import { domainOwnershipService, readProofFile } from '../api/osint/domain-ownership.mjs';
 import { authenticatorAuthService } from '../api/osint/authenticator-auth.mjs';
 import { osintRouter } from '../api/osint.mjs';
+import { EventEmitter } from 'node:events';
 
 function fixture() {
   const records = new Map();
-  let clock = 10000, version = 1, calls = 0, txt = [];
+  let clock = 10000, version = 1, calls = 0, txt = [], proofBody = null, httpsCalls = 0,
+    proofAddress = { url: new URL('https://example.org/.well-known/strikeout-verify.txt'), address: '8.8.8.8', family: 4 };
   const store = {
     async createIfMissing(key, value) {
       if (records.has(key)) return false;
@@ -30,13 +32,18 @@ function fixture() {
     store, security, now: () => clock,
     random: () => 'a'.repeat(48),
     resolve: async name => { calls++; assert.equal(name, '_strikeout-verify.example.org'); return txt; },
+    resolveAddress: async url => { httpsCalls++; assert.equal(url, 'https://example.org/.well-known/strikeout-verify.txt'); return proofAddress; },
+    readFile: async (domain, resolved) => { assert.equal(domain, 'example.org'); assert.equal(resolved, proofAddress); return proofBody; },
   });
   const req = { osintUser: { id: 'owner' }, headers: { cookie: 'strikeout_session=session' }, path: '/dorks' };
   return { store, domains, req,
     setTxt: value => { txt = [[value]]; },
+    setHttps: value => { proofBody = value; },
+    setProofAddress: value => { proofAddress = value; },
     clock: delta => { clock += delta; },
     version: () => { version++; },
     get calls() { return calls; },
+    get httpsCalls() { return httpsCalls; },
   };
 }
 
@@ -78,6 +85,87 @@ test('domain challenges and proofs expire and can be revoked', async () => {
   await f.domains.verify(f.req, 'example.org');
   f.clock(7 * 24 * 60 * 60 * 1000 + 1);
   await assert.rejects(f.domains.requireOwned(f.req, 'example.org'), { status: 403 });
+});
+
+test('HTTPS proof verifies exact-host content without DNS TXT and still expires', async () => {
+  const f = fixture();
+  const pending = await f.domains.challenge(f.req, 'example.org');
+  assert.equal(pending.pending.https.url, 'https://example.org/.well-known/strikeout-verify.txt');
+  assert.equal(pending.pending.https.value, pending.pending.value);
+  f.setHttps('wrong');
+  await assert.rejects(f.domains.verify(f.req, 'example.org', 'https'), { status: 409 });
+  f.setHttps(pending.pending.value + '\n');
+  const proof = await f.domains.verify(f.req, 'example.org', 'https');
+  assert.equal(proof.verified, true);
+  assert.equal(f.calls, 0);
+  assert.equal(f.httpsCalls, 2);
+  await f.domains.requireOwned(f.req, 'example.org');
+  f.clock(7 * 24 * 60 * 60 * 1000 + 1);
+  await assert.rejects(f.domains.requireOwned(f.req, 'example.org'), { status: 403 });
+});
+
+test('HTTPS proof rejects private DNS, redirects and unsupported methods', async () => {
+  const f = fixture();
+  await f.domains.challenge(f.req, 'example.org');
+  await assert.rejects(f.domains.verify(f.req, 'example.org', 'web'), { status: 400 });
+  f.setProofAddress(null);
+  f.setHttps(null);
+  await assert.rejects(f.domains.verify(f.req, 'example.org', 'https'), { status: 409 });
+  const privateAddress = Object.assign(Error('Private hostname'), { status: 400 });
+  const domains = domainOwnershipService({ store: f.store,
+    security: async () => ({ enabled: true, version: 1 }), now: () => 10000,
+    resolveAddress: async () => { throw privateAddress; },
+    readFile: async () => { throw Error('Must not fetch'); } });
+  await assert.rejects(domains.verify(f.req, 'example.org', 'https'), { status: 409 });
+});
+
+test('HTTPS proof reader pins the public address and never follows redirects', async () => {
+  let options;
+  function fakeRequest(input, respond) {
+    options = input;
+    const req = new EventEmitter();
+    req.setTimeout = () => {};
+    req.destroy = () => {};
+    req.end = () => queueMicrotask(() => {
+      const response = new EventEmitter();
+      response.statusCode = 200;
+      response.resume = () => {};
+      respond(response);
+      response.emit('data', Buffer.from('strikeout-verification=abc'));
+      response.emit('end');
+    });
+    return req;
+  }
+  const body = await readProofFile('example.org', { address: '8.8.8.8', family: 4 }, { request: fakeRequest });
+  assert.equal(body, 'strikeout-verification=abc');
+  assert.equal(options.hostname, 'example.org');
+  assert.equal(options.servername, 'example.org');
+  assert.equal(options.path, '/.well-known/strikeout-verify.txt');
+  assert.equal(options.agent, false);
+  options.lookup('example.org', {}, (error, address, family) => {
+    assert.equal(error, null); assert.equal(address, '8.8.8.8'); assert.equal(family, 4);
+  });
+  options.lookup('example.org', { all: true }, (error, addresses) => {
+    assert.equal(error, null);
+    assert.deepEqual(addresses, [{ address: '8.8.8.8', family: 4 }]);
+  });
+  let redirectRequests = 0;
+  const redirected = await readProofFile('example.org', { address: '8.8.8.8', family: 4 }, {
+    request: (_input, respond) => {
+      redirectRequests++;
+      const req = new EventEmitter();
+      req.setTimeout = () => {};
+      req.end = () => queueMicrotask(() => {
+        const response = new EventEmitter();
+        response.statusCode = 302;
+        response.resume = () => {};
+        respond(response);
+      });
+      return req;
+    },
+  });
+  assert.equal(redirected, null);
+  assert.equal(redirectRequests, 1);
 });
 
 test('invalid domains never reach DNS or storage', async () => {
@@ -165,4 +253,8 @@ test('MFA gate and domain proof both precede provider search', async () => {
   assert.equal((await send('/images/reverse', { ...image, imageUrl: 'https://other.org/photo.png' })).status, 403);
   assert.equal((await send('/domains/revoke', { domain: 'example.org' })).status, 200);
   assert.equal((await send('/dorks', body)).status, 403);
+  const webPending = await send('/domains/challenge', { domain: 'example.org' });
+  f.setHttps(webPending.value.pending.value);
+  assert.equal((await send('/domains/verify', { domain: 'example.org', method: 'https' })).status, 200);
+  assert.equal((await send('/dorks', body)).status, 200);
 });

@@ -43,7 +43,7 @@ export function osintRouter({
   );
   router.get("/capabilities", (req, res) =>
     res.json({
-      version: "0.5.1",
+      version: "0.6.0",
       authentication: {
         phoneOtpRequired: false,
         authenticatorRequired: true,
@@ -52,6 +52,7 @@ export function osintRouter({
         domainAndImageOwnershipRequired: true,
         domainOwnershipRequired: true,
         domainVerificationAvailable: true,
+        domainVerificationMethods: ["dns_txt", "https_file"],
         imageHostProofRequired: true,
         imageHostVerificationAvailable: true,
       },
@@ -113,7 +114,7 @@ export function osintRouter({
   router.post("/domains/challenge", domainRoute(req =>
     domainOwnership.challenge(req, req.body?.domain)));
   router.post("/domains/verify", domainRoute(req =>
-    domainOwnership.verify(req, req.body?.domain)));
+    domainOwnership.verify(req, req.body?.domain, req.body?.method)));
   router.post("/domains/revoke", domainRoute(req =>
     domainOwnership.revoke(req, req.body?.domain)));
   router.post(

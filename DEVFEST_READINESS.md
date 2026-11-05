@@ -204,6 +204,7 @@ screenshots are in [the November 3 QA record](docs/DEVFEST-QA-2026-11-03.md).
 | Verified-email workflow repair (Nov 4) | `ExposureApp.tsx`, exposure browser test and search-coverage docs | Check Exposure now shows the account's verified report email, fills that exact address, opens verification settings when absent, and refreshes status on return. The local browser journey passed 37 checks; full suite passed 154 tests and build | This improves the verified-email route but does not unlock social/phone searches or configure production search providers |
 | Shared exposure quota (Nov 4) | `api/osint/distributed-limit.mjs`, exposure router and cleanup tests | Hosted exposure authentication, checks and domain proof use account-scoped private Blob counters with atomic creation and ETag updates; conflict exhaustion fails closed. Local concurrency tests cover separate instances, quota reset and contention | Production load/cost testing, scheduled cleanup and non-OSINT distributed limits remain |
 | Lens response and no-key handoff (Nov 4) | `api/osint/images.mjs`, `api/osint/osint.mjs`, related tests/docs | The Lens adapter now includes exact-flagged visual matches and organic web links with separate confidence, and verified-email handoffs work without another provider. A local live Lens check on StrikeOut's public image returned 20 visual and 7 web links without outputting URLs or the key | Production Lens still needs a configured provider and a verified image host; no private-image upload or arbitrary-image ownership proof |
+| HTTPS domain proof (Nov 5) | `api/osint/domain-ownership.mjs`, exposure UI, domain/browser tests | A user can publish the account-bound challenge at a fixed HTTPS path on the exact host as an alternative to DNS TXT. The backend rejects redirects/private DNS, pins the public address during TLS, and keeps the existing seven-day MFA-version gate | Production end-to-end proof with a team-controlled domain and booth-browser QA remain |
 
 The November 4 local smoke check completed for GitHub, Pwned Passwords prefix,
 and SerpApi Google, Bing and DuckDuckGo after the empty-result repair. The
@@ -212,7 +213,7 @@ configured locally. No production integration result is implied by these local
 checks.
 
 **Current release blockers:** build target-proof flows before unlocking profile
-and arbitrary-image searches; verify the new exact-domain TXT path with a domain the team
+and arbitrary-image searches; verify DNS TXT and HTTPS file proof with a domain the team
 controls; test a fresh production MFA sign-in, verified-email
 ownership and supported providers with
 an authorized operator account; run a full keyboard/screen-reader and phone-sized
