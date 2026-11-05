@@ -86,7 +86,7 @@ export function authenticatorAuthService({
       if (typeof target !== "string" || !address?.verifiedAt ||
           typeof address.email !== "string" ||
           target.trim().toLowerCase() !== address.email.trim().toLowerCase())
-        fail(403, "Verify this exact email address in Cases > Settings > Report email before searching. Your authenticator alone does not prove email ownership.");
+        fail(403, "Verify this exact email address in Check Exposure before searching. Your authenticator alone does not prove email ownership.");
     }
     if (path === "/check" && ["instagram", "phone", "linkedin", "identity_cards"].includes(req.body?.service))
       fail(403, "This personal search is locked until ownership of the target can be verified. Your authenticator alone does not prove target ownership.");

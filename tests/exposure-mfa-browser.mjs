@@ -5,6 +5,20 @@ import {readFile,mkdir,writeFile} from 'node:fs/promises';
 const base=process.env.DESKTOP_TEST_URL||'http://localhost:3002';const browser=await chromium.launch();const page=await browser.newPage({viewport:{width:1440,height:1000}});const errors=[];page.on('pageerror',e=>errors.push(e.message));let created=false;const checks=[];
 function check(name,value){assert.ok(value,name);checks.push(name);}
 try{
+ // Test-only mail adapter responses: no real verification email is sent.
+ let emailFixture={email:null,verified:false},emailConfigured=false,failEmailSend=true,searchRequests=0;
+ page.on('request',request=>{if(request.url().endsWith('/api/osint/check'))searchRequests++;});
+ await page.route('**/api/reports/email',route=>route.fulfill({json:emailFixture}));
+ await page.route('**/api/reports/capabilities',route=>route.fulfill({json:{emailConfigured}}));
+ await page.route('**/api/reports/email/verification',route=>{
+  if(failEmailSend)return route.fulfill({status:503,json:{error:'Test email service temporarily unavailable.'}});
+  emailFixture={email:route.request().postDataJSON().email.toLowerCase(),verified:false};
+  return route.fulfill({json:{sent:true,expiresInSeconds:600}});
+ });
+ await page.route('**/api/reports/email/confirm',route=>{
+  if(route.request().postDataJSON().code!=='123456')return route.fulfill({status:400,json:{error:'The code did not match.'}});
+  emailFixture={...emailFixture,verified:true};return route.fulfill({json:emailFixture});
+ });
  const r=await page.request.post(base+'/api/auth/register',{data:{username:'exposureaudit_'+Date.now().toString(36),password:'Fictional-exposure-audit-42'}});check('registration',r.status()===200);created=true;
  await page.goto(base+'/exposure');const panel=page.locator('.exposure-window');const gate=panel.locator('.exposure-auth-gate');await gate.getByRole('heading',{name:'Verify to check exposure',exact:true}).waitFor();check('gate visible',await gate.isVisible());check('search hidden before verification',await panel.getByLabel('Check type',{exact:false}).count()===0);
  await gate.getByRole('button',{name:'Set up authenticator MFA',exact:true}).click();await gate.getByAltText('Authenticator setup QR code',{exact:true}).waitFor();check('QR rendered',(await gate.getByAltText('Authenticator setup QR code').getAttribute('src')).startsWith('data:image/png'));
@@ -14,9 +28,16 @@ try{
  await gate.getByLabel('Six-digit authenticator code',{exact:true}).fill(otp.generate({timestamp:Date.now()+30000}));await gate.getByRole('button',{name:'Verify and continue',exact:true}).click();await panel.getByLabel('Check type',{exact:false}).waitFor();check('verified tools appear',await panel.getByLabel('Check type',{exact:false}).isVisible());
  check('Instagram locked',await panel.locator('option[value=instagram]').evaluate(el=>el.disabled));check('phone locked',await panel.locator('option[value=phone]').evaluate(el=>el.disabled));
  const emailProof=panel.getByLabel('Verified email for exposure checks',{exact:true});await emailProof.getByText('No verified email is available for this check.',{exact:true}).waitFor();check('email proof status shown',await emailProof.isVisible());
- await emailProof.getByRole('button',{name:'Open email verification',exact:true}).click();await page.getByRole('heading',{name:'Your preferences.',exact:true}).waitFor();check('email verification opens account settings',await page.getByRole('heading',{name:'Report email',exact:true}).isVisible());
- const verifiedEmailRoute=route=>route.fulfill({json:{email:'verified@example.org',verified:true}});
- await page.route('**/api/reports/email',verifiedEmailRoute);await page.evaluate(()=>window.dispatchEvent(new CustomEvent('strikeout-open',{detail:{section:'exposure'}})));await emailProof.getByRole('button',{name:'Use verified email',exact:true}).waitFor();check('email proof refreshes on return',await emailProof.getByText('verified@example.org',{exact:true}).isVisible());await emailProof.getByRole('button',{name:'Use verified email',exact:true}).click();check('verified address fills check',await panel.getByLabel('Your email address',{exact:true}).inputValue()==='verified@example.org');await page.unroute('**/api/reports/email',verifiedEmailRoute);
+ await emailProof.getByText('Email verification is unavailable',{exact:false}).waitFor();check('unconfigured mail explained inline',await emailProof.getByRole('button',{name:'Send verification code',exact:true}).count()===0);
+ emailConfigured=true;await emailProof.getByRole('button',{name:'Refresh verification status',exact:true}).click();
+ await emailProof.getByLabel('Your email to verify',{exact:true}).fill('verified@example.org');
+ const sendCode=emailProof.getByRole('button',{name:'Send verification code',exact:true});check('email delivery requires explicit consent',await sendCode.isDisabled());
+ await emailProof.getByRole('checkbox',{name:'This is my email and I want StrikeOut to send me a verification code.',exact:true}).check();await sendCode.click();
+ await emailProof.getByRole('alert').getByText('Test email service temporarily unavailable.',{exact:true}).waitFor();check('failed delivery never shows sent state',await emailProof.getByLabel('Email verification code',{exact:true}).count()===0);
+ failEmailSend=false;await sendCode.click();await emailProof.getByLabel('Email verification code',{exact:true}).fill('000000');await emailProof.getByRole('button',{name:'Verify email',exact:true}).click();await emailProof.getByRole('alert').getByText('The code did not match.',{exact:true}).waitFor();check('wrong email code stays unverified',await emailProof.getByRole('button',{name:'Use verified email',exact:true}).count()===0);
+ await emailProof.getByLabel('Email verification code',{exact:true}).fill('123456');await emailProof.getByLabel('Email verification code',{exact:true}).press('Enter');await emailProof.getByRole('button',{name:'Use verified email',exact:true}).waitFor();check('inline verified address fills check',await panel.getByLabel('Your email address',{exact:true}).inputValue()==='verified@example.org');check('verification never starts a search',searchRequests===0);check('verification clears code',await emailProof.getByLabel('Email verification code',{exact:true}).count()===0);
+ emailConfigured=false;await emailProof.getByRole('button',{name:'Refresh verification status',exact:true}).click();await emailProof.getByText('Email verification is unavailable',{exact:false}).waitFor();check('existing proof works without mail service',await emailProof.getByRole('button',{name:'Use verified email',exact:true}).isEnabled());
+ await mkdir('output/exposure-audit',{recursive:true});await emailProof.scrollIntoViewIfNeeded();await page.screenshot({path:'output/exposure-audit/email-proof-desktop.png'});await page.setViewportSize({width:390,height:844});await emailProof.scrollIntoViewIfNeeded();check('inline email proof has no mobile overflow',await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.screenshot({path:'output/exposure-audit/email-proof-mobile.png'});await page.setViewportSize({width:1440,height:1000});
  await panel.getByLabel('Your email address',{exact:true}).fill('demo@example.org');await panel.locator('#tour-exposure-search-well').getByRole('checkbox',{name:'This is my information and I approve the described check.'}).check();await panel.getByRole('button',{name:'Check my exposure',exact:true}).click();await panel.getByRole('alert').getByText('Verify this exact email address',{exact:false}).waitFor();check('unverified email search blocked',await panel.getByRole('alert').getByText('Verify this exact email address',{exact:false}).isVisible());
  let handoffRequest;
  const handoffRoute=route=>{
