@@ -15,7 +15,8 @@ import {
   scryptSync,
   timingSafeEqual,
 } from "node:crypto";
-import { read, write, remove, hash, usesCloud, createIfMissing } from "./store.mjs";
+import { read, write, remove, hash, createIfMissing } from "./store.mjs";
+import { inspectStorage } from "./storage-health.mjs";
 import {
   seed,
   portfolio,
@@ -192,20 +193,15 @@ async function owned(req) {
     );
   return { u, p };
 }
-app.get("/api/health", (req, res) =>
-  res.json({
-    ok: true,
+app.get("/api/health", async (req, res) => {
+  const storage = await inspectStorage();
+  res.status(storage.ok ? 200 : 503).json({
+    ...storage,
     version: "2.3.0",
     revision: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) || null,
-    storage:
-      usesCloud() && process.env.BLOB_READ_WRITE_TOKEN
-        ? "private-durable-blob"
-        : process.env.VERCEL
-          ? "unconfigured"
-          : "local-durable-files",
     demonstrationSourcesAvailable: true,
-  }),
-);
+  });
+});
 app.post(
   "/api/pop/connect-code",
   guarded(async (req, res) => {

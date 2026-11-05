@@ -35,8 +35,8 @@ export async function checkDeployment(origin = defaultOrigin, {
     responses.set(route, response);
   }
   const health = await responses.get('/api/health').json().catch(() => null);
-  if (health?.ok !== true || health.storage !== 'private-durable-blob')
-    throw Error('API health did not confirm durable private storage.');
+  if (health?.ok !== true || health.storage !== 'private-durable-blob' || health.storageRead !== true)
+    throw Error('API health did not confirm a working private storage read.');
   if (expectedSha && (!health.revision || !expectedSha.startsWith(health.revision)))
     throw Error('API revision does not match the expected release commit.');
   const html = await responses.get('/devfest.html').text();
@@ -44,6 +44,7 @@ export async function checkDeployment(origin = defaultOrigin, {
     throw Error('DevFest page lacks the fictional-demo marker or its script.');
   return {
     origin: base.origin, revision: health.revision || null, storage: health.storage,
+    storageRead: health.storageRead,
     publicAssets: checks.length - 1, visitorAccessible: true,
   };
 }
