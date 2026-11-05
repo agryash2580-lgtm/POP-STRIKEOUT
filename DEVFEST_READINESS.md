@@ -260,3 +260,11 @@ preview tool in the runtime image. Only a successful `self-host` job proves this
 runtime verification; public-domain deployment, real providers and backup recovery
 remain separate unverified requirements. See [the workflow](.github/workflows/readiness.yml)
 and [deployment guide](deploy/README.md).
+
+**Verified:** [GitHub run 42015303196](https://github.com/agryash2580-lgtm/POP-STRIKEOUT/actions/runs/42015303196)
+passed both Node 22/24 checks and all 28 self-host runtime assertions. The Docker
+build, local certificate-verified HTTPS proxy, container replacement, persistent
+session/case/encrypted MFA, recovery-code login, masked assessment, deletion and
+retention preview all ran successfully on the isolated runner. This closes the
+base-image/Compose verification gap, while actual-server DNS, public HTTPS,
+email/search integrations, backup restoration and operational scheduling remain.
