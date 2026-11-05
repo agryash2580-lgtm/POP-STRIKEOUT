@@ -16,6 +16,7 @@ export function AdvancedExposure({ capabilities }: { capabilities: any }) {
   const [proof, setProof] = useState<any>(null);
   const [proofBusy, setProofBusy] = useState(false);
   const [proofError, setProofError] = useState('');
+  const [proofMethod, setProofMethod] = useState<'dns' | 'https'>('dns');
   const epoch = useRef(0);
   const proofEpoch = useRef(0);
   useEffect(() => {
@@ -41,7 +42,8 @@ export function AdvancedExposure({ capabilities }: { capabilities: any }) {
     setProofBusy(true); setProofError(''); setError('');
     try {
       const data = await requestJSON('/api/osint/domains/' + action + (action === 'status' ? '?domain=' + encodeURIComponent(proofDomain) : ''), {
-        ...(action === 'status' ? {} : { method: 'POST', body: { domain: proofDomain } }), timeoutMs: 12000,
+        ...(action === 'status' ? {} : { method: 'POST', body: { domain: proofDomain,
+          ...(action === 'verify' ? { method: proofMethod } : {}) } }), timeoutMs: 15000,
       });
       if (current === proofEpoch.current) setProof(data);
     } catch (e: any) { if (current === proofEpoch.current) setProofError(e.message); }
@@ -85,11 +87,16 @@ export function AdvancedExposure({ capabilities }: { capabilities: any }) {
       </>}
       {capabilities.authentication?.domainVerificationAvailable && <div className="mini-note" aria-label="Domain ownership verification">
         <strong>{targetVerified ? 'Host control verified' : 'First prove you control this domain or image host'}</strong>
-        <p>Add the TXT record below in your DNS settings, then check it here. Verification lasts seven days and is tied to your StrikeOut account.</p>
-        {proof?.pending && !targetVerified && <p style={{ overflowWrap: 'anywhere' }}>TXT record name: <code>{proof.pending.name}</code><br />TXT value: <code>{proof.pending.value}</code></p>}
+        <p>Choose a proof you can publish on this exact host. Verification lasts seven days and is tied to your StrikeOut account.</p>
+        <label>Proof method<select aria-label="Proof method" value={proofMethod} onChange={e => { setProofMethod(e.target.value as 'dns' | 'https'); setProofError(''); }}>
+          <option value="dns">DNS TXT record</option>
+          {capabilities.authentication?.domainVerificationMethods?.includes('https_file') && <option value="https">HTTPS file on my website</option>}
+        </select></label>
+        {proof?.pending && !targetVerified && proofMethod === 'dns' && <p style={{ overflowWrap: 'anywhere' }}>Add this TXT record, then check it here.<br />TXT record name: <code>{proof.pending.name}</code><br />TXT value: <code>{proof.pending.value}</code></p>}
+        {proof?.pending?.https && !targetVerified && proofMethod === 'https' && <p style={{ overflowWrap: 'anywhere' }}>Publish a plain-text file at <code>{proof.pending.https.url}</code> containing exactly <code>{proof.pending.https.value}</code>, then check it here. Redirects and private hosts are rejected.</p>}
         {targetVerified && <p>Verified until {new Date(proof.verifiedUntil).toLocaleString()}.</p>}
-        <button type="button" disabled={!proofDomain || proofBusy || !!targetVerified} onClick={() => domainAction('challenge')}>Create DNS challenge</button>{' '}
-        <button type="button" disabled={!proofDomain || proofBusy} onClick={() => domainAction(proof?.pending ? 'verify' : 'status')}>{proof?.pending ? 'Check DNS record' : 'Refresh verification status'}</button>{' '}
+        <button type="button" disabled={!proofDomain || proofBusy || !!targetVerified} onClick={() => domainAction('challenge')}>Create challenge</button>{' '}
+        <button type="button" disabled={!proofDomain || proofBusy} onClick={() => domainAction(proof?.pending ? 'verify' : 'status')}>{proof?.pending ? proofMethod === 'dns' ? 'Check DNS record' : 'Check proof file' : 'Refresh verification status'}</button>{' '}
         {targetVerified && <button type="button" disabled={proofBusy} onClick={() => domainAction('revoke')}>Revoke verification</button>}
         {proofError && <p role="alert" className="error">{proofError}</p>}
       </div>}
