@@ -2,6 +2,17 @@ import { read, usesCloud } from './store.mjs';
 
 const probeKey = 'health/storage_read_probe_7d924ce41b';
 
+function failureCategory(error) {
+  const message = typeof error?.message === 'string' ? error.message : '';
+  if (message.startsWith('Invalid token: unable to extract store ID'))
+    return 'invalid_token_format';
+  if (message.startsWith('No blob credentials found'))
+    return 'missing_blob_credentials';
+  const upstream = /^Failed to fetch blob: ([45]\d\d)\b/.exec(message);
+  if (upstream) return 'blob_http_' + upstream[1];
+  return 'other_storage_error';
+}
+
 // A configured token is not evidence that private Blob reads actually work.
 // Request a deliberately absent key so the storage service must authenticate
 // and answer the read without exposing or changing any account record.
@@ -25,9 +36,10 @@ export async function inspectStorage({
       ok: false,
       storage: 'unavailable',
       storageRead: false,
-      // Names only: never include upstream messages, credentials or paths.
+      // Fixed categories only: never include upstream messages, credentials or paths.
       storageErrorType: typeof name === 'string' && /^[A-Za-z][A-Za-z0-9]{0,63}$/.test(name)
         ? name : 'Error',
+      storageFailure: failureCategory(error),
     };
   }
 }
