@@ -182,6 +182,41 @@ async function verify() {
     check('MFA login challenge is HTTPS-only and HttpOnly', login.json?.mfaRequired === true && secureCookie(login, 'strikeout_mfa', 'Lax'));
     check('persisted recovery code completes MFA sign-in', (await request('/api/auth/mfa/verify', { method: 'POST', body: { code: recovery } })).status === 200);
     check('recovery code is consumed once', (await request('/api/auth/mfa/status')).json?.recoveryRemaining === 7);
+
+    // Simulate loss of this disposable project's private data volume. The source
+    // is stopped before backup, and restoration uses a newly created empty volume.
+    const dataVolume = mount.find(item => item.Type === 'volume' && item.Destination === '/app/.data').Name;
+    check('recovery test volume belongs only to this isolated fixture', dataVolume.startsWith(process.env.COMPOSE_PROJECT_NAME + '_'));
+    const recoveryEnv = { ...process.env, STRIKEOUT_BACKUP_KEY: randomBytes(32).toString('base64') };
+    await compose('stop', 'app');
+    const archived = await execute('docker', ['compose', 'run', '--rm', '--no-deps', '-T', '-e', 'STRIKEOUT_BACKUP_KEY', 'app',
+      'node', 'scripts/storage-backup.mjs', 'create', '--offline'], { env: recoveryEnv, encoding: 'buffer', timeout: 120000, maxBuffer: 128 * 1024 * 1024 });
+    check('offline encrypted backup is created', archived.stdout.subarray(0, 20).toString().startsWith('STRIKEOUT-BACKUP-V1'));
+    await compose('rm', '--force', 'app');
+    await execute('docker', ['volume', 'rm', dataVolume]);
+    const restoring = execute('docker', ['compose', 'run', '--rm', '--no-deps', '-T', '-e', 'STRIKEOUT_BACKUP_KEY', 'app',
+      'node', 'scripts/storage-backup.mjs', 'restore', '--offline'], { env: recoveryEnv, timeout: 120000 });
+    restoring.child.stdin.end(archived.stdout);
+    const restored = JSON.parse((await restoring).stdout);
+    check('backup restores into newly empty storage', restored.restored > 0 && restored.sessionsRestored === false);
+    await compose('up', '--detach', '--no-deps', '--wait', '--wait-timeout', '90', 'app');
+    await healthy();
+    check('restore does not revive an old session', (await request('/api/data')).status === 401);
+    const recoveryLogin = await request('/api/auth/login', { method: 'POST', body: { username, password } });
+    check('restored account still requires its authenticator', recoveryLogin.json?.mfaRequired === true);
+    const waitMs = Date.parse(restored.mfaCodesUsableAfter) - Date.now() + 200;
+    assert.ok(Number.isFinite(waitMs) && waitMs < 90000, 'bounded fresh authenticator wait');
+    if (waitMs > 0) await delay(waitMs);
+    check('fresh authenticator decrypts after volume-loss recovery', (await request('/api/auth/mfa/verify', {
+      method: 'POST', body: { code: otp.generate() },
+    })).status === 200);
+    check('private case is recovered after volume loss', (await request('/api/data')).json?.cases?.[0]?.summary === record.summary);
+    check('restore invalidates historical recovery codes', (await request('/api/auth/mfa/status')).json?.recoveryRemaining === 0);
+    check('restore requires a new exposure grant', (await request('/api/osint/review-documents', { method: 'POST', body: review })).status === 403);
+    check('restored account can authorize a new assessment', (await request('/api/osint/auth/verify', {
+      method: 'POST', body: { code: otp.generate({ timestamp: Date.now() + 30000 }) },
+    })).json?.verified === true);
+    check('assessment works after backup recovery', (await request('/api/osint/review-documents', { method: 'POST', body: review })).status === 200);
     check('synthetic account can be deleted', (await request('/api/account', { method: 'DELETE' })).status === 200);
     accountCreated = false;
     check('deleted session cannot access private cases', (await request('/api/data')).status === 401);
