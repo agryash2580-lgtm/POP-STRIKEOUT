@@ -27,9 +27,32 @@ test('address checks exclude private/reserved/mixed DNS',async()=>{
 });
 test('image API parses source-linked results, distinguishes exact/visual and redacts',async()=>{
  const result=await reverseImage({...image,mode:'api'},{env:{SERPAPI_API_KEY:'test-key-never-return'},resolver,fetcher:async url=>{
- assert.equal(url.hostname,'serpapi.com');assert.equal(url.searchParams.get('engine'),'google_lens');assert.equal(url.searchParams.get('url'),image.imageUrl);
+ assert.equal(url.hostname,'serpapi.com');assert.equal(url.searchParams.get('engine'),'google_lens');assert.equal(url.searchParams.get('type'),'all');assert.equal(url.searchParams.get('url'),image.imageUrl);
  return ok({exact_matches:[{link:'https://example.org/post',title:'password=fictional'}],visual_matches:[{link:'https://example.org/post'},{link:'javascript:alert(1)'},{link:'https://other.org/page',title:'Similar'}]});}});
  assert.equal(result.status,'completed');assert.equal(result.findings.length,2);assert.equal(result.findings[0].confidence,'provider_exact_match');assert.equal(result.findings[1].confidence,'provider_visual_similarity');assert.ok(!JSON.stringify(result).includes('test-key-never-return'));assert.ok(!JSON.stringify(result).includes('fictional'));
+});
+test('Lens all-response includes exact flags and bounded web results without implying visual proof',async()=>{
+ const result=await reverseImage({...image,mode:'api'},{env:{SERPAPI_API_KEY:'test'},resolver,fetcher:async()=>ok({
+  visual_matches:[{link:'https://example.org/exact',title:'Exact',exact_matches:true},{link:'https://example.org/visual',title:'Similar'}],
+  organic_results:[{link:'https://example.org/exact',title:'Duplicate'},{link:'https://example.org/web',title:'Web reference'}],
+ })});
+ assert.deepEqual(result.findings.map(x=>x.confidence),['provider_exact_match','provider_visual_similarity','provider_web_result']);
+ assert.equal(result.checks[0].visualMatches,2);
+ assert.equal(result.checks[0].webResults,1);
+ assert.equal(result.findings.length,3);
+ const many=await reverseImage({...image,mode:'api'},{env:{SERPAPI_API_KEY:'test'},resolver,fetcher:async()=>ok({
+  visual_matches:Array.from({length:30},(_,i)=>({link:`https://example.org/visual-${i}`})),
+  organic_results:Array.from({length:15},(_,i)=>({link:`https://example.org/web-${i}`})),
+ })});
+ assert.equal(many.findings.length,30);
+ assert.equal(many.checks[0].visualMatches,20);
+ assert.equal(many.checks[0].webResults,10);
+});
+test('Lens success without supported result sections is reported as incomplete',async()=>{
+ const result=await reverseImage({...image,mode:'api'},{env:{SERPAPI_API_KEY:'test'},resolver,fetcher:async()=>ok({search_information:{organic_results_state:'Fully empty'}})});
+ assert.equal(result.status,'incomplete');
+ assert.equal(result.checks[0].status,'unrecognized_response');
+ assert.equal(result.findings.length,0);
 });
 test('provider failures/malformed data are explicit, with consented auto fallback',async()=>{
  const options={env:{SERPAPI_API_KEY:'test'},resolver,fetcher:async()=>new Response('',{status:429})};

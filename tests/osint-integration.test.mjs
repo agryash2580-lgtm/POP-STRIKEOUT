@@ -30,6 +30,15 @@ test('verified-email checks can prepare free web searches without claiming they 
  assert.ok(result.checks.every(x=>x.provider!=='manual_web_handoff'));
 });
 
+test('verified-email handoff works without any automatic provider',async()=>{
+ const result=await runCheck({service:'email',input:{email:'demo@example.org'},consent:{selfOwned:true,version:'1',providers:['manual_web_handoff']}},{env:{},fetcher:async()=>{throw Error('No provider request expected');}});
+ assert.equal(result.status,'requires_user_search');
+ assert.equal(result.checks.length,0);
+ assert.equal(result.findings.length,0);
+ assert.equal(result.handoffs.length,3);
+ assert.deepEqual(result.coverage,[]);
+});
+
 test('document review is mounted behind existing authentication and self-ownership consent',async()=>{
  const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;let cookie,owner;
  async function request(path,method='GET',body){const r=await fetch(base+path,{method,headers:{...(cookie?{cookie}:{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});if(r.headers.get('set-cookie'))cookie=r.headers.get('set-cookie').split(';')[0];return {status:r.status,value:await r.json()};}
