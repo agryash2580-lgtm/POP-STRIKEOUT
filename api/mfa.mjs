@@ -3,6 +3,7 @@ import { randomBytes, createCipheriv, createDecipheriv } from "node:crypto";
 import * as OTPAuth from "otpauth";
 import QRCode from "qrcode";
 import { read, write, remove, hash, createIfMissing } from "./store.mjs";
+import { secureCookies } from "./secure-cookie.mjs";
 const fail = (status, message) => {
   throw Object.assign(Error(message), { status });
 };
@@ -10,7 +11,7 @@ const securityKey = (id) => "account_security/" + id;
 const cookieName = "strikeout_mfa";
 const cookieOptions = () => ({
   httpOnly: true,
-  secure: !!process.env.VERCEL,
+  secure: secureCookies(),
   sameSite: "lax",
   path: "/api/auth/mfa",
   maxAge: 5 * 60000,

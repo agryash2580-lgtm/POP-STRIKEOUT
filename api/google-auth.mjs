@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { OAuth2Client } from "google-auth-library";
+import { secureCookies } from "./secure-cookie.mjs";
 
 // Optional: configuration is private server-side data, never a VITE_* variable.
 export function installGoogleAuth(
@@ -27,7 +28,7 @@ export function installGoogleAuth(
   const cookieName = "strikeout_google_state";
   const cookieOptions = {
     httpOnly: true,
-    secure: !!env.VERCEL,
+    secure: secureCookies(env),
     sameSite: "lax",
     path: "/api/auth/google",
     maxAge: 10 * 60 * 1000,

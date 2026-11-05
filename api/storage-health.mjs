@@ -3,7 +3,8 @@ import { read, usesCloud } from './store.mjs';
 const probeKey = 'health/storage_read_probe_7d924ce41b';
 
 function failureCategory(error) {
-  const message = typeof error?.message === 'string' ? error.message : '';
+  const rawMessage = typeof error?.message === 'string' ? error.message : '';
+  const message = rawMessage.replace(/^Vercel Blob: /, '');
   if (message.startsWith('Invalid token: unable to extract store ID'))
     return 'invalid_token_format';
   if (message.startsWith('No blob credentials found'))

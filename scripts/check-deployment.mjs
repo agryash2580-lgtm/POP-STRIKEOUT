@@ -1,11 +1,12 @@
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const defaultOrigin = 'https://strikeout-mu20.vercel.app';
-
-export async function checkDeployment(origin = defaultOrigin, {
-  expectedSha = '', fetcher = fetch, timeoutMs = 12000,
+export async function checkDeployment(origin, {
+  expectedSha = '', expectedStorage = 'local-durable-files', fetcher = fetch, timeoutMs = 12000,
 } = {}) {
+  if (!origin) throw Error('Pass the site origin as the first argument or set DEPLOY_URL.');
+  if (!['local-durable-files', 'private-durable-blob'].includes(expectedStorage))
+    throw Error('Expected storage must be local-durable-files or private-durable-blob.');
   const base = new URL(origin);
   if (base.username || base.password || base.search || base.hash || base.pathname !== '/' ||
       !(base.protocol === 'https:' || (base.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(base.hostname))))
@@ -35,8 +36,8 @@ export async function checkDeployment(origin = defaultOrigin, {
     responses.set(route, response);
   }
   const health = await responses.get('/api/health').json().catch(() => null);
-  if (health?.ok !== true || health.storage !== 'private-durable-blob' || health.storageRead !== true)
-    throw Error('API health did not confirm a working private storage read.');
+  if (health?.ok !== true || health.storage !== expectedStorage || health.storageRead !== true)
+    throw Error('API health did not confirm a working ' + expectedStorage + ' storage read.');
   if (expectedSha && (!health.revision || !expectedSha.startsWith(health.revision)))
     throw Error('API revision does not match the expected release commit.');
   const html = await responses.get('/devfest.html').text();
@@ -51,8 +52,9 @@ export async function checkDeployment(origin = defaultOrigin, {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const result = await checkDeployment(process.argv[2] || process.env.DEPLOY_URL || defaultOrigin,
-      { expectedSha: process.env.EXPECTED_SHA || '' });
+    const result = await checkDeployment(process.argv[2] || process.env.DEPLOY_URL,
+      { expectedSha: process.env.EXPECTED_SHA || '',
+        expectedStorage: process.env.EXPECTED_STORAGE || 'local-durable-files' });
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {
     console.error(error.message);

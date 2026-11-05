@@ -1,6 +1,9 @@
 # STRIKEOUT + Pop
 
-Live website: https://strikeout-mu20.vercel.app
+GitHub source: https://github.com/agryash2580-lgtm/POP-STRIKEOUT
+
+For hosting on a new domain, see [the single-server deployment guide](deploy/README.md).
+The new domain is not live until a server, DNS and private settings are configured.
 
 A Windows 98 style recovery workspace with private incident cases, evidence, reviewed complaint drafts, optional Gemini reports/PDFs, guided next steps, a separate Check Exposure app and a Chromium/Firefox companion extension.
 
