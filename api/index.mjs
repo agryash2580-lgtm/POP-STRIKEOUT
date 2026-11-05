@@ -169,6 +169,13 @@ async function issueSession(res, id, authVersion = 0) {
 async function session(res, id) {
   return startLogin(res, id, issueSession);
 }
+async function revokeSession(token, ownerId) {
+  if (!token) return;
+  const key = "sessions/" + hash(token);
+  const id = ownerId || (await read(key))?.userId;
+  if (id) await remove("osint_authenticator/" + hash(id + ":" + token));
+  await remove(key);
+}
 const safeUser = (u) => ({
   id: u.id,
   username: u.username,
@@ -288,7 +295,7 @@ app.post(
     const { action } = req.params;
     if (action === "logout") {
       const t = cookie(req);
-      if (t) await remove("sessions/" + hash(t));
+      await revokeSession(t);
       res.clearCookie("strikeout_session", { path: "/" });
       await clearMfaChallenge(req, res);
       return res.json({ ok: true });
@@ -408,10 +415,7 @@ app.delete(
     await remove("workspaces/" + u.workspaceId);
     await remove("users/" + u.id);
     const t = cookie(req);
-    if (t) {
-      await remove("osint_authenticator/" + hash(u.id + ":" + t));
-      await remove("sessions/" + hash(t));
-    }
+    await revokeSession(t, u.id);
     res.clearCookie("strikeout_session", { path: "/" });
     res.json({ deleted: true });
   }),
