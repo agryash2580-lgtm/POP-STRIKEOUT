@@ -78,6 +78,12 @@ npm run package:pop
 ```
 
 Live checks using fictional inputs: `node scripts/check-osint-live.mjs` and `npm run check:reports:live`. They call real providers; the report check does not send email.
+`npm run check:providers` checks configured search adapters with reserved-example
+queries and prints only status. Lens is skipped unless the operator explicitly
+sets `STRIKEOUT_SMOKE_IMAGE_URL` to an owned public image approved for disclosure;
+the command does not contact a previous deployment by default. See the
+[November 25 backend delivery register](docs/KUSH-NOV28-READINESS.md) for current
+evidence, consent/safety scope and remaining dependencies.
 The browser journeys need Playwright Chromium (`npx playwright install chromium`),
 a running local server and a configured local MFA encryption key for the protected
 exposure journey. They create and remove synthetic test accounts.

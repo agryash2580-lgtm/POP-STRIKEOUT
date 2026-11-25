@@ -1,3 +1,4 @@
+import { redactEvidence } from "./redact.mjs";
 export class ProviderError extends Error {
   constructor(code, message, details = {}) {
     super(message);
@@ -140,10 +141,8 @@ export async function webSearch(
     })
     .map((x) => ({
       url: x.url,
-      title: String(x.title || "").slice(0, 300),
-      snippet: String(x.description || "")
-        .replace(/<[^>]*>/g, "")
-        .slice(0, 1000),
+      title: redactEvidence(x.title || "").slice(0, 300),
+      snippet: redactEvidence(x.description || ""),
     }));
 }
 export async function emailBreaches(
@@ -180,7 +179,7 @@ export async function emailBreaches(
   }));
 }
 export async function passwordRange(prefix, { fetcher = fetch } = {}) {
-  if (!/^[A-F0-9]{5}$/.test(prefix))
+  if (typeof prefix !== "string" || !/^[A-F0-9]{5}$/.test(prefix))
     throw Object.assign(
       Error(
         "Provide exactly five uppercase SHA-1 prefix characters, never a password or full hash.",
@@ -203,7 +202,6 @@ export async function passwordRange(prefix, { fetcher = fetch } = {}) {
 
 // Official, keyless GitHub issue/PR search. This is explicitly not whole-web coverage.
 export async function githubReferences(needles, { fetcher = fetch } = {}) {
-  const { redactEvidence } = await import("./redact.mjs");
   const findings = [],
     checks = [];
   for (const needle of needles.slice(0, 2)) {

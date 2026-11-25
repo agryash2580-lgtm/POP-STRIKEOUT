@@ -1,6 +1,6 @@
 # Google dorks and reverse-image lookup
 
-The active website adds these tools inside Check Exposure. Existing GitHub references, supplied-document review and password-prefix checks remain separate. This change adds no public-page retrieval, account-export parser or crawling; those belong to Swarit's work.
+The active website adds these tools inside Check Exposure. Existing GitHub references, supplied-document review and password-prefix checks remain separate. The November 25 repairs add no public-page retrieval, account-export parser or crawling. Kush now owns backend checks following the team's role swap; any unpublished retrieval work needs a handoff from Swarit before changes.
 
 ## What works without keys
 

@@ -1,5 +1,10 @@
 # StrikeOut — DevFest readiness
 
+**November 25 update:** [Kush's delivery register](docs/KUSH-NOV28-READINESS.md)
+records the current backend repairs, verification and team dependencies. The team
+confirmed it has no domain yet; earlier deployment observations below are historical.
+Local test success does not establish public-host or live-email readiness.
+
 Audit started **November 2, 2026**; updated **November 3, 2026**. Exhibition target: **November 28, 2026**.
 Baseline: upstream `main` at `dd0806bc628ce40a2f86c347e1ced52562dcd57f`.
 PR #11 was merged into `main` at `ff15c0c`; the fictional demo is public.

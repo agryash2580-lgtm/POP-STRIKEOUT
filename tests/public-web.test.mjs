@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { runCheck } from "../api/osint/osint.mjs";
+import { runDorks } from "../api/osint/dorks.mjs";
 const body = {
   service: "email",
   input: { email: "email@example.com" },
@@ -70,6 +71,42 @@ test("SerpApi's successful fully empty DuckDuckGo response is not a provider fai
   assert.equal(result.findings.length, 0);
   assert.equal(result.checks[0].status, "completed");
   assert.equal(result.checks[0].returnedCandidates, 0);
+});
+
+test("documented empty Google response completes public references and scoped dorks with zero candidates", async () => {
+  const fetcher = async () => Response.json({
+    search_metadata: { status: "Success" },
+    search_information: { organic_results_state: "Fully empty" },
+    error: "Google hasn't returned any results for this query.",
+  });
+  const result = await runCheck({ ...body, consent: { ...body.consent, providers: ["serpapi_google"] } }, { ...options, fetcher });
+  assert.equal(result.status, "completed");
+  assert.equal(result.findings.length, 0);
+  assert.equal(result.checks[0].returnedCandidates, 0);
+  const dorks = await runDorks({ domain: "example.org", identifier: "fictional-demo", templates: ["references"], mode: "api",
+    consent: { selfOwned: true, version: "1", providers: ["serpapi"] } }, { ...options, fetcher });
+  assert.equal(dorks.status, "completed");
+  assert.equal(dorks.findings.length, 0);
+});
+
+test("inconsistent empty markers and missing result sections never become a completed zero-result check", async () => {
+  const empty = { search_metadata: { status: "Success" }, search_information: { organic_results_state: "Fully empty" },
+    error: "Google hasn't returned any results for this query." };
+  for (const response of [
+    { ...empty, search_metadata: { status: "Error" } },
+    { ...empty, search_information: {} },
+    { ...empty, error: "Provider temporarily unavailable" },
+    { ...empty, organic_results: [{ link: "https://example.org", title: "email@example.com" }] },
+    { search_metadata: { status: "Success" } },
+    { search_metadata: { status: "Success" }, organic_results: {} },
+  ]) {
+    const fetcher = async () => Response.json(response);
+    const result = await runCheck({ ...body, consent: { ...body.consent, providers: ["serpapi_google"] } }, { ...options, fetcher });
+    assert.equal(result.status, "incomplete");
+    const dorks = await runDorks({ domain: "example.org", identifier: "fictional-demo", templates: ["references"], mode: "api",
+      consent: { selfOwned: true, version: "1", providers: ["serpapi"] } }, { ...options, fetcher });
+    assert.equal(dorks.status, "incomplete");
+  }
 });
 test("other SerpApi errors remain incomplete, even with a success status", async () => {
   const result = await runCheck(

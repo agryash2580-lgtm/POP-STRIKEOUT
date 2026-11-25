@@ -1,5 +1,6 @@
 import { prioritizeFindings } from "./prioritize.mjs";
 import { luhn, redactEvidence } from "./redact.mjs";
+import { consent } from "./consent.mjs";
 const invalid = (message) => Object.assign(Error(message), { status: 400 });
 function safeUrl(value) {
   if (!value) return null;
@@ -12,8 +13,7 @@ function safeUrl(value) {
   }
 }
 export function reviewDocuments(body) {
-  if (body?.consent?.selfOwned !== true || body.consent.version !== "1")
-    throw invalid("Confirm these are your own documents and identifiers.");
+  consent(body);
   if (
     !Array.isArray(body.documents) ||
     !body.documents.length ||
