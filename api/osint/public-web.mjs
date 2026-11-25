@@ -26,10 +26,7 @@ export async function publicWebReferences(
         },
         options,
       );
-      if (
-        data.organic_results !== undefined &&
-        !Array.isArray(data.organic_results)
-      )
+      if (!Array.isArray(data.organic_results))
         throw Error("Unexpected results");
       const rows = (data.organic_results || []).slice(0, 10);
       let accepted = 0;

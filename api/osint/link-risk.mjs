@@ -1,4 +1,5 @@
 import { isIP } from "node:net";
+import { consent } from "./consent.mjs";
 import { domainToUnicode } from "node:url";
 import { publicAddress } from "./image-url.mjs";
 import { recommendationsFor } from "./recommendations.mjs";
@@ -272,10 +273,7 @@ export function flagReport(report) {
   };
 }
 export function assessLinks(body) {
-  if (body?.consent?.selfOwned !== true || body.consent.version !== "1")
-    throw Object.assign(Error("Confirm this is an authorized link review."), {
-      status: 400,
-    });
+  consent(body);
   if (
     !Array.isArray(body.links) ||
     !body.links.length ||

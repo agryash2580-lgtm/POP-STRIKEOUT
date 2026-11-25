@@ -1,11 +1,7 @@
 import {lookup} from 'node:dns/promises';
 import {isIP, BlockList} from 'node:net';
 export const fail=(status,message)=>{throw Object.assign(Error(message),{status})};
-export function consent(body,provider){
- if(body?.consent?.selfOwned!==true||body.consent.version!=='1')fail(400,'Confirm this is your own information or an authorized self-audit.');
- if(body.consent.providers!==undefined&&(!Array.isArray(body.consent.providers)||body.consent.providers.some(x=>typeof x!=='string')))fail(400,'Provider consent must be a list.');
- if(provider&&!body.consent.providers?.includes(provider))fail(400,'Approve disclosure to '+provider+' for this request.');
-}
+export {consent} from './consent.mjs';
 export function publicURL(value){
  if(typeof value!=='string'||value.length>2000)fail(400,'Provide a public HTTPS URL.');
  let u;try{u=new URL(value)}catch{fail(400,'Provide a public HTTPS URL.')}

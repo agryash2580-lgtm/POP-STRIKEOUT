@@ -14,6 +14,7 @@ export function osintRouter({
   limited,
   imageOptions,
   searchOptions,
+  checkOptions,
   domainOwnership = domainOwnershipService(),
   exposureAuth = authenticatorAuthService({ domains: domainOwnership }),
   sharedLimit = usesCloud() ? createDistributedLimiter() : async () => {},
@@ -119,7 +120,7 @@ export function osintRouter({
     domainOwnership.revoke(req, req.body?.domain)));
   router.post(
     "/check",
-    handle((body) => runCheck(body)),
+    handle((body) => runCheck(body, checkOptions)),
   );
   router.post(
     "/review-documents",

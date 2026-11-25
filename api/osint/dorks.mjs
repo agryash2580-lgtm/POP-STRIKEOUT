@@ -27,7 +27,7 @@ export async function runDorks(body,{env=process.env,fetcher=fetch}={}){
  for(const query of plan.queries){
   try{
    const data=await serpSearch({engine:'google',q:query.query,num:'5'},{env,fetcher});
-   if(data.organic_results!==undefined&&!Array.isArray(data.organic_results))fail(502,'Search provider returned unexpected results.');
+   if(!Array.isArray(data.organic_results))fail(502,'Search provider returned unexpected results.');
    let accepted=0;
    for(const row of (data.organic_results||[]).slice(0,5)){
     let url;try{url=new URL(row.link)}catch{continue}

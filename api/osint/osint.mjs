@@ -1,4 +1,5 @@
 import { publicWebEngines, publicWebReferences } from "./public-web.mjs";
+import { consent } from "./consent.mjs";
 import { prioritizeFindings } from "./prioritize.mjs";
 import { providerBudget } from "./request-budget.mjs";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
@@ -24,19 +25,6 @@ function personalName(value) {
   if (!/^[\p{L}\p{N} .'-]+$/u.test(value))
     throw invalid("Enter your own name without search operators.");
   return value.trim();
-}
-function ownedConsent(body) {
-  if (body?.consent?.selfOwned !== true || body.consent.version !== "1")
-    throw invalid(
-      "Explicit self-owned-information consent version 1 is required.",
-    );
-}
-function permitted(body, provider) {
-  if (
-    !Array.isArray(body.consent.providers) ||
-    !body.consent.providers.includes(provider)
-  )
-    throw invalid("Approve disclosure to " + provider + " for this check.");
 }
 function publicSearchHandoffs(query) {
   return [
@@ -81,7 +69,7 @@ export function cardReview(number) {
 }
 export async function runCheck(body, options = {}) {
   options = providerBudget(options);
-  ownedConsent(body);
+  consent(body);
   const { service, input = {} } = body;
   if (
     !input ||
@@ -172,6 +160,7 @@ export async function runCheck(body, options = {}) {
             reviewPriority: "high",
             confidence: "provider_record",
             ...x,
+            provider: "hibp",
           })),
         );
       } catch (e) {
@@ -329,6 +318,7 @@ export async function runCheck(body, options = {}) {
             reviewPriority: service === "identity_cards" ? "high" : "review",
             confidence: "unverified_search_lead",
             ...x,
+            provider: "brave",
           })),
         );
       } catch (e) {
@@ -386,8 +376,7 @@ export async function runCheck(body, options = {}) {
   return report;
 }
 export async function runPasswordRange(body, options = {}) {
-  ownedConsent(body);
-  permitted(body, "pwned_passwords");
+  consent(body, "pwned_passwords");
   if (Object.keys(body).some((k) => !["prefix", "consent"].includes(k)))
     throw invalid(
       "Only a five-character hash prefix and consent may be submitted.",
