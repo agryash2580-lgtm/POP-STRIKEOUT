@@ -6,7 +6,7 @@ function fixture(overrides = {}) {
   const calls = [];
   const integrations = Object.fromEntries(['githubReferences', 'passwordRange', 'webSearch', 'emailBreaches', 'serpSearch', 'reverseImage'].map(name => [name, async (...args) => {
     calls.push({ name, args });
-    return name === 'githubReferences' ? { checks: [{ status: 'completed' }] } : { status: 'completed' };
+    return name === 'githubReferences' ? { checks: [{ status: 'completed' }] } : { status: 'completed', organic_results: [] };
   }]));
   return { calls, integrations: { ...integrations, ...overrides } };
 }
@@ -38,4 +38,10 @@ test('smoke reports omit arbitrary upstream error data and distinguish missing k
   assert.equal(report.checks.find(c => c.provider === 'github_public').code, 'request_failed');
   assert.equal(report.checks.find(c => c.provider === 'serpapi_google').status, 'not_configured');
   assert.equal(JSON.stringify(report).includes('private-'), false);
+  const incomplete = await checkProviderReadiness({ env: { RESEND_API_KEY: 'fixture' }, integrations: fixture().integrations });
+  assert.equal(incomplete.checks.find(c => c.provider === 'email').status, 'not_configured');
+  const configured = await checkProviderReadiness({ env: { RESEND_API_KEY: 'fixture', REPORT_EMAIL_FROM: 'fixture@example.org' }, integrations: fixture().integrations });
+  assert.equal(configured.checks.find(c => c.provider === 'email').status, 'configured_not_tested');
+  const unsupported = await checkProviderReadiness({ env: { SERPAPI_API_KEY: 'fixture' }, integrations: fixture({ serpSearch: async () => ({ search_metadata: { status: 'Success' } }) }).integrations });
+  assert.ok(unsupported.checks.filter(c => ['serpapi_google', 'serpapi_bing', 'serpapi_duckduckgo'].includes(c.provider)).every(c => c.status === 'unavailable'));
 });

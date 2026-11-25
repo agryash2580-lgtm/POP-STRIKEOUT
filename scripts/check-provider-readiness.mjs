@@ -4,6 +4,7 @@ import path from 'node:path';
 import { githubReferences, passwordRange, webSearch, emailBreaches } from '../api/osint/providers.mjs';
 import { serpSearch } from '../api/osint/search-provider.mjs';
 import { reverseImage } from '../api/osint/images.mjs';
+import { createMailer } from '../api/report-mail.mjs';
 
 const adapters = { githubReferences, passwordRange, webSearch, emailBreaches, serpSearch, reverseImage };
 export async function checkProviderReadiness({ env = process.env, integrations = adapters } = {}) {
@@ -26,7 +27,10 @@ export async function checkProviderReadiness({ env = process.env, integrations =
   });
   await check('pwned_passwords', true, () => integrations.passwordRange('5BAA6'));
   for (const engine of ['google', 'bing', 'duckduckgo'])
-    await check('serpapi_' + engine, !!env.SERPAPI_API_KEY, () => integrations.serpSearch({ engine, q: 'site:example.org "strikeout-demo"' }, { env }));
+    await check('serpapi_' + engine, !!env.SERPAPI_API_KEY, async () => {
+      const result = await integrations.serpSearch({ engine, q: 'site:example.org "strikeout-demo"' }, { env });
+      if (!Array.isArray(result.organic_results)) throw Error('No supported organic results section');
+    });
   if (env.SERPAPI_API_KEY && !env.STRIKEOUT_SMOKE_IMAGE_URL) {
     checks.push({ provider: 'serpapi_google_lens', status: 'not_tested', reason: 'Set STRIKEOUT_SMOKE_IMAGE_URL only to a public image you own and approve sharing with SerpApi/Google.' });
   } else {
@@ -42,7 +46,7 @@ export async function checkProviderReadiness({ env = process.env, integrations =
     ['gemini', !!env.GEMINI_API_KEY],
     ['google_sign_in', !!env.GOOGLE_CLIENT_ID && !!env.GOOGLE_CLIENT_SECRET],
     ['private_blob', !!env.BLOB_READ_WRITE_TOKEN],
-    ['email', !!env.RESEND_API_KEY || (!!env.SMTP_USER && !!env.SMTP_APP_PASSWORD)],
+    ['email', createMailer({ env }).configured()],
   ]) checks.push({ provider, status: configured ? 'configured_not_tested' : 'not_configured' });
   return { environment: 'local_operator_configuration', checkedAt: new Date().toISOString(), checks,
     limitations: ['No email was sent, no production account was changed, and no provider result contents were printed.',

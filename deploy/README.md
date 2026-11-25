@@ -40,6 +40,15 @@ up securely before upgrades; `docker compose down -v` **deletes** it. Protect th
 server and its backups because the files contain private user records. The health
 endpoint proves a storage read, not that backups or optional search providers work.
 
+Email ownership verification requires a working sender. The existing mail adapter
+uses either both `SMTP_USER` and `SMTP_APP_PASSWORD`, or both `RESEND_API_KEY` and
+`REPORT_EMAIL_FROM`; an API key alone does not configure email. Use a dedicated
+project sender and keep its settings only in the private `.env.production` file.
+The UI reports missing email configuration and must not unlock an unverified
+email. After the operator configures delivery, use their own address to request
+and confirm a code, then separately approve an exposure check. Configuration
+flags and captured-mail tests do not prove live delivery or inbox receipt.
+
 This setup does not import records from an earlier hosting provider. A migration
 must be planned separately before switching users to the new domain. Google OAuth,
 if enabled, also needs a callback URL registered for that exact HTTPS domain.
